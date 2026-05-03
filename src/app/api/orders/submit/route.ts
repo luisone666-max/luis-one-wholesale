@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { ReceivingMethod, ShippingFeePayment } from "@/lib/order-labels";
 
 type CheckoutPayload = {
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
   const {
     data: { user },
     error: userError,
-  } = await admin.auth.getUser(token);
+  } = await (createServerSupabaseClient() ?? admin).auth.getUser(token);
 
   if (userError || !user) {
     return jsonError("Your login session has expired. Please login again.", 401);

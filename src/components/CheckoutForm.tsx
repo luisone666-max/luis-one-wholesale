@@ -250,7 +250,7 @@ export function CheckoutForm() {
                 shippingFeePayment === "freight_collect"
                   ? "Paid by receiver"
                   : shippingFeePayment === "no_shipping_fee"
-                    ? "₱0"
+                    ? "PHP 0"
                     : "To be confirmed"
               }
             />
