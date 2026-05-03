@@ -4,22 +4,28 @@ import { ProductCard } from "@/components/ProductCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { categories, getCategoryBySlug, getProductsByCategory, products } from "@/lib/mock-data";
+import {
+  getActiveCategories,
+  getActiveCategoryBySlug,
+  getActiveProducts,
+  getActiveProductsByCategory,
+} from "@/lib/mock-data";
 
 export function generateStaticParams() {
-  return [{ slug: "all" }, ...categories.map((category) => ({ slug: category.slug }))];
+  return [{ slug: "all" }, ...getActiveCategories().map((category) => ({ slug: category.slug }))];
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const isAll = slug === "all";
-  const category = isAll ? null : getCategoryBySlug(slug);
+  const categories = getActiveCategories();
+  const category = isAll ? null : getActiveCategoryBySlug(slug);
 
   if (!isAll && !category) {
     notFound();
   }
 
-  const visibleProducts = isAll ? products : getProductsByCategory(slug);
+  const visibleProducts = isAll ? getActiveProducts() : getActiveProductsByCategory(slug);
   const title = isAll ? "All Wholesale Products" : category?.name ?? "Products";
   const description = isAll
     ? "Browse the full mock catalog with public B2B tier pricing, MOQ, stock, and product details."

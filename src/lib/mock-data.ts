@@ -27,6 +27,7 @@ export type Category = {
   name: string;
   description: string;
   itemCount: number;
+  active: boolean;
 };
 
 const standardTiers = (base: number): PriceTier[] => [
@@ -42,24 +43,28 @@ export const categories: Category[] = [
     name: "Motorcycle Parts",
     description: "Fast-moving replacement parts for scooters and commuter bikes.",
     itemCount: 3,
+    active: true,
   },
   {
     slug: "automotive-care",
     name: "Automotive Care",
     description: "Cleaning, maintenance, and workshop supply products.",
     itemCount: 1,
+    active: true,
   },
   {
     slug: "grocery",
     name: "Grocery Wholesale",
     description: "Shelf-ready food items for retail and food service buyers.",
     itemCount: 1,
+    active: true,
   },
   {
     slug: "electronics",
     name: "Phone Accessories",
     description: "Daily demand mobile accessories for counters and kiosks.",
     itemCount: 1,
+    active: true,
   },
 ];
 
@@ -182,6 +187,28 @@ export function getCategoryBySlug(slug: string) {
 
 export function getProductsByCategory(slug: string) {
   return products.filter((product) => product.categorySlug === slug);
+}
+
+export function getActiveCategories() {
+  return categories.filter((category) => category.active);
+}
+
+export function getActiveProducts() {
+  const activeSlugs = new Set(getActiveCategories().map((category) => category.slug));
+  return products.filter((product) => activeSlugs.has(product.categorySlug));
+}
+
+export function getActiveCategoryBySlug(slug: string) {
+  return getActiveCategories().find((category) => category.slug === slug);
+}
+
+export function getActiveProductBySlug(slug: string) {
+  const activeSlugs = new Set(getActiveCategories().map((category) => category.slug));
+  return products.find((product) => product.slug === slug && activeSlugs.has(product.categorySlug));
+}
+
+export function getActiveProductsByCategory(slug: string) {
+  return getActiveProducts().filter((product) => product.categorySlug === slug);
 }
 
 export function getPriceRange(product: Product) {

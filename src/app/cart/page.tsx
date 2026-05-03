@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { formatMoney, getTierForQuantity, products } from "@/lib/mock-data";
+import { formatMoney, getActiveProducts, getTierForQuantity } from "@/lib/mock-data";
 
+const products = getActiveProducts();
 const cartItems = [
   { product: products[0], quantity: 12 },
   { product: products[3], quantity: 50 },

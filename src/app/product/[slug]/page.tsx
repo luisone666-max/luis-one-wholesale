@@ -5,21 +5,21 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailActions } from "@/components/ProductDetailActions";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { formatMoney, getProductBySlug, products } from "@/lib/mock-data";
+import { formatMoney, getActiveProductBySlug, getActiveProducts } from "@/lib/mock-data";
 
 export function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
+  return getActiveProducts().map((product) => ({ slug: product.slug }));
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = getActiveProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const related = products.filter((item) => item.categorySlug === product.categorySlug && item.slug !== product.slug).slice(0, 3);
+  const related = getActiveProducts().filter((item) => item.categorySlug === product.categorySlug && item.slug !== product.slug).slice(0, 3);
 
   return (
     <>

@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { categories } from "@/lib/mock-data";
+import { getActiveCategories } from "@/lib/mock-data";
 
 export function SiteHeader() {
+  const categories = getActiveCategories();
+
   return (
     <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/95 backdrop-blur">
       <div className="bg-[#f65f18] text-white">

@@ -4,7 +4,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { categories, products } from "@/lib/mock-data";
+import { getActiveCategories, getActiveProducts } from "@/lib/mock-data";
 
 const rules = [
   "Public product prices before login",
@@ -14,6 +14,8 @@ const rules = [
 ];
 
 export default function Home() {
+  const categories = getActiveCategories();
+  const products = getActiveProducts();
   const bestSellers = [...products].sort((a, b) => b.sold - a.sold).slice(0, 4);
 
   return (
