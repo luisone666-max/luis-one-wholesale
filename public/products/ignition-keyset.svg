@@ -1,0 +1,10 @@
+<svg width="640" height="640" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="640" rx="36" fill="#FFF1E8"/>
+  <ellipse cx="320" cy="462" rx="190" ry="35" fill="#FFD0B8"/>
+  <rect x="190" y="210" width="160" height="218" rx="28" fill="#1F2937"/>
+  <rect x="224" y="248" width="92" height="72" rx="14" fill="#F65F18"/>
+  <circle cx="270" cy="366" r="24" fill="#E5E7EB"/>
+  <path d="M355 286h78l38 38-31 31 29 29-24 24-29-28-24 24-26-26 29-29-40-40v-23Z" fill="#D1D5DB"/>
+  <circle cx="432" cy="286" r="24" stroke="#9CA3AF" stroke-width="16"/>
+  <text x="320" y="132" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="800" fill="#111827">Ignition Keyset</text>
+</svg>

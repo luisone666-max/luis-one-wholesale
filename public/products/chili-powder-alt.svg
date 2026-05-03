@@ -1,0 +1,9 @@
+<svg width="640" height="640" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="640" rx="36" fill="#FFF7ED"/>
+  <path d="M204 154h232l32 326H172l32-326Z" fill="#DC2626"/>
+  <path d="M224 116h192l20 66H204l20-66Z" fill="#7F1D1D"/>
+  <rect x="230" y="242" width="180" height="152" rx="18" fill="#FFF7ED"/>
+  <path d="M282 318c20-33 49-45 82-35" stroke="#F97316" stroke-width="18" stroke-linecap="round"/>
+  <path d="M268 334h104" stroke="#991B1B" stroke-width="16" stroke-linecap="round"/>
+  <text x="320" y="442" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#FFFFFF">Bulk Pack</text>
+</svg>

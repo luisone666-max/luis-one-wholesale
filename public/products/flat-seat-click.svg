@@ -1,0 +1,10 @@
+<svg width="640" height="640" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="640" rx="36" fill="#FFF1E8"/>
+  <ellipse cx="320" cy="460" rx="210" ry="34" fill="#FFD0B8"/>
+  <path d="M132 360c12-90 83-143 209-143 88 0 150 17 187 51 13 12 4 34-14 35l-80 4c-42 2-70 15-91 35-35 33-79 49-132 49h-52c-18 0-30-14-27-31Z" fill="#252525"/>
+  <path d="M164 337c19-55 80-84 177-84 70 0 124 11 161 33" stroke="#555" stroke-width="18" stroke-linecap="round"/>
+  <path d="M187 391h193c23 0 43-11 58-29l32-38" stroke="#F65F18" stroke-width="14" stroke-linecap="round"/>
+  <rect x="174" y="407" width="142" height="28" rx="14" fill="#3B3B3B"/>
+  <rect x="350" y="397" width="106" height="26" rx="13" fill="#3B3B3B"/>
+  <text x="320" y="124" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#111827">Flat Seat</text>
+</svg>

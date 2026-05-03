@@ -1,0 +1,10 @@
+<svg width="640" height="640" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="640" rx="36" fill="#FFF1E8"/>
+  <ellipse cx="320" cy="488" rx="168" ry="32" fill="#FFD0B8"/>
+  <path d="M212 170h216l34 310H178l34-310Z" fill="#F65F18"/>
+  <path d="M226 132h188l14 58H212l14-58Z" fill="#B91C1C"/>
+  <rect x="230" y="250" width="180" height="126" rx="18" fill="#FFFFFF"/>
+  <path d="M256 316c50-54 96-54 128 0" stroke="#DC2626" stroke-width="18" stroke-linecap="round"/>
+  <text x="320" y="343" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="800" fill="#991B1B">CHILI</text>
+  <text x="320" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#FFFFFF">POWDER</text>
+</svg>
