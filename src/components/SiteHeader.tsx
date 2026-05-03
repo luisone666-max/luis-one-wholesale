@@ -81,8 +81,17 @@ export function SiteHeader() {
               </span>
             </Link>
             <div className="flex items-center gap-2 lg:hidden">
-              <Link href="/cart" className="rounded-sm bg-orange-50 px-2.5 py-1.5 text-xs font-black text-orange-700 ring-1 ring-orange-200">
-                Cart
+              <Link
+                href="/cart"
+                aria-label="Order cart"
+                title="Order cart"
+                className="grid h-9 w-9 place-items-center rounded-sm bg-orange-50 text-orange-700 ring-1 ring-orange-200"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="20" r="1.5" />
+                  <circle cx="17" cy="20" r="1.5" />
+                  <path d="M3 4h2l2.2 10.4a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H6" />
+                </svg>
               </Link>
               <button
                 type="button"
