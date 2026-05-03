@@ -253,8 +253,53 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["payment_records"]["Insert"]>;
         Relationships: [];
       };
+      cart_items: {
+        Row: {
+          id: string;
+          customer_id: string;
+          product_id: string;
+          variant_id: string | null;
+          quantity: number;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          customer_id: string;
+          product_id: string;
+          variant_id?: string | null;
+          quantity?: number;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["cart_items"]["Insert"]>;
+        Relationships: [];
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      customer_products: {
+        Row: {
+          id: string;
+          sku: string;
+          name: string;
+          slug: string;
+          category_id: string | null;
+          subcategory_id: string | null;
+          child_category_id: string | null;
+          brand: string | null;
+          model: string | null;
+          moq: number | null;
+          stock_status: string | null;
+          lead_time: string | null;
+          image_url: string | null;
+          description: string | null;
+          active: boolean | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: Record<string, never>;
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

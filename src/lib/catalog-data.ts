@@ -139,6 +139,8 @@ function mapSupabaseSnapshot(
     const tiers = (tiersByProductId.get(product.id) ?? []).sort((a, b) => a.min_qty - b.min_qty).map(toPriceTier);
 
     return {
+      id: product.id,
+      sku: product.sku,
       slug: product.slug,
       name: product.name,
       category: category?.name_en ?? "Wholesale",
