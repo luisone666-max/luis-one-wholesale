@@ -49,7 +49,7 @@ function DashboardContent() {
               {adminOrders.slice(0, 4).map((order) => (
                 <tr key={order.orderNo}>
                   <td className="px-4 py-4 font-black text-zinc-900">{order.orderNo}</td>
-                  <td className="px-4 py-4 text-zinc-600">{order.customer}</td>
+                  <td className="px-4 py-4 text-zinc-600">{order.customerName}</td>
                   <td className="px-4 py-4 text-zinc-600">{t(order.orderStatusKey)}</td>
                   <td className="px-4 py-4 font-black text-orange-700">{order.productTotal}</td>
                 </tr>

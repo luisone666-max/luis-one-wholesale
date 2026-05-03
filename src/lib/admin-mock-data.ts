@@ -357,72 +357,189 @@ export const adminCategories: AdminCategoryNode[] = [
   },
 ];
 
-export const adminOrders = [
+export type AdminOrderItem = {
+  image: string;
+  sku: string;
+  name: string;
+  quantity: number;
+  unitPrice: string;
+  subtotal: string;
+  stockStatusKey: TranslationKey;
+  supplierNotesSnapshot: string;
+};
+
+export type AdminPaymentRecord = {
+  method: string;
+  amount: string;
+  referenceNo: string;
+  statusKey: TranslationKey;
+  date: string;
+};
+
+export type AdminOrder = {
+  orderNo: string;
+  createdDate: string;
+  customerName: string;
+  customerPhone: string;
+  facebookMessenger: string;
+  location: string;
+  businessType: string;
+  receiverName: string;
+  receiverPhone: string;
+  receivingMethodKey: TranslationKey;
+  completeAddress: string;
+  shippingFeePaymentKey: TranslationKey;
+  shippingFeeAmount: string;
+  orderNotes: string;
+  productTotal: string;
+  amountToConfirm: string;
+  orderStatusKey: TranslationKey;
+  paymentStatusKey: TranslationKey;
+  date: string;
+  items: AdminOrderItem[];
+  payments: AdminPaymentRecord[];
+  adminNotes: string;
+};
+
+export const adminOrders: AdminOrder[] = [
   {
-    orderNo: "B2B-20260503-001",
-    customer: "Metro Auto Parts",
-    phone: "+63 917 120 8801",
-    productTotal: "$1,246.50",
-    orderStatusKey: "pendingConfirmation" as TranslationKey,
-    paymentStatusKey: "waitingDeposit" as TranslationKey,
-    receivingMethod: "Pickup",
-    shippingFeePayment: "Customer pays",
+    orderNo: "LO-2026-000001",
+    createdDate: "2026-05-03",
+    customerName: "Juan Dela Cruz",
+    customerPhone: "+63 917 111 0001",
+    facebookMessenger: "m.me/juandelacruz",
+    location: "Quezon City",
+    businessType: "Motorcycle parts reseller",
+    receiverName: "Juan Dela Cruz",
+    receiverPhone: "+63 917 111 0001",
+    receivingMethodKey: "courierShipping",
+    completeAddress: "Banawe Street, Quezon City, Metro Manila",
+    shippingFeePaymentKey: "freightCollect",
+    shippingFeeAmount: "Freight collect",
+    orderNotes: "Customer prefers courier branch pickup if cheaper.",
+    productTotal: "₱3,500",
+    amountToConfirm: "₱3,500",
+    orderStatusKey: "waitingDeposit",
+    paymentStatusKey: "noPayment",
     date: "2026-05-03",
+    items: [
+      {
+        image: "/products/flat-seat-click.svg",
+        sku: "WH-MP-1001",
+        name: "Flat Seat Click 125 / 150 / 160",
+        quantity: 10,
+        unitPrice: "₱250",
+        subtotal: "₱2,500",
+        stockStatusKey: "readyStock",
+        supplierNotesSnapshot: "Supplier A: black cover only this week.",
+      },
+      {
+        image: "/products/ignition-keyset.svg",
+        sku: "WH-MP-1002",
+        name: "Ignition Keyset Mio / Click",
+        quantity: 10,
+        unitPrice: "₱100",
+        subtotal: "₱1,000",
+        stockStatusKey: "readyStock",
+        supplierNotesSnapshot: "Check key blank batch before large order.",
+      },
+    ],
+    payments: [],
+    adminNotes: "No shipping fee added because receiver will pay freight collect.",
   },
   {
-    orderNo: "B2B-20260502-014",
-    customer: "North Road Supplies",
-    phone: "+63 918 402 3312",
-    productTotal: "$840.00",
-    orderStatusKey: "depositPaid" as TranslationKey,
-    paymentStatusKey: "depositPaid" as TranslationKey,
-    receivingMethod: "Delivery",
-    shippingFeePayment: "Collect on delivery",
+    orderNo: "LO-2026-000002",
+    createdDate: "2026-05-02",
+    customerName: "Mark Santos",
+    customerPhone: "+63 918 222 0002",
+    facebookMessenger: "fb.com/marksantos.shop",
+    location: "Pasig",
+    businessType: "Retail counter",
+    receiverName: "Mark Santos",
+    receiverPhone: "+63 918 222 0002",
+    receivingMethodKey: "pickUpAtStore",
+    completeAddress: "Pick up at warehouse counter",
+    shippingFeePaymentKey: "pickupNoShippingFee",
+    shippingFeeAmount: "₱0",
+    orderNotes: "Pickup by rider after deposit verification.",
+    productTotal: "₱1,734",
+    amountToConfirm: "₱1,734",
+    orderStatusKey: "depositPaid",
+    paymentStatusKey: "depositVerified",
     date: "2026-05-02",
+    items: [
+      {
+        image: "/products/contact-cleaner.svg",
+        sku: "WH-AC-1004",
+        name: "Contact Cleaner Spray 450ml",
+        quantity: 12,
+        unitPrice: "₱95",
+        subtotal: "₱1,140",
+        stockStatusKey: "readyStock",
+        supplierNotesSnapshot: "Aerosol cartons must be handled separately.",
+      },
+      {
+        image: "/products/chili-powder.svg",
+        sku: "WH-FS-1008",
+        name: "Chili Powder 100g",
+        quantity: 18,
+        unitPrice: "₱33",
+        subtotal: "₱594",
+        stockStatusKey: "readyStock",
+        supplierNotesSnapshot: "Keep away from moisture.",
+      },
+    ],
+    payments: [
+      { method: "GCash", amount: "₱500", referenceNo: "GC-771203", statusKey: "depositVerified", date: "2026-05-02" },
+    ],
+    adminNotes: "Pickup order. Do not add shipping fee.",
   },
   {
-    orderNo: "B2B-20260501-022",
-    customer: "Ace Retail Counter",
-    phone: "+63 920 551 0914",
-    productTotal: "$2,120.80",
-    orderStatusKey: "sourcingItems" as TranslationKey,
-    paymentStatusKey: "depositPaid" as TranslationKey,
-    receivingMethod: "Delivery",
-    shippingFeePayment: "Quoted separately",
+    orderNo: "LO-2026-000003",
+    createdDate: "2026-05-01",
+    customerName: "Ana Reyes",
+    customerPhone: "+63 919 333 0003",
+    facebookMessenger: "m.me/anareyes.store",
+    location: "Makati",
+    businessType: "Wholesale buyer",
+    receiverName: "Ana Reyes",
+    receiverPhone: "+63 919 333 0003",
+    receivingMethodKey: "localDelivery",
+    completeAddress: "Poblacion, Makati City",
+    shippingFeePaymentKey: "toBeConfirmed",
+    shippingFeeAmount: "To be Confirmed",
+    orderNotes: "Lalamove quote needed after items are packed.",
+    productTotal: "₱5,880",
+    amountToConfirm: "₱5,880 + shipping to be confirmed",
+    orderStatusKey: "sourcingItems",
+    paymentStatusKey: "depositSubmitted",
     date: "2026-05-01",
-  },
-  {
-    orderNo: "B2B-20260430-011",
-    customer: "MNL Scooter Works",
-    phone: "+63 919 761 4420",
-    productTotal: "$435.20",
-    orderStatusKey: "readyForPickup" as TranslationKey,
-    paymentStatusKey: "depositPaid" as TranslationKey,
-    receivingMethod: "Pickup",
-    shippingFeePayment: "N/A",
-    date: "2026-04-30",
-  },
-  {
-    orderNo: "B2B-20260428-008",
-    customer: "Luzon Wholesale Mart",
-    phone: "+63 916 771 2088",
-    productTotal: "$988.00",
-    orderStatusKey: "completed" as TranslationKey,
-    paymentStatusKey: "completed" as TranslationKey,
-    receivingMethod: "Delivery",
-    shippingFeePayment: "Paid",
-    date: "2026-04-28",
-  },
-  {
-    orderNo: "B2B-20260427-003",
-    customer: "City Corner Store",
-    phone: "+63 915 338 9902",
-    productTotal: "$160.00",
-    orderStatusKey: "cancelled" as TranslationKey,
-    paymentStatusKey: "cancelled" as TranslationKey,
-    receivingMethod: "Pickup",
-    shippingFeePayment: "N/A",
-    date: "2026-04-27",
+    items: [
+      {
+        image: "/products/topbox-bracket.svg",
+        sku: "WH-MP-1003",
+        name: "Topbox Bracket NMAX / Aerox",
+        quantity: 20,
+        unitPrice: "₱210",
+        subtotal: "₱4,200",
+        stockStatusKey: "lowStock",
+        supplierNotesSnapshot: "Low stock, confirm warehouse quantity first.",
+      },
+      {
+        image: "/products/phone-accessories.svg",
+        sku: "WH-EL-1009",
+        name: "Phone Charger Cable",
+        quantity: 60,
+        unitPrice: "₱28",
+        subtotal: "₱1,680",
+        stockStatusKey: "unavailable",
+        supplierNotesSnapshot: "Do not publish until cable certification is confirmed.",
+      },
+    ],
+    payments: [
+      { method: "Bank Transfer", amount: "₱1,500", referenceNo: "BPI-552019", statusKey: "depositSubmitted", date: "2026-05-01" },
+    ],
+    adminNotes: "Confirm cable availability before finalizing.",
   },
 ];
 

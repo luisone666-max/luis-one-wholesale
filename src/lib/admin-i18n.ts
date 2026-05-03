@@ -154,6 +154,47 @@ export type TranslationKey =
   | "waitingDeposit"
   | "waitingDepositOrders"
   | "warning"
+  | "addDeliveryFee"
+  | "addPaymentRecord"
+  | "amountToConfirm"
+  | "cancelOrder"
+  | "customerName"
+  | "customerPhone"
+  | "customerAccountInfo"
+  | "completeAddress"
+  | "createdDate"
+  | "depositSubmitted"
+  | "depositVerified"
+  | "markFreightCollect"
+  | "orderNotes"
+  | "orderSummary"
+  | "paymentRecords"
+  | "pickUpAtStore"
+  | "pickupNoShippingFee"
+  | "printOrder"
+  | "proofImage"
+  | "quantity"
+  | "productItems"
+  | "receiverInfo"
+  | "receiverName"
+  | "receiverPhone"
+  | "shippingFeeAmount"
+  | "shippingFeeSeparate"
+  | "freightCollect"
+  | "prepaidShipping"
+  | "toBeConfirmed"
+  | "localDelivery"
+  | "courierShipping"
+  | "noPayment"
+  | "fullyPaid"
+  | "rejected"
+  | "unavailableRefund"
+  | "updateOrderStatus"
+  | "updatePaymentStatus"
+  | "unitPriceSnapshot"
+  | "subtotal"
+  | "supplierNotesSnapshot"
+  | "saveNote"
   | "wholesalePrices";
 
 export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, string>> = {
@@ -311,6 +352,47 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     waitingDeposit: "Waiting for Deposit",
     waitingDepositOrders: "Waiting Deposit Orders",
     warning: "Warning",
+    addDeliveryFee: "Add Delivery Fee",
+    addPaymentRecord: "Add Payment Record",
+    amountToConfirm: "Amount to Confirm",
+    cancelOrder: "Cancel Order",
+    customerName: "Customer Name",
+    customerPhone: "Customer Phone",
+    customerAccountInfo: "Customer Account Info",
+    completeAddress: "Complete Address",
+    createdDate: "Created Date",
+    depositSubmitted: "Deposit Submitted",
+    depositVerified: "Deposit Verified",
+    markFreightCollect: "Mark Shipping Fee as Freight Collect",
+    orderNotes: "Order Notes",
+    orderSummary: "Order Summary",
+    paymentRecords: "Payment Records",
+    pickUpAtStore: "Pick up at store",
+    pickupNoShippingFee: "Pick-up / No Shipping Fee",
+    printOrder: "Print Order",
+    proofImage: "Proof Image",
+    quantity: "Quantity",
+    productItems: "Product Items",
+    receiverInfo: "Receiver Info",
+    receiverName: "Receiver Name",
+    receiverPhone: "Receiver Phone",
+    shippingFeeAmount: "Shipping Fee Amount",
+    shippingFeeSeparate: "Product Total and Shipping Fee are displayed separately.",
+    freightCollect: "Freight Collect / Paid by Receiver",
+    prepaidShipping: "Prepaid Shipping",
+    toBeConfirmed: "To be Confirmed",
+    localDelivery: "Local delivery / Lalamove",
+    courierShipping: "Courier shipping",
+    noPayment: "No Payment",
+    fullyPaid: "Fully Paid",
+    rejected: "Rejected",
+    unavailableRefund: "Unavailable / Refund",
+    updateOrderStatus: "Update Order Status",
+    updatePaymentStatus: "Update Payment Status",
+    unitPriceSnapshot: "Unit Price Snapshot",
+    subtotal: "Subtotal",
+    supplierNotesSnapshot: "Supplier Notes Snapshot",
+    saveNote: "Save Note",
     wholesalePrices: "Wholesale Prices",
   },
   zh: {
@@ -467,6 +549,47 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     waitingDeposit: "待付订金",
     waitingDepositOrders: "待付订金订单",
     warning: "警告",
+    addDeliveryFee: "添加运费",
+    addPaymentRecord: "添加付款记录",
+    amountToConfirm: "待确认金额",
+    cancelOrder: "取消订单",
+    customerName: "客户姓名",
+    customerPhone: "客户电话",
+    customerAccountInfo: "客户账户信息",
+    completeAddress: "完整地址",
+    createdDate: "创建日期",
+    depositSubmitted: "订金已提交",
+    depositVerified: "订金已核实",
+    markFreightCollect: "标记运费到付",
+    orderNotes: "订单备注",
+    orderSummary: "订单摘要",
+    paymentRecords: "付款记录",
+    pickUpAtStore: "到店自提",
+    pickupNoShippingFee: "自提 / 无运费",
+    printOrder: "打印订单",
+    proofImage: "凭证图片",
+    quantity: "数量",
+    productItems: "商品明细",
+    receiverInfo: "收货信息",
+    receiverName: "收货人",
+    receiverPhone: "收货电话",
+    shippingFeeAmount: "运费金额",
+    shippingFeeSeparate: "商品总额和运费分开显示。",
+    freightCollect: "运费到付 / 收货人支付",
+    prepaidShipping: "运费预付",
+    toBeConfirmed: "待确认",
+    localDelivery: "本地配送 / Lalamove",
+    courierShipping: "快递运输",
+    noPayment: "未付款",
+    fullyPaid: "已全额付款",
+    rejected: "已拒绝",
+    unavailableRefund: "缺货 / 退款",
+    updateOrderStatus: "更新订单状态",
+    updatePaymentStatus: "更新付款状态",
+    unitPriceSnapshot: "单价快照",
+    subtotal: "小计",
+    supplierNotesSnapshot: "供应商备注快照",
+    saveNote: "保存备注",
     wholesalePrices: "批发价格",
   },
 };
