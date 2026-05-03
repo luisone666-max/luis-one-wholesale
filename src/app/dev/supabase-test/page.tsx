@@ -1,4 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
+import { notFound } from "next/navigation";
+import { requireActiveAdminPage } from "@/lib/admin-auth";
 import { getSupabaseAdminConfig, getSupabasePublicConfig } from "@/lib/supabase/config";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -103,15 +105,14 @@ async function runChecks(): Promise<Check[]> {
 
 export default async function SupabaseTestPage() {
   const isDevelopment = process.env.NODE_ENV === "development";
-  const checks = isDevelopment
-    ? await runChecks()
-    : [
-        {
-          label: "Development only",
-          status: "blocked" as const,
-          detail: "This Supabase diagnostic page is disabled outside development.",
-        },
-      ];
+
+  if (!isDevelopment) {
+    notFound();
+  }
+
+  await requireActiveAdminPage();
+
+  const checks = await runChecks();
 
   return (
     <main className="min-h-screen bg-zinc-50 px-4 py-10 text-zinc-950 sm:px-6 lg:px-8">
@@ -135,4 +136,3 @@ export default async function SupabaseTestPage() {
     </main>
   );
 }
-
