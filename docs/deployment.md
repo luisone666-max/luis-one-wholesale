@@ -88,6 +88,14 @@ NEXT_PUBLIC_MESSENGER_URL=https://m.me/your-page-name
 
 Keep the value public-friendly. Do not put private tokens in this variable.
 
+To connect the Facebook Page `Shop Now` button:
+
+1. Open the store Facebook Page settings.
+2. Edit the page action button.
+3. Choose `Shop Now` or a similar shopping/contact action.
+4. Set the destination URL to the production website home page or product listing page, for example `https://your-domain.com/category/all`.
+5. Use the Messenger button separately for chat support by linking it to the same Messenger URL configured in `NEXT_PUBLIC_MESSENGER_URL`.
+
 ## Production Safety Notes
 
 - `/dev/supabase-test` is development-only and requires active admin access.
