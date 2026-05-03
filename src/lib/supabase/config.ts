@@ -32,7 +32,6 @@ export function getSupabasePublicConfig() {
 
 export function getSupabaseServerConfig() {
   const publicConfig = getSupabasePublicConfig();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!publicConfig) {
     return null;
@@ -40,7 +39,7 @@ export function getSupabaseServerConfig() {
 
   return {
     url: publicConfig.url,
-    key: isUsableKey(serviceRoleKey) ? (serviceRoleKey as string) : publicConfig.anonKey,
+    key: publicConfig.anonKey,
   };
 }
 
