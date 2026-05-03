@@ -78,20 +78,20 @@ export function ProductDetailExperience({ product }: { product: Product }) {
   };
 
   return (
-    <section className="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="grid gap-7 lg:grid-cols-[430px_1fr]">
+    <section className="overflow-hidden bg-white shadow-sm sm:rounded-sm sm:border sm:border-zinc-200 sm:p-4">
+      <div className="grid gap-4 lg:grid-cols-[430px_1fr] lg:gap-7">
         <div>
-          <div className="aspect-square rounded-sm border border-zinc-200 bg-white p-3">
+          <div className="aspect-square bg-white p-2 sm:rounded-sm sm:border sm:border-zinc-200 sm:p-3">
             <ProductImage src={displayProduct.image} alt={displayProduct.name} />
           </div>
-          <div className="mt-3 grid grid-cols-5 gap-2">
+          <div className="mx-3 mt-2 grid grid-cols-5 gap-1.5 sm:mx-0 sm:mt-3 sm:gap-2">
             {displayProduct.gallery.slice(0, 5).map((image) => (
-              <button key={image} type="button" className="aspect-square rounded-sm border border-zinc-200 bg-white p-1.5 hover:border-orange-400">
+              <button key={image} type="button" className="aspect-square rounded-sm border border-zinc-200 bg-white p-1 hover:border-orange-400 sm:p-1.5">
                 <ProductImage src={image} alt={`${displayProduct.name} view`} />
               </button>
             ))}
           </div>
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-zinc-100 pt-3 text-sm font-bold text-zinc-500">
+          <div className="mx-3 mt-3 flex items-center justify-between gap-3 border-t border-zinc-100 pt-2 text-xs font-bold text-zinc-500 sm:mx-0 sm:mt-4 sm:pt-3 sm:text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <span>Share:</span>
               <button
@@ -115,29 +115,29 @@ export function ProductDetailExperience({ product }: { product: Product }) {
           {shareMessage ? <p className="mt-2 text-xs font-bold text-orange-700">{shareMessage}</p> : null}
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 px-3 pb-4 sm:px-0 sm:pb-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-sm bg-[#f65f18] px-2 py-1 text-xs font-black text-white">Wholesale</span>
             <StockStatusBadge status={displayProduct.stockStatus} />
           </div>
 
-          <h1 className="mt-3 text-2xl font-bold leading-snug text-zinc-950 lg:text-[26px]">{product.name}</h1>
+          <h1 className="mt-2 text-lg font-bold leading-snug text-zinc-950 sm:mt-3 sm:text-2xl lg:text-[26px]">{product.name}</h1>
 
-          <div className="mt-4 rounded-sm bg-[#fafafa] px-5 py-4">
-            <p className="text-3xl font-black text-[#f65f18]">
+          <div className="mt-3 rounded-sm bg-[#fafafa] px-3 py-2.5 sm:mt-4 sm:px-5 sm:py-4">
+            <p className="text-2xl font-black text-[#f65f18] sm:text-3xl">
               {selectedVariant ? getVariantPriceRange(selectedVariant) : getPriceRange(product)}
             </p>
             <p className="mt-1 text-xs font-bold text-zinc-500">Public wholesale prices. Final order will be confirmed manually.</p>
           </div>
 
-          <div className="mt-5 space-y-4 text-sm">
+          <div className="mt-3 space-y-3 text-sm sm:mt-5 sm:space-y-4">
             <DetailRow label="SKU">
               <span className="font-bold text-zinc-900">{displayProduct.sku ?? "-"}</span>
             </DetailRow>
             <DetailRow label="Wholesale Tiers">
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
                 {displayProduct.tiers.map((tier) => (
-                  <span key={tier.label} className="rounded-sm border border-orange-100 bg-orange-50 px-3 py-1.5 text-xs font-black text-orange-700">
+                  <span key={tier.label} className="rounded-sm border border-orange-100 bg-orange-50 px-2 py-1 text-[11px] font-black text-orange-700 sm:px-3 sm:py-1.5 sm:text-xs">
                     {tier.label}: {formatMoney(tier.price)}
                   </span>
                 ))}
@@ -155,20 +155,20 @@ export function ProductDetailExperience({ product }: { product: Product }) {
 
             {activeVariants.length ? (
               <DetailRow label="Model">
-                <div className="grid max-h-52 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid max-h-40 grid-cols-2 gap-1.5 overflow-y-auto pr-1 sm:max-h-52 sm:gap-2 xl:grid-cols-3">
                   {activeVariants.map((variant) => (
                     <button
                       key={variant.id}
                       type="button"
                       onClick={() => selectVariant(variant)}
-                      className={`min-h-12 rounded-sm border px-3 py-2 text-left text-xs font-bold transition ${
+                      className={`min-h-10 rounded-sm border px-2 py-1.5 text-left text-[11px] font-bold transition sm:min-h-12 sm:px-3 sm:py-2 sm:text-xs ${
                         selectedVariantId === variant.id
                           ? "border-[#f65f18] bg-orange-50 text-orange-700"
                           : "border-zinc-200 bg-white text-zinc-700 hover:border-orange-300"
                       }`}
                     >
                       <span className="line-clamp-1 block font-black">{variant.name}</span>
-                      <span className="mt-0.5 line-clamp-1 block text-[11px] text-zinc-500">{variant.sku || variant.fits || "Variant"}</span>
+                      <span className="mt-0.5 line-clamp-1 block text-[10px] text-zinc-500 sm:text-[11px]">{variant.sku || variant.fits || "Variant"}</span>
                     </button>
                   ))}
                 </div>
@@ -200,16 +200,16 @@ export function ProductDetailExperience({ product }: { product: Product }) {
             </DetailRow>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-zinc-100 pt-5 sm:flex-row">
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 sm:mt-6 sm:flex sm:gap-3 sm:pt-5">
             <button
               type="button"
               onClick={addToOrder}
               disabled={loading}
-              className="h-12 min-w-44 rounded-sm border border-[#f65f18] bg-orange-50 px-8 text-sm font-black text-[#f65f18] transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-11 rounded-sm border border-[#f65f18] bg-orange-50 px-3 text-xs font-black text-[#f65f18] transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 sm:min-w-44 sm:px-8 sm:text-sm"
             >
               {loading ? "Adding..." : "Add to Order"}
             </button>
-            <ProductInquiryButton product={displayProduct} label="Messenger" className="h-12 min-w-44 !border-[#f65f18] !bg-[#f65f18] px-8 text-sm !text-white hover:!bg-[#df4f0d]" />
+            <ProductInquiryButton product={displayProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-44 sm:px-8 sm:text-sm" />
           </div>
 
           {message ? (
@@ -225,8 +225,8 @@ export function ProductDetailExperience({ product }: { product: Product }) {
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-[118px_1fr]">
-      <div className="font-bold text-zinc-500">{label}</div>
+    <div className="grid grid-cols-[86px_1fr] gap-2 sm:grid-cols-[118px_1fr] sm:gap-3">
+      <div className="text-xs font-bold text-zinc-500 sm:text-sm">{label}</div>
       <div>{children}</div>
     </div>
   );
