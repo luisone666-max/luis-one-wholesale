@@ -25,7 +25,7 @@ export type WholesalePriceResult =
     };
 
 export function formatPhp(value: number) {
-  return `PHP ${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return `₱${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 function getTierLabel(tier: PriceTierRow) {

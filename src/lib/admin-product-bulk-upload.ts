@@ -189,7 +189,7 @@ function priceRange(prices: ParsedBulkRow["prices"]) {
   }
 
   const values = prices.map((price) => price.unitPrice);
-  return `PHP ${Math.min(...values).toLocaleString("en-US")} - PHP ${Math.max(...values).toLocaleString("en-US")}`;
+  return `₱${Math.min(...values).toLocaleString("en-US")} - ₱${Math.max(...values).toLocaleString("en-US")}`;
 }
 
 function getCategoryPath(row: ParsedBulkRow) {

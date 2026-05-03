@@ -52,7 +52,7 @@ export const customerOrders = [
   {
     orderNo: "LO-2026-000001",
     date: "2026-05-03",
-    productTotal: "PHP 3,500",
+    productTotal: "₱3,500",
     orderStatus: "Waiting for Deposit",
     paymentStatus: "No Payment",
     receivingMethod: "Courier shipping",
@@ -60,7 +60,7 @@ export const customerOrders = [
   {
     orderNo: "LO-2026-000002",
     date: "2026-05-02",
-    productTotal: "PHP 1,734",
+    productTotal: "₱1,734",
     orderStatus: "Deposit Paid",
     paymentStatus: "Deposit Verified",
     receivingMethod: "Pick up at store",
@@ -68,7 +68,7 @@ export const customerOrders = [
   {
     orderNo: "LO-2026-000003",
     date: "2026-05-01",
-    productTotal: "PHP 5,880",
+    productTotal: "₱5,880",
     orderStatus: "Sourcing Items",
     paymentStatus: "Deposit Submitted",
     receivingMethod: "Local delivery / Lalamove",
@@ -80,5 +80,5 @@ export function getTierForCustomerQuantity(item: CustomerCartItem, quantity: num
 }
 
 export function formatPhp(value: number) {
-  return `PHP ${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `₱${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
