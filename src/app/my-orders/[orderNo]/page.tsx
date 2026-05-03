@@ -104,7 +104,10 @@ function OrderDetailContent() {
                       {order.items.map((item) => (
                         <tr key={item.id}>
                           <td className="px-4 py-4 font-bold text-zinc-600">{item.sku}</td>
-                          <td className="px-4 py-4 font-black text-zinc-950">{item.productName}</td>
+                          <td className="px-4 py-4 font-black text-zinc-950">
+                            {item.productName}
+                            {item.variantName ? <span className="mt-1 block text-xs font-bold text-orange-700">Variant: {item.variantName}</span> : null}
+                          </td>
                           <td className="px-4 py-4 text-zinc-600">{item.quantity}</td>
                           <td className="px-4 py-4 font-black text-orange-700">{formatPhp(item.unitPrice)}</td>
                           <td className="px-4 py-4 font-black text-zinc-950">{formatPhp(item.subtotal)}</td>

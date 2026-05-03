@@ -65,13 +65,9 @@ export function CustomerAuthNav() {
   return (
     <>
       <span className="max-w-40 truncate font-black text-zinc-950">{customer?.name ?? fallbackName}</span>
-      <Link href="/my-orders" className="hover:text-orange-600">
-        My Orders
-      </Link>
       <button type="button" onClick={handleLogout} className="font-bold text-zinc-500 hover:text-orange-600">
         Logout
       </button>
     </>
   );
 }
-

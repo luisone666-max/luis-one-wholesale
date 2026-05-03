@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AddToOrderButton } from "@/components/AddToOrderButton";
 import { ProductImage, StockStatusBadge } from "@/components/CustomerUi";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import { formatMoney, getPriceRange, type Product } from "@/lib/mock-data";
@@ -34,14 +33,6 @@ export function ProductCard({ product }: { product: Product }) {
             View Details
           </Link>
           <ProductInquiryButton product={product} className="h-10 w-full" />
-          <div className="col-span-2">
-            <AddToOrderButton
-              productId={product.id}
-              quantity={product.moq}
-              compact
-              className="h-10 w-full rounded-sm bg-[#f65f18] px-3 text-xs font-black text-white transition hover:bg-[#df4f0d] disabled:cursor-not-allowed disabled:bg-orange-300"
-            />
-          </div>
         </div>
       </div>
     </article>

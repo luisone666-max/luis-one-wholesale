@@ -131,6 +131,64 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["product_price_tiers"]["Insert"]>;
         Relationships: [];
       };
+      product_variants: {
+        Row: {
+          id: string;
+          product_id: string;
+          variant_name: string;
+          variant_sku: string | null;
+          model: string | null;
+          fits: string | null;
+          image_url: string | null;
+          moq: number | null;
+          stock_status: string | null;
+          lead_time: string | null;
+          active: boolean | null;
+          sort_order: number | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          variant_name: string;
+          variant_sku?: string | null;
+          model?: string | null;
+          fits?: string | null;
+          image_url?: string | null;
+          moq?: number | null;
+          stock_status?: string | null;
+          lead_time?: string | null;
+          active?: boolean | null;
+          sort_order?: number | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["product_variants"]["Insert"]>;
+        Relationships: [];
+      };
+      product_variant_price_tiers: {
+        Row: {
+          id: string;
+          variant_id: string;
+          min_qty: number;
+          max_qty: number | null;
+          unit_price: number;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          variant_id: string;
+          min_qty: number;
+          max_qty?: number | null;
+          unit_price: number;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["product_variant_price_tiers"]["Insert"]>;
+        Relationships: [];
+      };
       customers: {
         Row: {
           id: string;
@@ -206,6 +264,9 @@ export type Database = {
           id: string;
           order_id: string | null;
           product_id: string | null;
+          variant_id: string | null;
+          variant_name_snapshot: string | null;
+          variant_sku_snapshot: string | null;
           product_name_snapshot: string | null;
           sku_snapshot: string | null;
           quantity: number;
@@ -217,6 +278,9 @@ export type Database = {
           id?: string;
           order_id?: string | null;
           product_id?: string | null;
+          variant_id?: string | null;
+          variant_name_snapshot?: string | null;
+          variant_sku_snapshot?: string | null;
           product_name_snapshot?: string | null;
           sku_snapshot?: string | null;
           quantity: number;

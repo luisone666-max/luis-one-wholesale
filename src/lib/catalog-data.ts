@@ -8,6 +8,7 @@ import {
   type Category,
   type PriceTier,
   type Product,
+  type ProductVariant,
 } from "@/lib/mock-data";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/types/database";
@@ -36,6 +37,11 @@ type PriceTierRow = Pick<
   "product_id" | "min_qty" | "max_qty" | "unit_price"
 >;
 type ProductImageRow = Pick<Database["public"]["Tables"]["product_images"]["Row"], "product_id" | "image_url" | "sort_order">;
+type ProductVariantRow = Database["public"]["Tables"]["product_variants"]["Row"];
+type ProductVariantPriceTierRow = Pick<
+  Database["public"]["Tables"]["product_variant_price_tiers"]["Row"],
+  "variant_id" | "min_qty" | "max_qty" | "unit_price"
+>;
 
 type CatalogSnapshot = {
   categories: Category[];
@@ -96,12 +102,16 @@ function mapSupabaseSnapshot(
   productRows: ProductRow[],
   tierRows: PriceTierRow[],
   imageRows: ProductImageRow[],
+  variantRows: ProductVariantRow[] = [],
+  variantTierRows: ProductVariantPriceTierRow[] = [],
 ): CatalogSnapshot {
   const activeCategoryRows = categoryRows.filter((category) => category.active);
   const activeCategoryIds = new Set(activeCategoryRows.map((category) => category.id));
   const categoriesById = new Map(activeCategoryRows.map((category) => [category.id, category]));
   const tiersByProductId = new Map<string, PriceTierRow[]>();
   const imagesByProductId = new Map<string, ProductImageRow[]>();
+  const variantsByProductId = new Map<string, ProductVariantRow[]>();
+  const variantTiersByVariantId = new Map<string, ProductVariantPriceTierRow[]>();
 
   for (const tier of tierRows) {
     if (!tier.product_id) {
@@ -117,6 +127,18 @@ function mapSupabaseSnapshot(
     }
 
     imagesByProductId.set(image.product_id, [...(imagesByProductId.get(image.product_id) ?? []), image]);
+  }
+
+  for (const variant of variantRows) {
+    if (!variant.active) {
+      continue;
+    }
+
+    variantsByProductId.set(variant.product_id, [...(variantsByProductId.get(variant.product_id) ?? []), variant]);
+  }
+
+  for (const tier of variantTierRows) {
+    variantTiersByVariantId.set(tier.variant_id, [...(variantTiersByVariantId.get(tier.variant_id) ?? []), tier]);
   }
 
   const visibleProductRows = productRows.filter(
@@ -138,6 +160,35 @@ function mapSupabaseSnapshot(
 
     const tiers = (tiersByProductId.get(product.id) ?? []).sort((a, b) => a.min_qty - b.min_qty).map(toPriceTier);
 
+    const variants = (variantsByProductId.get(product.id) ?? [])
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((variant): ProductVariant => {
+        const variantTiers = (variantTiersByVariantId.get(variant.id) ?? [])
+          .sort((a, b) => a.min_qty - b.min_qty)
+          .map((tier) => ({
+            label: tier.max_qty === null ? `${tier.min_qty}+ pcs` : `${tier.min_qty}-${tier.max_qty} pcs`,
+            min: tier.min_qty,
+            max: tier.max_qty,
+            price: Number(tier.unit_price),
+          }));
+
+        return {
+          id: variant.id,
+          productId: product.id,
+          name: variant.variant_name,
+          sku: variant.variant_sku ?? undefined,
+          model: variant.model ?? undefined,
+          fits: variant.fits ?? undefined,
+          image: variant.image_url ?? undefined,
+          moq: variant.moq ?? product.moq ?? 1,
+          stockStatus: toStockStatus(variant.stock_status),
+          leadTime: variant.lead_time ?? undefined,
+          active: Boolean(variant.active),
+          sortOrder: variant.sort_order ?? 0,
+          tiers: variantTiers.length ? variantTiers : tiers,
+        };
+      });
+
     return {
       id: product.id,
       sku: product.sku,
@@ -155,6 +206,7 @@ function mapSupabaseSnapshot(
       description: product.description ?? "Wholesale product details will be maintained by admin.",
       details,
       tiers: tiers.length ? tiers : [{ label: "1+ pcs", min: 1, max: null, price: 0 }],
+      variants,
     };
   });
 
@@ -189,7 +241,7 @@ const readSupabaseCatalog = cache(async (): Promise<CatalogSnapshot | null> => {
     return null;
   }
 
-  const [categoriesResult, productsResult, tiersResult, imagesResult] = await Promise.all([
+  const [categoriesResult, productsResult, tiersResult, imagesResult, variantsResult, variantTiersResult] = await Promise.all([
     supabase
       .from("categories")
       .select(
@@ -206,6 +258,12 @@ const readSupabaseCatalog = cache(async (): Promise<CatalogSnapshot | null> => {
       .order("name", { ascending: true }),
     supabase.from("product_price_tiers").select("product_id,min_qty,max_qty,unit_price").order("min_qty", { ascending: true }),
     supabase.from("product_images").select("product_id,image_url,sort_order").order("sort_order", { ascending: true }),
+    supabase
+      .from("product_variants")
+      .select("id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order,created_at,updated_at")
+      .eq("active", true)
+      .order("sort_order", { ascending: true }),
+    supabase.from("product_variant_price_tiers").select("variant_id,min_qty,max_qty,unit_price").order("min_qty", { ascending: true }),
   ]);
 
   if (categoriesResult.error) {
@@ -229,6 +287,8 @@ const readSupabaseCatalog = cache(async (): Promise<CatalogSnapshot | null> => {
     productsResult.data ?? [],
     tiersResult.data ?? [],
     imagesResult.data ?? [],
+    variantsResult.error ? [] : variantsResult.data ?? [],
+    variantTiersResult.error ? [] : variantTiersResult.data ?? [],
   );
 });
 

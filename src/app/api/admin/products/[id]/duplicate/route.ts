@@ -8,12 +8,13 @@ function jsonError(message: string, status = 400) {
 
 async function uniqueValue(
   admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
-  column: "sku" | "slug",
+  column: "sku" | "slug" | "variant_sku",
   base: string,
 ) {
   for (let index = 1; index < 100; index += 1) {
     const candidate = index === 1 ? `${base}-copy` : `${base}-copy-${index}`;
-    const { data, error } = await admin.from("products").select("id").eq(column, candidate).maybeSingle();
+    const table = column === "variant_sku" ? "product_variants" : "products";
+    const { data, error } = await admin.from(table).select("id").eq(column, candidate).maybeSingle();
 
     if (error) {
       throw new Error(error.message);
@@ -59,6 +60,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (tiersError) {
     return jsonError(tiersError.message, 500);
+  }
+
+  const { data: variants, error: variantsError } = await admin
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", id)
+    .order("sort_order", { ascending: true });
+
+  if (variantsError && !variantsError.message.toLowerCase().includes("product_variants")) {
+    return jsonError(variantsError.message, 500);
+  }
+
+  const variantRows = (variants ?? []) as Record<string, unknown>[];
+  const variantIds = variantRows.map((variant) => String(variant.id));
+  const variantTiersResult = variantIds.length
+    ? await admin.from("product_variant_price_tiers").select("variant_id,min_qty,max_qty,unit_price").in("variant_id", variantIds)
+    : { data: [], error: null };
+
+  if (variantTiersResult.error) {
+    return jsonError(variantTiersResult.error.message, 500);
   }
 
   try {
@@ -108,6 +129,53 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (copyTiersError) {
         await admin.from("products").delete().eq("id", productId);
         return jsonError(copyTiersError.message, 500);
+      }
+    }
+
+    for (const variant of variantRows) {
+      const variantSku = variant.variant_sku ? await uniqueValue(admin, "variant_sku", String(variant.variant_sku)) : null;
+      const { data: duplicatedVariant, error: duplicateVariantError } = await admin
+        .from("product_variants")
+        .insert({
+          product_id: productId,
+          variant_name: `${String(variant.variant_name)} Copy`,
+          variant_sku: variantSku,
+          model: variant.model,
+          fits: variant.fits,
+          image_url: variant.image_url,
+          moq: variant.moq,
+          stock_status: variant.stock_status,
+          lead_time: variant.lead_time,
+          active: false,
+          sort_order: variant.sort_order,
+        })
+        .select("id")
+        .single();
+
+      if (duplicateVariantError || !duplicatedVariant) {
+        await admin.from("products").delete().eq("id", productId);
+        return jsonError(duplicateVariantError?.message ?? "Duplicate variant failed.", 500);
+      }
+
+      const newVariantId = (duplicatedVariant as { id: string }).id;
+      const tiersForVariant = ((variantTiersResult.data ?? []) as Record<string, unknown>[]).filter(
+        (tier) => tier.variant_id === variant.id,
+      );
+
+      if (tiersForVariant.length) {
+        const { error: variantTierError } = await admin.from("product_variant_price_tiers").insert(
+          tiersForVariant.map((tier) => ({
+            variant_id: newVariantId,
+            min_qty: tier.min_qty,
+            max_qty: tier.max_qty,
+            unit_price: tier.unit_price,
+          })),
+        );
+
+        if (variantTierError) {
+          await admin.from("products").delete().eq("id", productId);
+          return jsonError(variantTierError.message, 500);
+        }
       }
     }
 

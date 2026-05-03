@@ -1,4 +1,4 @@
-export type PriceTier = {
+﻿export type PriceTier = {
   label: string;
   min: number;
   max: number | null;
@@ -21,6 +21,23 @@ export type Product = {
   rating: number;
   description: string;
   details: string[];
+  tiers: PriceTier[];
+  variants?: ProductVariant[];
+};
+
+export type ProductVariant = {
+  id: string;
+  productId: string;
+  name: string;
+  sku?: string;
+  model?: string;
+  fits?: string;
+  image?: string;
+  moq: number;
+  stockStatus: Product["stockStatus"];
+  leadTime?: string;
+  active: boolean;
+  sortOrder: number;
   tiers: PriceTier[];
 };
 
@@ -181,7 +198,7 @@ export const products: Product[] = [
 ];
 
 export function formatMoney(value: number) {
-  return `₱${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `PHP ${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function getProductBySlug(slug: string) {
@@ -223,9 +240,15 @@ export function getPriceRange(product: Product) {
   return `${formatMoney(Math.min(...prices))} - ${formatMoney(Math.max(...prices))}`;
 }
 
+export function getVariantPriceRange(variant: ProductVariant) {
+  const prices = variant.tiers.map((tier) => tier.price);
+  return `${formatMoney(Math.min(...prices))} - ${formatMoney(Math.max(...prices))}`;
+}
+
 export function getTierForQuantity(product: Product, quantity: number) {
   return (
     product.tiers.find((tier) => quantity >= tier.min && (tier.max === null || quantity <= tier.max)) ??
     product.tiers[0]
   );
 }
+

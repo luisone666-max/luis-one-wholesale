@@ -23,6 +23,9 @@ type OrderRow = {
 type OrderItemRow = {
   id: string;
   product_id: string | null;
+  variant_id: string | null;
+  variant_name_snapshot: string | null;
+  variant_sku_snapshot: string | null;
   product_name_snapshot: string | null;
   sku_snapshot: string | null;
   quantity: number;
@@ -53,6 +56,8 @@ export type CustomerOrderDetail = CustomerOrderSummary & {
     productId: string | null;
     productName: string;
     sku: string;
+    variantName: string | null;
+    variantSku: string | null;
     quantity: number;
     unitPrice: number;
     subtotal: number;
@@ -140,7 +145,7 @@ export async function getCustomerOrderDetail(orderNo: string): Promise<{ order: 
   const orderRow = orderData as OrderRow;
   const { data: itemData, error: itemError } = await context.supabase
     .from("order_items")
-    .select("id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price_snapshot,subtotal")
+    .select("id,product_id,variant_id,variant_name_snapshot,variant_sku_snapshot,product_name_snapshot,sku_snapshot,quantity,unit_price_snapshot,subtotal")
     .eq("order_id", orderRow.id)
     .order("id", { ascending: true });
 
@@ -163,6 +168,8 @@ export async function getCustomerOrderDetail(orderNo: string): Promise<{ order: 
         productId: item.product_id,
         productName: item.product_name_snapshot ?? "Wholesale item",
         sku: item.sku_snapshot ?? "",
+        variantName: item.variant_name_snapshot,
+        variantSku: item.variant_sku_snapshot,
         quantity: item.quantity,
         unitPrice: Number(item.unit_price_snapshot),
         subtotal: Number(item.subtotal),

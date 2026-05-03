@@ -209,110 +209,108 @@ export function AdminOrdersClient({
 
   return (
     <>
-      <AdminPageTitle titleKey="orders" caption={copy.developmentOnly} />
-      {message ? <div className="mb-4 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-700">{message}</div> : null}
+      <div className="print:hidden">
+        <AdminPageTitle titleKey="orders" caption={copy.developmentOnly} />
+        {message ? <div className="mb-4 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-700">{message}</div> : null}
 
-      <div className="mb-4 rounded-md border border-orange-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap gap-3">
-          <StatusPill tone="orange">{t("shippingFeeSeparate")}</StatusPill>
-          <StatusPill tone="neutral">{t("freightCollect")}</StatusPill>
-          <StatusPill tone="neutral">{t("noAutomaticPricing")}</StatusPill>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <input
-            value={orderNoSearch}
-            onChange={(event) => {
-              setOrderNoSearch(event.target.value);
-              setPage(1);
-            }}
-            placeholder={copy.searchOrderNo}
-            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
-          />
-          <input
-            value={customerSearch}
-            onChange={(event) => {
-              setCustomerSearch(event.target.value);
-              setPage(1);
-            }}
-            placeholder={copy.searchCustomer}
-            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
-          />
-          <FilterSelect value={orderStatus} onChange={setOrderStatus} allLabel={copy.allOrderStatuses} values={orderStatuses} map={statusKeyByValue} />
-          <FilterSelect value={paymentStatus} onChange={setPaymentStatus} allLabel={copy.allPaymentStatuses} values={paymentStatuses} map={statusKeyByValue} />
-          <FilterSelect value={receivingMethod} onChange={setReceivingMethod} allLabel={copy.allReceivingMethods} values={receivingMethods} map={receivingMethodKeyByValue} />
-          <div className="flex h-11 items-center rounded-md border border-dashed border-zinc-200 px-3 text-sm font-bold text-zinc-400">
-            {copy.dateRangePlaceholder}
+        <div className="mb-4 rounded-md border border-orange-100 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap gap-3">
+            <StatusPill tone="orange">{t("shippingFeeSeparate")}</StatusPill>
+            <StatusPill tone="neutral">{t("freightCollect")}</StatusPill>
+            <StatusPill tone="neutral">{t("noAutomaticPricing")}</StatusPill>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+            <input
+              value={orderNoSearch}
+              onChange={(event) => {
+                setOrderNoSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder={copy.searchOrderNo}
+              className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+            />
+            <input
+              value={customerSearch}
+              onChange={(event) => {
+                setCustomerSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder={copy.searchCustomer}
+              className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+            />
+            <FilterSelect value={orderStatus} onChange={setOrderStatus} allLabel={copy.allOrderStatuses} values={orderStatuses} map={statusKeyByValue} />
+            <FilterSelect value={paymentStatus} onChange={setPaymentStatus} allLabel={copy.allPaymentStatuses} values={paymentStatuses} map={statusKeyByValue} />
+            <FilterSelect value={receivingMethod} onChange={setReceivingMethod} allLabel={copy.allReceivingMethods} values={receivingMethods} map={receivingMethodKeyByValue} />
+            <div className="flex h-11 items-center rounded-md border border-dashed border-zinc-200 px-3 text-sm font-bold text-zinc-400">
+              {copy.dateRangePlaceholder}
+            </div>
           </div>
         </div>
+
+        <TableShell>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1240px] text-left text-sm">
+              <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
+                <tr>
+                  <th className="px-4 py-3">{t("orderNo")}</th>
+                  <th className="px-4 py-3">{t("customerName")}</th>
+                  <th className="px-4 py-3">{t("customerPhone")}</th>
+                  <th className="px-4 py-3">{t("productTotal")}</th>
+                  <th className="px-4 py-3">{t("orderStatus")}</th>
+                  <th className="px-4 py-3">{t("paymentStatus")}</th>
+                  <th className="px-4 py-3">{t("receivingMethod")}</th>
+                  <th className="px-4 py-3">{t("shippingFeePayment")}</th>
+                  <th className="px-4 py-3">{t("date")}</th>
+                  <th className="px-4 py-3">{t("actions")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {visibleOrders.map((order) => (
+                  <tr key={order.orderNo} className={selectedOrder?.orderNo === order.orderNo ? "bg-orange-50/50" : "bg-white"}>
+                    <td className="px-4 py-4 font-black text-zinc-950">{order.orderNo}</td>
+                    <td className="px-4 py-4 text-zinc-700">{order.customerName}</td>
+                    <td className="px-4 py-4 text-zinc-600">{order.customerPhone}</td>
+                    <td className="px-4 py-4 font-black text-orange-700">{formatPhp(order.productTotal)}</td>
+                    <td className="px-4 py-4"><StatusPill tone="orange">{labelFor(t, statusKeyByValue, order.orderStatus)}</StatusPill></td>
+                    <td className="px-4 py-4"><StatusPill tone="green">{labelFor(t, statusKeyByValue, order.paymentStatus)}</StatusPill></td>
+                    <td className="px-4 py-4 text-zinc-600">{labelFor(t, receivingMethodKeyByValue, order.receivingMethod)}</td>
+                    <td className="px-4 py-4 text-zinc-600">{labelFor(t, shippingFeePaymentKeyByValue, order.shippingFeePayment)}</td>
+                    <td className="px-4 py-4 text-zinc-600">{order.createdDate}</td>
+                    <td className="px-4 py-4">
+                      <button type="button" onClick={() => setSelectedOrderNo(order.orderNo)} className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700">
+                        {t("view")}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {!visibleOrders.length ? (
+                  <tr>
+                    <td className="px-4 py-6 text-zinc-500" colSpan={10}>{copy.noOrders}</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-end gap-2 border-t border-zinc-100 bg-white px-4 py-3">
+            {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => setPage(pageNumber)}
+                className={`h-9 w-9 rounded-md text-sm font-black ${pageNumber === page ? "bg-[#f65f18] text-white" : "border border-zinc-200 text-zinc-700"}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+          </div>
+        </TableShell>
+
+        {selectedOrder ? (
+          <OrderDetail order={selectedOrder} patchOrder={patchOrder} addPaymentRecord={addPaymentRecord} />
+        ) : null}
       </div>
 
-      <TableShell>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1240px] text-left text-sm">
-            <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
-              <tr>
-                <th className="px-4 py-3">{t("orderNo")}</th>
-                <th className="px-4 py-3">{t("customerName")}</th>
-                <th className="px-4 py-3">{t("customerPhone")}</th>
-                <th className="px-4 py-3">{t("productTotal")}</th>
-                <th className="px-4 py-3">{t("orderStatus")}</th>
-                <th className="px-4 py-3">{t("paymentStatus")}</th>
-                <th className="px-4 py-3">{t("receivingMethod")}</th>
-                <th className="px-4 py-3">{t("shippingFeePayment")}</th>
-                <th className="px-4 py-3">{t("date")}</th>
-                <th className="px-4 py-3">{t("actions")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {visibleOrders.map((order) => (
-                <tr key={order.orderNo} className={selectedOrder?.orderNo === order.orderNo ? "bg-orange-50/50" : "bg-white"}>
-                  <td className="px-4 py-4 font-black text-zinc-950">{order.orderNo}</td>
-                  <td className="px-4 py-4 text-zinc-700">{order.customerName}</td>
-                  <td className="px-4 py-4 text-zinc-600">{order.customerPhone}</td>
-                  <td className="px-4 py-4 font-black text-orange-700">{formatPhp(order.productTotal)}</td>
-                  <td className="px-4 py-4">
-                    <StatusPill tone="orange">{labelFor(t, statusKeyByValue, order.orderStatus)}</StatusPill>
-                  </td>
-                  <td className="px-4 py-4">
-                    <StatusPill tone="green">{labelFor(t, statusKeyByValue, order.paymentStatus)}</StatusPill>
-                  </td>
-                  <td className="px-4 py-4 text-zinc-600">{labelFor(t, receivingMethodKeyByValue, order.receivingMethod)}</td>
-                  <td className="px-4 py-4 text-zinc-600">{labelFor(t, shippingFeePaymentKeyByValue, order.shippingFeePayment)}</td>
-                  <td className="px-4 py-4 text-zinc-600">{order.createdDate}</td>
-                  <td className="px-4 py-4">
-                    <button type="button" onClick={() => setSelectedOrderNo(order.orderNo)} className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700">
-                      {t("view")}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {!visibleOrders.length ? (
-                <tr>
-                  <td className="px-4 py-6 text-zinc-500" colSpan={10}>{copy.noOrders}</td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-100 bg-white px-4 py-3">
-          {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
-            <button
-              key={pageNumber}
-              type="button"
-              onClick={() => setPage(pageNumber)}
-              className={`h-9 w-9 rounded-md text-sm font-black ${
-                pageNumber === page ? "bg-[#f65f18] text-white" : "border border-zinc-200 text-zinc-700"
-              }`}
-            >
-              {pageNumber}
-            </button>
-          ))}
-        </div>
-      </TableShell>
-
-      {selectedOrder ? (
-        <OrderDetail order={selectedOrder} patchOrder={patchOrder} addPaymentRecord={addPaymentRecord} />
-      ) : null}
+      {selectedOrder ? <PrintOrderTemplate order={selectedOrder} t={t} /> : null}
     </>
   );
 }
@@ -509,8 +507,14 @@ function OrderDetail({
                       <Image src={item.image} alt={item.name} width={56} height={56} className="h-full w-full object-contain" />
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-black text-zinc-950">{item.sku}</td>
-                  <td className="px-4 py-3 font-bold text-zinc-800">{item.name}</td>
+                  <td className="px-4 py-3 font-black text-zinc-950">
+                    {item.variantSku || item.sku}
+                    {item.variantSku ? <span className="mt-1 block text-xs font-bold text-zinc-500">Product SKU: {item.sku}</span> : null}
+                  </td>
+                  <td className="px-4 py-3 font-bold text-zinc-800">
+                    {item.name}
+                    {item.variantName ? <span className="mt-1 block text-xs font-black text-orange-700">Variant: {item.variantName}</span> : null}
+                  </td>
                   <td className="px-4 py-3 text-zinc-600">{item.quantity}</td>
                   <td className="px-4 py-3 text-zinc-600">{formatPhp(item.unitPrice)}</td>
                   <td className="px-4 py-3 font-black text-orange-700">{formatPhp(item.subtotal)}</td>
@@ -574,6 +578,139 @@ function OrderDetail({
         </Panel>
       </div>
     </section>
+  );
+}
+
+function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: TranslationKey) => string }) {
+  const shippingFee =
+    order.shippingFeePayment === "freight_collect"
+      ? "Freight Collect / Paid by Receiver"
+      : order.shippingFeeAmount === null
+        ? labelFor(t, shippingFeePaymentKeyByValue, order.shippingFeePayment)
+        : formatPhp(order.shippingFeeAmount);
+
+  return (
+    <section className="hidden bg-white p-8 text-zinc-950 print:block">
+      <div className="flex items-start justify-between gap-8 border-b-2 border-zinc-950 pb-5">
+        <div className="flex items-center gap-4">
+          <div className="grid h-16 w-16 place-items-center rounded-full bg-[#f65f18] text-xl font-black text-white">LO</div>
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-wide">Luis One Supply Hub</h1>
+            <p className="mt-1 text-sm font-bold text-zinc-600">Wholesale Supply for Resellers & Shops</p>
+            <p className="mt-1 text-xs text-zinc-500">Orders are manually confirmed. No online payment is required on this website.</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">Wholesale Order Sheet</p>
+          <p className="mt-2 text-xl font-black">{order.orderNo}</p>
+          <p className="mt-1 text-sm text-zinc-600">{order.createdDate}</p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 gap-5">
+        <PrintBox title="Customer Account">
+          <PrintRow label="Name" value={order.customerName} />
+          <PrintRow label="Phone" value={order.customerPhone} />
+          <PrintRow label="Facebook / Messenger" value={order.facebookMessenger || "-"} />
+          <PrintRow label="Location" value={order.location || "-"} />
+          <PrintRow label="Business Type" value={order.businessType || "-"} />
+        </PrintBox>
+        <PrintBox title="Receiver Information">
+          <PrintRow label="Receiver" value={order.receiverName} />
+          <PrintRow label="Phone" value={order.receiverPhone} />
+          <PrintRow label="Receiving Method" value={labelFor(t, receivingMethodKeyByValue, order.receivingMethod)} />
+          <PrintRow label="Address" value={order.completeAddress || "-"} />
+          <PrintRow label="Order Notes" value={order.orderNotes || "-"} />
+        </PrintBox>
+      </div>
+
+      <div className="mt-6 overflow-hidden border border-zinc-300">
+        <table className="w-full text-left text-xs">
+          <thead className="bg-zinc-100 text-[11px] uppercase tracking-wide text-zinc-700">
+            <tr>
+              <th className="border-r border-zinc-300 px-3 py-2">SKU</th>
+              <th className="border-r border-zinc-300 px-3 py-2">Product</th>
+              <th className="border-r border-zinc-300 px-3 py-2 text-center">Qty</th>
+              <th className="border-r border-zinc-300 px-3 py-2 text-right">Unit Price</th>
+              <th className="px-3 py-2 text-right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {order.items.map((item) => (
+              <tr key={item.id} className="border-t border-zinc-300">
+                <td className="border-r border-zinc-300 px-3 py-3 font-bold">{item.variantSku || item.sku}</td>
+                <td className="border-r border-zinc-300 px-3 py-3">
+                  <span className="font-bold">{item.name}</span>
+                  {item.variantName ? <span className="mt-1 block text-zinc-600">Variant: {item.variantName}</span> : null}
+                </td>
+                <td className="border-r border-zinc-300 px-3 py-3 text-center font-bold">{item.quantity}</td>
+                <td className="border-r border-zinc-300 px-3 py-3 text-right">{formatPhp(item.unitPrice)}</td>
+                <td className="px-3 py-3 text-right font-black">{formatPhp(item.subtotal)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 grid grid-cols-[1fr_320px] gap-6">
+        <div className="rounded-sm border border-zinc-300 p-4">
+          <h3 className="text-sm font-black uppercase tracking-wide">Order Handling Notes</h3>
+          <ul className="mt-3 space-y-2 text-xs leading-5 text-zinc-700">
+            <li>Deposit may be required to secure items.</li>
+            <li>Shipping and pickup arrangements are confirmed manually.</li>
+            <li>Freight collect is paid by the receiver and is not added to product total.</li>
+            <li>Please confirm availability before releasing goods.</li>
+          </ul>
+        </div>
+        <div className="rounded-sm border border-zinc-300 p-4">
+          <PrintTotalRow label="Product Total" value={formatPhp(order.productTotal)} />
+          <PrintTotalRow label="Shipping Fee" value={shippingFee} />
+          <PrintTotalRow label="Payment Status" value={labelFor(t, statusKeyByValue, order.paymentStatus)} />
+          <PrintTotalRow label="Order Status" value={labelFor(t, statusKeyByValue, order.orderStatus)} />
+          <div className="mt-3 border-t border-zinc-300 pt-3">
+            <PrintTotalRow label="Amount to Confirm" value={formatPhp(order.amountToConfirm)} strong />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-10 grid grid-cols-2 gap-12 text-sm">
+        <div>
+          <div className="h-12 border-b border-zinc-400" />
+          <p className="mt-2 font-bold">Prepared By</p>
+        </div>
+        <div>
+          <div className="h-12 border-b border-zinc-400" />
+          <p className="mt-2 font-bold">Customer / Receiver Signature</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PrintBox({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-sm border border-zinc-300 p-4">
+      <h2 className="mb-3 text-sm font-black uppercase tracking-wide">{title}</h2>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
+function PrintRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[130px_1fr] gap-3 text-xs">
+      <span className="font-bold text-zinc-500">{label}</span>
+      <span className="font-semibold text-zinc-900">{value || "-"}</span>
+    </div>
+  );
+}
+
+function PrintTotalRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className={`flex justify-between gap-4 py-1 text-sm ${strong ? "font-black" : "font-bold"}`}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
   );
 }
 

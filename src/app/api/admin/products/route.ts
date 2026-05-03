@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertUniqueVariantSkus, saveProductVariants } from "@/lib/admin-product-variants";
 import { parseProductPayload, type ProductPayload } from "@/lib/admin-product-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
@@ -53,6 +54,12 @@ export async function POST(request: Request) {
     return jsonError(uniqueError, 409);
   }
 
+  const variantSkuError = await assertUniqueVariantSkus(admin, payload);
+
+  if (variantSkuError) {
+    return jsonError(variantSkuError, 409);
+  }
+
   const { data: product, error: productError } = await admin
     .from("products")
     .insert({
@@ -94,6 +101,13 @@ export async function POST(request: Request) {
   if (tiersError) {
     await admin.from("products").delete().eq("id", productId);
     return jsonError(tiersError.message, 500);
+  }
+
+  const variantError = await saveProductVariants(admin, productId, payload.variants);
+
+  if (variantError) {
+    await admin.from("products").delete().eq("id", productId);
+    return jsonError(variantError, 500);
   }
 
   return NextResponse.json({ ok: true, productId });

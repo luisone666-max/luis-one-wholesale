@@ -140,7 +140,12 @@ function CartContent() {
                       <Link href={`/product/${item.slug}`} className="font-black text-zinc-950 hover:text-orange-700">
                         {item.name}
                       </Link>
-                      <p className="mt-2 text-sm font-bold text-zinc-500">{item.sku}</p>
+                      {item.variantName ? (
+                        <p className="mt-2 text-sm font-black text-orange-700">Variant: {item.variantName}</p>
+                      ) : null}
+                      <p className="mt-2 text-sm font-bold text-zinc-500">
+                        {item.variantSku ? `Variant SKU: ${item.variantSku}` : `SKU: ${item.sku}`}
+                      </p>
                       <p className="mt-1 text-xs font-bold text-orange-700">
                         {item.tierLabel ? `${item.tierLabel} applied` : item.priceError}
                       </p>

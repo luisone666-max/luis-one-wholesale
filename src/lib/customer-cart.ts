@@ -22,12 +22,26 @@ type CartProductRow = {
   image_url: string | null;
 };
 
+type CartVariantRow = {
+  id: string;
+  product_id: string;
+  variant_name: string;
+  variant_sku: string | null;
+  image_url: string | null;
+  moq: number | null;
+  stock_status: string | null;
+  active: boolean | null;
+};
+
 export type CustomerCartItem = {
   id: string;
   productId: string;
+  variantId: string | null;
   sku: string;
+  variantSku: string | null;
   slug: string;
   name: string;
+  variantName: string | null;
   image: string;
   moq: number;
   quantity: number;
@@ -60,7 +74,7 @@ async function getCartContext(): Promise<CartContext> {
   return { supabase, customer: session.customer };
 }
 
-export async function addProductToCart(productId: string | undefined, quantity: number): Promise<CartActionResult> {
+export async function addProductToCart(productId: string | undefined, quantity: number, variantId?: string | null): Promise<CartActionResult> {
   if (!productId) {
     return { ok: false, message: "This product is not connected to the order cart yet." };
   }
@@ -88,14 +102,45 @@ export async function addProductToCart(productId: string | undefined, quantity: 
   }
 
   const product = productData as { id: string; moq: number | null };
-  const quantityToAdd = Math.max(requestedQuantity, product.moq ?? 1);
-  const { data: existingData, error: existingError } = await supabase
+  let moq = product.moq ?? 1;
+  const normalizedVariantId = variantId ?? null;
+
+  const { data: variantRowsData, error: variantsError } = await supabase
+    .from("product_variants")
+    .select("id,moq,active")
+    .eq("product_id", productId)
+    .eq("active", true);
+
+  if (variantsError && !variantsError.message.toLowerCase().includes("product_variants")) {
+    return { ok: false, message: variantsError.message };
+  }
+
+  const activeVariants = (variantRowsData ?? []) as { id: string; moq: number | null; active: boolean | null }[];
+
+  if (activeVariants.length && !normalizedVariantId) {
+    return { ok: false, message: "Please select a variant before adding this product." };
+  }
+
+  if (normalizedVariantId) {
+    const variant = activeVariants.find((item) => item.id === normalizedVariantId);
+
+    if (!variant) {
+      return { ok: false, message: "Please select an available variant." };
+    }
+
+    moq = variant.moq ?? 1;
+  }
+
+  const quantityToAdd = Math.max(requestedQuantity, moq);
+  let existingQuery = supabase
     .from("cart_items")
     .select("id,quantity")
     .eq("customer_id", customer.id)
-    .eq("product_id", productId)
-    .is("variant_id", null)
-    .maybeSingle();
+    .eq("product_id", productId);
+
+  existingQuery = normalizedVariantId ? existingQuery.eq("variant_id", normalizedVariantId) : existingQuery.is("variant_id", null);
+
+  const { data: existingData, error: existingError } = await existingQuery.maybeSingle();
 
   if (existingError) {
     return { ok: false, message: existingError.message };
@@ -105,7 +150,8 @@ export async function addProductToCart(productId: string | undefined, quantity: 
   const nextQuantity = (existing?.quantity ?? 0) + quantityToAdd;
   const pricing = await getWholesalePriceForQuantity(productId, nextQuantity, {
     supabase,
-    moq: product.moq ?? 1,
+    moq,
+    variantId: normalizedVariantId,
   });
 
   if (!pricing.ok) {
@@ -117,7 +163,7 @@ export async function addProductToCart(productId: string | undefined, quantity: 
     : supabase.from("cart_items").insert({
         customer_id: customer.id,
         product_id: productId,
-        variant_id: null,
+        variant_id: normalizedVariantId,
         quantity: quantityToAdd,
       });
 
@@ -150,6 +196,7 @@ export async function getCustomerCartItems(): Promise<{ items: CustomerCartItem[
 
   const cartRows = (cartRowsData ?? []) as CartItemRow[];
   const productIds = [...new Set(cartRows.map((item) => item.product_id))];
+  const variantIds = [...new Set(cartRows.map((item) => item.variant_id).filter((id): id is string => Boolean(id)))];
 
   if (!productIds.length) {
     return { items: [] };
@@ -165,6 +212,18 @@ export async function getCustomerCartItems(): Promise<{ items: CustomerCartItem[
   }
 
   const productsById = new Map((productRowsData ?? []).map((product) => [(product as CartProductRow).id, product as CartProductRow]));
+  const { data: variantRowsData, error: variantsError } = variantIds.length
+    ? await supabase
+        .from("product_variants")
+        .select("id,product_id,variant_name,variant_sku,image_url,moq,stock_status,active")
+        .in("id", variantIds)
+    : { data: [], error: null };
+
+  if (variantsError) {
+    return { items: [], error: variantsError.message };
+  }
+
+  const variantsById = new Map((variantRowsData ?? []).map((variant) => [(variant as CartVariantRow).id, variant as CartVariantRow]));
   const items: CustomerCartItem[] = [];
 
   for (const cartItem of cartRows) {
@@ -174,16 +233,20 @@ export async function getCustomerCartItems(): Promise<{ items: CustomerCartItem[
       continue;
     }
 
-    const moq = product.moq ?? 1;
-    const pricing = await getWholesalePriceForQuantity(product.id, cartItem.quantity, { supabase, moq });
+    const variant = cartItem.variant_id ? variantsById.get(cartItem.variant_id) : null;
+    const moq = variant?.moq ?? product.moq ?? 1;
+    const pricing = await getWholesalePriceForQuantity(product.id, cartItem.quantity, { supabase, moq, variantId: variant?.id ?? null });
 
     items.push({
       id: cartItem.id,
       productId: product.id,
+      variantId: variant?.id ?? null,
       sku: product.sku,
+      variantSku: variant?.variant_sku ?? null,
       slug: product.slug,
       name: product.name,
-      image: product.image_url ?? "/products/phone-accessories.svg",
+      variantName: variant?.variant_name ?? null,
+      image: variant?.image_url || product.image_url || "/products/phone-accessories.svg",
       moq,
       quantity: cartItem.quantity,
       appliedUnitPrice: pricing.ok ? pricing.applied_unit_price : null,
@@ -212,7 +275,7 @@ export async function updateCartItemQuantity(cartItemId: string, quantity: numbe
 
   const { data: cartItemData, error: cartItemError } = await supabase
     .from("cart_items")
-    .select("id,product_id,quantity")
+    .select("id,product_id,variant_id,quantity")
     .eq("id", cartItemId)
     .eq("customer_id", customer.id)
     .maybeSingle();
@@ -243,9 +306,33 @@ export async function updateCartItemQuantity(cartItemId: string, quantity: numbe
     return { ok: false, message: "This product is unavailable." };
   }
 
+  let moq = product.moq ?? 1;
+
+  if (cartItem.variant_id) {
+    const { data: variantData, error: variantError } = await supabase
+      .from("product_variants")
+      .select("id,moq,active")
+      .eq("id", cartItem.variant_id)
+      .eq("product_id", product.id)
+      .maybeSingle();
+
+    if (variantError) {
+      return { ok: false, message: variantError.message };
+    }
+
+    const variant = variantData as { id: string; moq: number | null; active: boolean | null } | null;
+
+    if (!variant || !variant.active) {
+      return { ok: false, message: "Please select an available variant." };
+    }
+
+    moq = variant.moq ?? 1;
+  }
+
   const pricing = await getWholesalePriceForQuantity(product.id, nextQuantity, {
     supabase,
-    moq: product.moq ?? 1,
+    moq,
+    variantId: cartItem.variant_id,
   });
 
   if (!pricing.ok) {

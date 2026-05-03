@@ -6,7 +6,7 @@ import { getPriceRange, type Product } from "@/lib/mock-data";
 
 export function ProductInquiryButton({
   product,
-  label = "Chat",
+  label = "Messenger",
   className = "",
 }: {
   product: Product;

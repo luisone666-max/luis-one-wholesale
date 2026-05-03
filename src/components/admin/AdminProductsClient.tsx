@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import type { TranslationKey } from "@/lib/admin-i18n";
-import type { AdminCategoryOption, AdminProductRecord, AdminProductTier } from "@/lib/admin-products-data";
+import type { AdminCategoryOption, AdminProductRecord, AdminProductTier, AdminProductVariant } from "@/lib/admin-products-data";
 
 type EditorMode = "view" | "create" | "edit";
 type ProductDraft = {
@@ -29,11 +29,12 @@ type ProductDraft = {
   internalCostNotes: string;
   adminNotes: string;
   tiers: AdminProductTier[];
+  variants: AdminProductVariant[];
 };
 
 const defaultPageSize = 24;
 const stockStatuses = ["ready_stock", "for_order", "low_stock", "unavailable"];
-const productTabs: TranslationKey[] = ["basicInfo", "categoryTab", "imagesTab", "supplierNotesTab", "adminNotesTab"];
+const productTabs: TranslationKey[] = ["basicInfo", "categoryTab", "variantsTab", "imagesTab", "supplierNotesTab", "adminNotesTab"];
 
 const text = {
   en: {
@@ -68,6 +69,9 @@ const text = {
     compactImages: "Compact",
     normalImages: "Normal",
     largeImages: "Large",
+    variantsHint: "Use variants when one product has multiple models, fitments, images, MOQ, stock, or prices.",
+    noVariants: "No variants yet. Products without variants still use the main product price tiers.",
+    variantImageHint: "Variant image URL overrides the main product image after customer selection.",
   },
   zh: {
     addTier: "新增价格阶梯",
@@ -160,6 +164,10 @@ function productToDraft(product: AdminProductRecord): ProductDraft {
     internalCostNotes: product.internalCostNotes,
     adminNotes: product.adminNotes,
     tiers: product.tiers.length ? product.tiers : defaultTiers(),
+    variants: product.variants.map((variant) => ({
+      ...variant,
+      tiers: variant.tiers.length ? variant.tiers : defaultTiers(),
+    })),
   };
 }
 
@@ -194,6 +202,7 @@ function blankDraft(categories: AdminCategoryOption[]): ProductDraft {
     internalCostNotes: "",
     adminNotes: "",
     tiers: defaultTiers(),
+    variants: [],
   };
 }
 
@@ -549,6 +558,46 @@ function ProductEditor({
       tiers: current.tiers.map((tier, tierIndex) => (tierIndex === index ? { ...tier, ...patch } : tier)),
     }));
   };
+  const addVariant = () => {
+    setDraft((current) => ({
+      ...current,
+      variants: [
+        ...current.variants,
+        {
+          name: "",
+          sku: "",
+          model: "",
+          fits: "",
+          imageUrl: "",
+          moq: current.moq || 1,
+          stockStatus: current.stockStatus || "for_order",
+          leadTime: current.leadTime,
+          active: true,
+          sortOrder: current.variants.length,
+          tiers: current.tiers.length ? current.tiers.map((tier) => ({ ...tier, id: undefined })) : defaultTiers(),
+        },
+      ],
+    }));
+  };
+  const updateVariant = (index: number, patch: Partial<AdminProductVariant>) => {
+    setDraft((current) => ({
+      ...current,
+      variants: current.variants.map((variant, variantIndex) => (variantIndex === index ? { ...variant, ...patch } : variant)),
+    }));
+  };
+  const updateVariantTier = (variantIndex: number, tierIndex: number, patch: Partial<AdminProductTier>) => {
+    setDraft((current) => ({
+      ...current,
+      variants: current.variants.map((variant, currentVariantIndex) =>
+        currentVariantIndex === variantIndex
+          ? {
+              ...variant,
+              tiers: variant.tiers.map((tier, currentTierIndex) => (currentTierIndex === tierIndex ? { ...tier, ...patch } : tier)),
+            }
+          : variant,
+      ),
+    }));
+  };
 
   useEffect(() => {
     return () => {
@@ -619,6 +668,45 @@ function ProductEditor({
     } finally {
       setUploadingImage(false);
     }
+  };
+
+  const uploadVariantImage = async (variantIndex: number, file: File | undefined) => {
+    if (!file) {
+      return;
+    }
+
+    if (!allowedImageTypes.has(file.type)) {
+      onMessage(imageCopy.imageInvalidType);
+      return;
+    }
+
+    if (file.size > maxImageSize) {
+      onMessage(imageCopy.imageTooLarge);
+      return;
+    }
+
+    const variant = draft.variants[variantIndex];
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("sku", variant.sku || draft.sku || draft.slug || "product-variant");
+
+    const response = await fetch("/api/admin/products/image-upload", {
+      method: "POST",
+      body: formData,
+    });
+    const result = (await response.json().catch(() => ({ ok: false, message: imageCopy.imageUploadFailed }))) as {
+      ok?: boolean;
+      message?: string;
+      imageUrl?: string;
+    };
+
+    if (!response.ok || !result.ok || !result.imageUrl) {
+      onMessage(result.message ?? imageCopy.imageUploadFailed);
+      return;
+    }
+
+    updateVariant(variantIndex, { imageUrl: result.imageUrl });
+    onMessage(imageCopy.imageUploadSuccess);
   };
 
   const submit = async () => {
@@ -710,6 +798,90 @@ function ProductEditor({
             <CategorySelect label={t("category")} value={draft.categoryId} categories={mainCategories} disabled={disabled} onChange={(value) => updateDraft({ categoryId: value, subcategoryId: "", childCategoryId: "" })} />
             <CategorySelect label={t("subcategory")} value={draft.subcategoryId} categories={subcategories} disabled={disabled} onChange={(value) => updateDraft({ subcategoryId: value, childCategoryId: "" })} optional />
             <CategorySelect label={t("childCategory")} value={draft.childCategoryId} categories={childCategories} disabled={disabled} onChange={(value) => updateDraft({ childCategoryId: value })} optional />
+          </div>
+        ) : null}
+
+        {activeTab === "variantsTab" ? (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 rounded-md border border-orange-100 bg-orange-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-base font-black text-zinc-950">{t("variantsTab")}</h3>
+                <p className="mt-1 text-sm font-bold text-orange-700">
+                  Use variants when one product has multiple models, fitments, images, MOQ, stock, or prices.
+                </p>
+              </div>
+              <button type="button" disabled={disabled} onClick={addVariant} className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white disabled:opacity-40">
+                {t("addVariant")}
+              </button>
+            </div>
+            {!draft.variants.length ? (
+              <div className="rounded-md border border-dashed border-zinc-200 bg-zinc-50 p-6 text-sm font-bold text-zinc-500">
+                No variants yet. Products without variants still use the main product price tiers.
+              </div>
+            ) : null}
+            {draft.variants.map((variant, variantIndex) => (
+              <section key={variant.id ?? variantIndex} className="rounded-md border border-zinc-200 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-600">
+                      {t("variantsTab")} #{variantIndex + 1}
+                    </p>
+                    <h4 className="text-lg font-black text-zinc-950">{variant.name || t("variantName")}</h4>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => updateDraft({ variants: draft.variants.filter((_, index) => index !== variantIndex) })}
+                    className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-40"
+                  >
+                    {t("deleteVariant")}
+                  </button>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <Input label={t("variantName")} value={variant.name} onChange={(value) => updateVariant(variantIndex, { name: value })} disabled={disabled} />
+                  <Input label={t("variantSku")} value={variant.sku} onChange={(value) => updateVariant(variantIndex, { sku: value })} disabled={disabled} />
+                  <Input label={t("model")} value={variant.model} onChange={(value) => updateVariant(variantIndex, { model: value })} disabled={disabled} />
+                  <Input label={t("fits")} value={variant.fits} onChange={(value) => updateVariant(variantIndex, { fits: value })} disabled={disabled} />
+                  <Input label={t("moq")} type="number" value={String(variant.moq)} onChange={(value) => updateVariant(variantIndex, { moq: Number(value) || 1 })} disabled={disabled} />
+                  <label className="text-sm font-bold text-zinc-700">
+                    {t("stockStatus")}
+                    <select disabled={disabled} value={variant.stockStatus} onChange={(event) => updateVariant(variantIndex, { stockStatus: event.target.value })} className="mt-2 h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-700">
+                      {stockStatuses.map((status) => <option key={status} value={status}>{labelForStock(t, status)}</option>)}
+                    </select>
+                  </label>
+                  <Input label={t("leadTime")} value={variant.leadTime} onChange={(value) => updateVariant(variantIndex, { leadTime: value })} disabled={disabled} />
+                  <Input label={t("sortOrder")} type="number" value={String(variant.sortOrder)} onChange={(value) => updateVariant(variantIndex, { sortOrder: Number(value) || 0 })} disabled={disabled} />
+                  <label className="flex items-center gap-3 text-sm font-bold text-zinc-700">
+                    <input type="checkbox" checked={variant.active} disabled={disabled} onChange={(event) => updateVariant(variantIndex, { active: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                    {variant.active ? t("activeToggle") : t("hidden")}
+                  </label>
+                  <Input label={`${t("imageUrl")} (${t("variantsTab")})`} value={variant.imageUrl} onChange={(value) => updateVariant(variantIndex, { imageUrl: value })} disabled={disabled} />
+                  <label className="text-sm font-bold text-zinc-700">
+                    {imageCopy.uploadImage}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={disabled}
+                      onChange={(event) => void uploadVariantImage(variantIndex, event.target.files?.[0])}
+                      className="mt-2 block w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 file:mr-3 file:rounded-md file:border-0 file:bg-orange-100 file:px-3 file:py-2 file:text-sm file:font-black file:text-orange-700 disabled:opacity-50"
+                    />
+                  </label>
+                </div>
+                <p className="mt-3 text-xs font-bold text-zinc-500">Variant image URL overrides the main product image after customer selection.</p>
+                <div className="mt-4">
+                  <WholesalePriceEditor
+                    disabled={disabled}
+                    tiers={variant.tiers}
+                    t={t}
+                    maxQtyBlank={copy.maxQtyBlank}
+                    addTierLabel={copy.addTier}
+                    onUpdateTier={(tierIndex, patch) => updateVariantTier(variantIndex, tierIndex, patch)}
+                    onDeleteTier={(tierIndex) => updateVariant(variantIndex, { tiers: variant.tiers.filter((_, index) => index !== tierIndex) })}
+                    onAddTier={() => updateVariant(variantIndex, { tiers: [...variant.tiers, { minQty: 1, maxQty: null, unitPrice: 1 }] })}
+                  />
+                </div>
+              </section>
+            ))}
           </div>
         ) : null}
 

@@ -33,6 +33,9 @@ type OrderItemRow = {
   id: string;
   order_id: string | null;
   product_id: string | null;
+  variant_id: string | null;
+  variant_name_snapshot: string | null;
+  variant_sku_snapshot: string | null;
   product_name_snapshot: string | null;
   sku_snapshot: string | null;
   quantity: number;
@@ -63,6 +66,8 @@ export type AdminOrderItem = {
   productId: string | null;
   image: string;
   sku: string;
+  variantName: string;
+  variantSku: string;
   name: string;
   quantity: number;
   unitPrice: number;
@@ -182,7 +187,7 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
     orderIds.length
       ? supabase
           .from("order_items")
-          .select("id,order_id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price_snapshot,subtotal,supplier_notes_snapshot")
+          .select("id,order_id,product_id,variant_id,variant_name_snapshot,variant_sku_snapshot,product_name_snapshot,sku_snapshot,quantity,unit_price_snapshot,subtotal,supplier_notes_snapshot")
           .in("order_id", orderIds)
       : Promise.resolve({ data: [], error: null }),
     orderIds.length
@@ -269,6 +274,8 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
             productId: item.product_id,
             image: product?.image_url ?? "/products/phone-accessories.svg",
             sku: item.sku_snapshot ?? "",
+            variantName: item.variant_name_snapshot ?? "",
+            variantSku: item.variant_sku_snapshot ?? "",
             name: item.product_name_snapshot ?? "Wholesale item",
             quantity: item.quantity,
             unitPrice: Number(item.unit_price_snapshot),

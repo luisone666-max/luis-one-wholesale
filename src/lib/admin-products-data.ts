@@ -35,9 +35,25 @@ type ProductRow = {
 type PriceTierRow = {
   id: string;
   product_id: string | null;
+  variant_id?: string | null;
   min_qty: number;
   max_qty: number | null;
   unit_price: number | string;
+};
+
+type VariantRow = {
+  id: string;
+  product_id: string;
+  variant_name: string;
+  variant_sku: string | null;
+  model: string | null;
+  fits: string | null;
+  image_url: string | null;
+  moq: number | null;
+  stock_status: string | null;
+  lead_time: string | null;
+  active: boolean | null;
+  sort_order: number | null;
 };
 
 export type AdminCategoryOption = {
@@ -54,6 +70,21 @@ export type AdminProductTier = {
   minQty: number;
   maxQty: number | null;
   unitPrice: number;
+};
+
+export type AdminProductVariant = {
+  id?: string;
+  name: string;
+  sku: string;
+  model: string;
+  fits: string;
+  imageUrl: string;
+  moq: number;
+  stockStatus: string;
+  leadTime: string;
+  active: boolean;
+  sortOrder: number;
+  tiers: AdminProductTier[];
 };
 
 export type AdminProductRecord = {
@@ -80,6 +111,7 @@ export type AdminProductRecord = {
   active: boolean;
   priceRange: string;
   tiers: AdminProductTier[];
+  variants: AdminProductVariant[];
   hasOrderItems: boolean;
 };
 
@@ -105,7 +137,7 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
     return { products: [], categories: [], error: "Supabase admin client is not configured." };
   }
 
-  const [productsResult, categoriesResult, tiersResult, orderItemsResult] = await Promise.all([
+  const [productsResult, categoriesResult, tiersResult, orderItemsResult, variantsResult, variantTiersResult] = await Promise.all([
     supabase
       .from("products")
       .select(
@@ -115,6 +147,11 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
     supabase.from("categories").select("id,name_en,slug,parent_id,level,active,sort_order").order("sort_order", { ascending: true }),
     supabase.from("product_price_tiers").select("id,product_id,min_qty,max_qty,unit_price").order("min_qty", { ascending: true }),
     supabase.from("order_items").select("product_id"),
+    supabase
+      .from("product_variants")
+      .select("id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order")
+      .order("sort_order", { ascending: true }),
+    supabase.from("product_variant_price_tiers").select("id,variant_id,min_qty,max_qty,unit_price").order("min_qty", { ascending: true }),
   ]);
 
   if (productsResult.error) {
@@ -143,6 +180,8 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
   }));
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const tiersByProductId = new Map<string, AdminProductTier[]>();
+  const variantsByProductId = new Map<string, AdminProductVariant[]>();
+  const tiersByVariantId = new Map<string, AdminProductTier[]>();
   const productIdsWithOrders = new Set(((orderItemsResult.data ?? []) as { product_id: string | null }[])
     .map((item) => item.product_id)
     .filter((id): id is string => Boolean(id)));
@@ -161,6 +200,44 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
         unitPrice: Number(tier.unit_price),
       },
     ]);
+  }
+
+  if (!variantsResult.error && !variantTiersResult.error) {
+    for (const tier of (variantTiersResult.data ?? []) as PriceTierRow[]) {
+      if (!tier.variant_id) {
+        continue;
+      }
+
+      tiersByVariantId.set(tier.variant_id, [
+        ...(tiersByVariantId.get(tier.variant_id) ?? []),
+        {
+          id: tier.id,
+          minQty: tier.min_qty,
+          maxQty: tier.max_qty,
+          unitPrice: Number(tier.unit_price),
+        },
+      ]);
+    }
+
+    for (const variant of (variantsResult.data ?? []) as VariantRow[]) {
+      variantsByProductId.set(variant.product_id, [
+        ...(variantsByProductId.get(variant.product_id) ?? []),
+        {
+          id: variant.id,
+          name: variant.variant_name,
+          sku: variant.variant_sku ?? "",
+          model: variant.model ?? "",
+          fits: variant.fits ?? "",
+          imageUrl: variant.image_url ?? "",
+          moq: variant.moq ?? 1,
+          stockStatus: variant.stock_status ?? "for_order",
+          leadTime: variant.lead_time ?? "",
+          active: Boolean(variant.active),
+          sortOrder: variant.sort_order ?? 0,
+          tiers: tiersByVariantId.get(variant.id) ?? [],
+        },
+      ]);
+    }
   }
 
   const products = ((productsResult.data ?? []) as ProductRow[]).map((product) => {
@@ -190,6 +267,7 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
       active: Boolean(product.active),
       priceRange: getPriceRange(tiers),
       tiers,
+      variants: variantsByProductId.get(product.id) ?? [],
       hasOrderItems: productIdsWithOrders.has(product.id),
     };
   });

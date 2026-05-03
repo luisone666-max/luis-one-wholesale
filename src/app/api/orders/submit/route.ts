@@ -14,6 +14,7 @@ type CheckoutPayload = {
 type CartItemRow = {
   id: string;
   product_id: string;
+  variant_id: string | null;
   quantity: number;
 };
 
@@ -28,9 +29,20 @@ type ProductRow = {
 
 type PriceTierRow = {
   product_id: string | null;
+  variant_id?: string | null;
   min_qty: number;
   max_qty: number | null;
   unit_price: number | string;
+};
+
+type VariantRow = {
+  id: string;
+  product_id: string;
+  variant_name: string;
+  variant_sku: string | null;
+  moq: number | null;
+  active: boolean | null;
+  supplier_notes?: never;
 };
 
 type ValidCheckoutPayload = {
@@ -136,6 +148,15 @@ function findTier(tiers: PriceTierRow[], productId: string, quantity: number) {
   );
 }
 
+function findVariantTier(tiers: PriceTierRow[], variantId: string, quantity: number) {
+  return tiers.find(
+    (tier) =>
+      tier.variant_id === variantId &&
+      quantity >= tier.min_qty &&
+      (tier.max_qty === null || quantity <= tier.max_qty),
+  );
+}
+
 async function generateOrderNo(admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>) {
   const year = new Date().getFullYear();
   const prefix = `LO-${year}-`;
@@ -202,7 +223,7 @@ export async function POST(request: Request) {
   const customerId = (customer as { id: string }).id;
   const { data: cartData, error: cartError } = await admin
     .from("cart_items")
-    .select("id,product_id,quantity")
+    .select("id,product_id,variant_id,quantity")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: true });
 
@@ -217,9 +238,21 @@ export async function POST(request: Request) {
   }
 
   const productIds = [...new Set(cartItems.map((item) => item.product_id))];
-  const [{ data: productsData, error: productsError }, { data: tiersData, error: tiersError }] = await Promise.all([
+  const variantIds = [...new Set(cartItems.map((item) => item.variant_id).filter((id): id is string => Boolean(id)))];
+  const [
+    { data: productsData, error: productsError },
+    { data: tiersData, error: tiersError },
+    variantsResult,
+    variantTiersResult,
+  ] = await Promise.all([
     admin.from("products").select("id,sku,name,moq,active,supplier_notes").in("id", productIds),
     admin.from("product_price_tiers").select("product_id,min_qty,max_qty,unit_price").in("product_id", productIds),
+    variantIds.length
+      ? admin.from("product_variants").select("id,product_id,variant_name,variant_sku,moq,active").in("id", variantIds)
+      : Promise.resolve({ data: [], error: null }),
+    variantIds.length
+      ? admin.from("product_variant_price_tiers").select("variant_id,min_qty,max_qty,unit_price").in("variant_id", variantIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (productsError) {
@@ -230,8 +263,18 @@ export async function POST(request: Request) {
     return jsonError(tiersError.message, 500);
   }
 
+  if (variantsResult.error) {
+    return jsonError(variantsResult.error.message, 500);
+  }
+
+  if (variantTiersResult.error) {
+    return jsonError(variantTiersResult.error.message, 500);
+  }
+
   const productsById = new Map((productsData ?? []).map((product) => [(product as ProductRow).id, product as ProductRow]));
+  const variantsById = new Map(((variantsResult.data ?? []) as VariantRow[]).map((variant) => [variant.id, variant]));
   const tiers = (tiersData ?? []) as PriceTierRow[];
+  const variantTiers = (variantTiersResult.data ?? []) as PriceTierRow[];
   const orderItems = [];
   let productTotal = 0;
 
@@ -242,16 +285,22 @@ export async function POST(request: Request) {
       return jsonError("One or more products in your cart are no longer available.");
     }
 
-    const moq = product.moq ?? 1;
+    const variant = cartItem.variant_id ? variantsById.get(cartItem.variant_id) : null;
+
+    if (cartItem.variant_id && (!variant || !variant.active || variant.product_id !== product.id)) {
+      return jsonError(`${product.name}: selected variant is no longer available.`);
+    }
+
+    const moq = variant?.moq ?? product.moq ?? 1;
 
     if (cartItem.quantity < moq) {
       return jsonError(`${product.name} minimum order quantity is ${moq} pc${moq === 1 ? "" : "s"}.`);
     }
 
-    const tier = findTier(tiers, product.id, cartItem.quantity);
+    const tier = variant ? findVariantTier(variantTiers, variant.id, cartItem.quantity) : findTier(tiers, product.id, cartItem.quantity);
 
     if (!tier) {
-      return jsonError(`${product.name}: Contact us for quotation.`);
+      return jsonError(`${variant ? `${product.name} / ${variant.variant_name}` : product.name}: Contact us for quotation.`);
     }
 
     const unitPrice = Number(tier.unit_price);
@@ -260,8 +309,11 @@ export async function POST(request: Request) {
 
     orderItems.push({
       product_id: product.id,
+      variant_id: variant?.id ?? null,
+      variant_name_snapshot: variant?.variant_name ?? null,
+      variant_sku_snapshot: variant?.variant_sku ?? null,
       product_name_snapshot: product.name,
-      sku_snapshot: product.sku,
+      sku_snapshot: variant?.variant_sku ?? product.sku,
       quantity: cartItem.quantity,
       unit_price_snapshot: unitPrice,
       subtotal,

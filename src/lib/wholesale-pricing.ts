@@ -11,6 +11,11 @@ type ProductMoqRow = {
   moq: number | null;
 };
 
+type VariantMoqRow = {
+  moq: number | null;
+  active: boolean | null;
+};
+
 export type WholesalePriceResult =
   | {
       ok: true;
@@ -25,7 +30,7 @@ export type WholesalePriceResult =
     };
 
 export function formatPhp(value: number) {
-  return `₱${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return `PHP ${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 function getTierLabel(tier: PriceTierRow) {
@@ -35,7 +40,7 @@ function getTierLabel(tier: PriceTierRow) {
 export async function getWholesalePriceForQuantity(
   productId: string,
   quantity: number,
-  options?: { supabase?: SupabaseClient; moq?: number },
+  options?: { supabase?: SupabaseClient; moq?: number; variantId?: string | null },
 ): Promise<WholesalePriceResult> {
   const supabase = options?.supabase ?? createBrowserSupabaseClient();
 
@@ -49,27 +54,57 @@ export async function getWholesalePriceForQuantity(
     return { ok: false, error: "Please enter a valid quantity." };
   }
 
+  const variantId = options?.variantId ?? null;
   let moq = options?.moq;
 
   if (moq === undefined) {
-    const { data, error } = await supabase.from("customer_products").select("moq").eq("id", productId).maybeSingle();
+    if (variantId) {
+      const { data, error } = await supabase
+        .from("product_variants")
+        .select("moq,active")
+        .eq("id", variantId)
+        .eq("product_id", productId)
+        .maybeSingle();
 
-    if (error) {
-      return { ok: false, error: error.message };
+      if (error) {
+        return { ok: false, error: error.message };
+      }
+
+      const variant = data as VariantMoqRow | null;
+
+      if (!variant || !variant.active) {
+        return { ok: false, error: "Please select an available variant." };
+      }
+
+      moq = variant.moq ?? 1;
+    } else {
+      const { data, error } = await supabase.from("customer_products").select("moq").eq("id", productId).maybeSingle();
+
+      if (error) {
+        return { ok: false, error: error.message };
+      }
+
+      moq = (data as ProductMoqRow | null)?.moq ?? 1;
     }
-
-    moq = ((data as ProductMoqRow | null)?.moq ?? 1);
   }
 
   if (normalizedQuantity < moq) {
     return { ok: false, error: `Minimum order quantity is ${moq} pc${moq === 1 ? "" : "s"}.` };
   }
 
-  const { data: tierRows, error } = await supabase
-    .from("product_price_tiers")
-    .select("min_qty,max_qty,unit_price")
-    .eq("product_id", productId)
-    .order("min_qty", { ascending: true });
+  const tierQuery = variantId
+    ? supabase
+        .from("product_variant_price_tiers")
+        .select("min_qty,max_qty,unit_price")
+        .eq("variant_id", variantId)
+        .order("min_qty", { ascending: true })
+    : supabase
+        .from("product_price_tiers")
+        .select("min_qty,max_qty,unit_price")
+        .eq("product_id", productId)
+        .order("min_qty", { ascending: true });
+
+  const { data: tierRows, error } = await tierQuery;
 
   if (error) {
     return { ok: false, error: error.message };

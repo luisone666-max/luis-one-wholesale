@@ -1,16 +1,75 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Container, MarketplaceShell, PriceTierTable, ProductImage, StockStatusBadge } from "@/components/CustomerUi";
+import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
-import { ProductDetailActions } from "@/components/ProductDetailActions";
+import { ProductDetailExperience } from "@/components/ProductDetailExperience";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogProductPage, getCatalogProductParams } from "@/lib/catalog-data";
 import { getPriceRange } from "@/lib/mock-data";
 
+function getSiteUrl() {
+  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+}
+
+function absoluteUrl(pathOrUrl: string | undefined) {
+  const fallback = "/brand/luis-one-logo.jpg";
+  const value = pathOrUrl || fallback;
+
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+
+  return `${getSiteUrl()}${value.startsWith("/") ? value : `/${value}`}`;
+}
+
 export async function generateStaticParams() {
   return getCatalogProductParams();
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const catalog = await getCatalogProductPage(slug);
+  const product = catalog.data.product;
+
+  if (!product) {
+    return {
+      title: "Product not found | Luis One Supply Hub",
+    };
+  }
+
+  const title = `${product.name} | Luis One Supply Hub`;
+  const description = `${product.category} wholesale item. Price range: ${getPriceRange(product)}. MOQ ${product.moq} pc.`;
+  const url = `${getSiteUrl()}/product/${product.slug}`;
+  const image = absoluteUrl(product.image);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Luis One Supply Hub",
+      type: "website",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 1200,
+          alt: product.name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -34,41 +93,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <span className="text-zinc-900">{product.name}</span>
           </div>
 
-          <section className="grid gap-6 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm lg:grid-cols-[460px_1fr_330px]">
-            <div>
-              <div className="aspect-square rounded-sm bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-6 ring-1 ring-orange-100">
-                <ProductImage src={product.image} alt={product.name} />
-              </div>
-              <div className="mt-3 grid grid-cols-5 gap-2">
-                {product.gallery.slice(0, 5).map((image) => (
-                  <div key={image} className="aspect-square rounded-sm border border-zinc-200 bg-white p-2">
-                    <ProductImage src={image} alt={`${product.name} view`} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-sm bg-orange-50 px-2 py-1 text-xs font-black text-orange-700 ring-1 ring-orange-100">Wholesale</span>
-                <StockStatusBadge status={product.stockStatus} />
-              </div>
-              <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-zinc-950">{product.name}</h1>
-              <p className="mt-3 text-3xl font-black text-[#f65f18]">{getPriceRange(product)}</p>
-              <div className="mt-4 grid gap-3 text-sm font-bold text-zinc-600 sm:grid-cols-2">
-                <Info label="SKU" value={product.sku ?? "-"} />
-                <Info label="MOQ" value={`${product.moq} pc`} />
-                <Info label="Stock Status" value={product.stockStatus === "Preorder" ? "For Order" : product.stockStatus === "In stock" ? "Ready Stock" : product.stockStatus} />
-                <Info label="Lead Time" value={product.stockStatus === "Preorder" ? "To be confirmed" : "Ready for confirmation"} />
-              </div>
-              <div className="mt-5">
-                <h2 className="mb-3 text-lg font-black text-zinc-950">Wholesale Price Table</h2>
-                <PriceTierTable tiers={product.tiers} />
-              </div>
-            </div>
-
-            <ProductDetailActions product={product} />
-          </section>
+          <ProductDetailExperience product={product} />
 
           <section className="mt-6 rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-black text-zinc-950">Product Description</h2>
@@ -96,14 +121,5 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </MarketplaceShell>
       <SiteFooter />
     </>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-sm bg-zinc-50 p-3 ring-1 ring-zinc-100">
-      <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-500">{label}</p>
-      <p className="mt-1 font-black text-zinc-950">{value}</p>
-    </div>
   );
 }

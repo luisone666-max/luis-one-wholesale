@@ -23,6 +23,22 @@ export type ProductPayload = {
   internalCostNotes: string | null;
   adminNotes: string | null;
   tiers: ProductTierInput[];
+  variants: ProductVariantInput[];
+};
+
+export type ProductVariantInput = {
+  id?: string;
+  name: string;
+  sku: string | null;
+  model: string | null;
+  fits: string | null;
+  imageUrl: string | null;
+  moq: number;
+  stockStatus: string;
+  leadTime: string | null;
+  active: boolean;
+  sortOrder: number;
+  tiers: ProductTierInput[];
 };
 
 const stockStatuses = new Set(["ready_stock", "for_order", "low_stock", "unavailable"]);
@@ -93,6 +109,39 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
         };
       })
     : [];
+  const variants = Array.isArray(raw.variants)
+    ? raw.variants.map((variant, index) => {
+        const item = variant as Record<string, unknown>;
+        const variantTiers = Array.isArray(item.tiers)
+          ? item.tiers.map((tier) => {
+              const tierItem = tier as Record<string, unknown>;
+              const maxQtyValue =
+                tierItem.maxQty === null || tierItem.maxQty === "" || tierItem.maxQty === undefined ? null : Number(tierItem.maxQty);
+
+              return {
+                minQty: Number(tierItem.minQty),
+                maxQty: maxQtyValue,
+                unitPrice: Number(tierItem.unitPrice),
+              };
+            })
+          : [];
+
+        return {
+          id: nullableText(item.id) ?? undefined,
+          name: clean(item.name),
+          sku: nullableText(item.sku),
+          model: nullableText(item.model),
+          fits: nullableText(item.fits),
+          imageUrl: nullableText(item.imageUrl),
+          moq: toNumber(item.moq),
+          stockStatus: clean(item.stockStatus) || "for_order",
+          leadTime: nullableText(item.leadTime),
+          active: Boolean(item.active),
+          sortOrder: Number.isInteger(Number(item.sortOrder)) ? Number(item.sortOrder) : index,
+          tiers: variantTiers,
+        };
+      })
+    : [];
 
   if (!sku) {
     return { error: "SKU is required." };
@@ -130,6 +179,30 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
     return { error: tierError };
   }
 
+  for (const variant of variants) {
+    if (!variant.name) {
+      return { error: "Variant name is required." };
+    }
+
+    if (!Number.isInteger(variant.moq) || variant.moq <= 0) {
+      return { error: "Variant MOQ must be greater than 0." };
+    }
+
+    if (!stockStatuses.has(variant.stockStatus)) {
+      return { error: "Invalid variant stock status." };
+    }
+
+    if (variant.active && !variant.tiers.length) {
+      return { error: "At least one price tier is required for active variants." };
+    }
+
+    const variantTierError = validateTierRules(variant.tiers);
+
+    if (variantTierError) {
+      return { error: `Variant ${variant.name}: ${variantTierError}` };
+    }
+  }
+
   return {
     value: {
       sku,
@@ -150,6 +223,7 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
       internalCostNotes: nullableText(raw.internalCostNotes),
       adminNotes: nullableText(raw.adminNotes),
       tiers,
+      variants,
     },
   };
 }

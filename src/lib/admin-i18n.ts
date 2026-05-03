@@ -132,6 +132,12 @@ export type TranslationKey =
   | "uploadCsvArea"
   | "previewImport"
   | "validationResult"
+  | "variantsTab"
+  | "variantName"
+  | "variantSku"
+  | "fits"
+  | "addVariant"
+  | "deleteVariant"
   | "csvColumns"
   | "settings"
   | "shippingFeePayment"
@@ -198,7 +204,7 @@ export type TranslationKey =
   | "saveNote"
   | "wholesalePrices";
 
-export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, string>> = {
+export const adminDictionaries: Record<AdminLanguage, Partial<Record<TranslationKey, string>>> = {
   en: {
     actions: "Actions",
     activeProducts: "Active Products",
@@ -331,6 +337,12 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     uploadCsvArea: "Upload CSV area",
     previewImport: "Preview Import",
     validationResult: "Validation result area",
+    variantsTab: "Variants",
+    variantName: "Variant Name",
+    variantSku: "Variant SKU",
+    fits: "Fits",
+    addVariant: "Add Variant",
+    deleteVariant: "Delete Variant",
     csvColumns: "CSV Columns",
     settings: "Settings",
     shippingFeePayment: "Shipping Fee Payment",
@@ -598,5 +610,5 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
 };
 
 export function translate(language: AdminLanguage, key: TranslationKey) {
-  return adminDictionaries[language][key];
+  return adminDictionaries[language][key] ?? adminDictionaries.en[key] ?? key;
 }
