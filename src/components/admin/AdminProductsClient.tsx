@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
@@ -49,7 +50,6 @@ const text = {
     duplicateDone: "Product duplicated.",
     hiddenFromFrontend: "Hidden products are not shown on customer frontend.",
     deleteBlocked: "If this product has order history, hide it instead of deleting.",
-    bulkUploadDisabled: "CSV bulk upload is not built yet.",
   },
   zh: {
     addTier: "新增价格阶梯",
@@ -65,7 +65,6 @@ const text = {
     duplicateDone: "商品已复制。",
     hiddenFromFrontend: "隐藏商品不会显示在客户前台。",
     deleteBlocked: "如果商品有订单历史，请隐藏商品，不要删除。",
-    bulkUploadDisabled: "CSV 批量上传暂未开发。",
   },
 };
 
@@ -284,9 +283,9 @@ export function AdminProductsClient({
           <button type="button" onClick={startCreate} className="h-11 rounded-md bg-[#f65f18] px-4 text-sm font-black text-white">
             {t("addProduct")}
           </button>
-          <button type="button" onClick={() => setMessage(copy.bulkUploadDisabled)} className="h-11 rounded-md border border-orange-200 bg-orange-50 px-4 text-sm font-black text-orange-700">
+          <Link href="/admin/products/bulk-upload" className="grid h-11 place-items-center rounded-md border border-orange-200 bg-orange-50 px-4 text-sm font-black text-orange-700">
             {t("bulkUpload")}
-          </button>
+          </Link>
           <button type="button" className="h-11 rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-zinc-700">
             {t("bulkEdit")}
           </button>
