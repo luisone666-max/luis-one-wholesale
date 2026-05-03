@@ -87,11 +87,7 @@ export function SiteHeader() {
                 title="Order cart"
                 className="grid h-9 w-9 place-items-center rounded-sm bg-orange-50 text-orange-700 ring-1 ring-orange-200"
               >
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="9" cy="20" r="1.5" />
-                  <circle cx="17" cy="20" r="1.5" />
-                  <path d="M3 4h2l2.2 10.4a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H6" />
-                </svg>
+                <CartIcon />
               </Link>
               <button
                 type="button"
@@ -111,8 +107,13 @@ export function SiteHeader() {
             <Link href="/category/all" className="hidden hover:text-orange-600 lg:inline-flex">Categories</Link>
             <CustomerAuthNav />
             <Link href="/my-orders" className="hidden hover:text-orange-600 sm:inline-flex">My Orders</Link>
-            <Link href="/cart" className="hidden rounded-sm bg-orange-50 px-4 py-3 font-black text-orange-700 ring-1 ring-orange-200 hover:bg-orange-100 lg:inline-flex">
-              Order List
+            <Link
+              href="/cart"
+              aria-label="Order cart"
+              title="Order cart"
+              className="grid h-11 w-11 place-items-center rounded-sm bg-orange-50 text-orange-700 ring-1 ring-orange-200 hover:bg-orange-100"
+            >
+              <CartIcon />
             </Link>
             <a href={messengerUrl} target="_blank" rel="noreferrer" className="rounded-sm border border-zinc-200 bg-white px-4 py-3 font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700">
               Messenger
@@ -151,5 +152,15 @@ export function SiteHeader() {
         </div>
       ) : null}
     </header>
+  );
+}
+
+function CartIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="20" r="1.5" />
+      <circle cx="17" cy="20" r="1.5" />
+      <path d="M3 4h2l2.2 10.4a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H6" />
+    </svg>
   );
 }
