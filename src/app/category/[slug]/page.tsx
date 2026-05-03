@@ -32,21 +32,21 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       <DataSourceNotice message={catalog.message} />
       <MarketplaceShell>
         <section className="border-b border-orange-100 bg-white">
-          <Container className="py-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <Container className="py-3 sm:py-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">Product Listing</p>
-                <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">{title}</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">{description}</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600 sm:text-sm">Product Listing</p>
+                <h1 className="mt-1 text-xl font-black tracking-tight text-zinc-950 sm:mt-2 sm:text-3xl">{title}</h1>
+                <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-zinc-600 sm:block">{description}</p>
               </div>
-              <div className="rounded-sm bg-orange-50 px-4 py-3 text-sm font-black text-orange-700 ring-1 ring-orange-200">
+              <div className="w-fit rounded-sm bg-orange-50 px-3 py-2 text-xs font-black text-orange-700 ring-1 ring-orange-200 sm:px-4 sm:py-3 sm:text-sm">
                 {visibleProducts.length} products / Public wholesale prices
               </div>
             </div>
           </Container>
         </section>
 
-        <Container className="grid gap-6 py-6 lg:grid-cols-[260px_1fr]">
+        <Container className="grid gap-3 py-3 sm:gap-6 sm:py-6 lg:grid-cols-[260px_1fr]">
           <div className="lg:hidden">
             <details className="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
               <summary className="cursor-pointer text-sm font-black text-zinc-950">Open filters</summary>
@@ -60,18 +60,18 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
 
           <div>
-            <div className="mb-4 flex flex-col gap-3 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap gap-2 text-sm font-black">
+            <div className="mb-3 flex flex-col gap-2 rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+              <div className="flex gap-1.5 overflow-x-auto text-xs font-black sm:flex-wrap sm:gap-2 sm:text-sm">
                 {["Popular", "Latest", "Price Low to High", "Price High to Low"].map((item, index) => (
-                  <button key={item} type="button" className={`rounded-sm px-3 py-2 ${index === 0 ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700"}`}>
+                  <button key={item} type="button" className={`shrink-0 rounded-sm px-2.5 py-1.5 sm:px-3 sm:py-2 ${index === 0 ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700"}`}>
                     {item}
                   </button>
                 ))}
               </div>
-              <Link href="/cart" className="text-sm font-black text-orange-700">View Order List</Link>
+              <Link href="/cart" className="text-xs font-black text-orange-700 sm:text-sm">View Order List</Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4">
               {visibleProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
             </div>
 
