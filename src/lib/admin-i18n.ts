@@ -52,6 +52,7 @@ export type TranslationKey =
   | "imageUrl"
   | "language"
   | "location"
+  | "logout"
   | "mainCategory"
   | "manualPayments"
   | "mergeCategory"
@@ -250,6 +251,7 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     imageUrl: "Image URL",
     language: "Language",
     location: "Location",
+    logout: "Logout",
     mainCategory: "Main Category",
     manualPayments: "Manual Payment Records",
     mergeCategory: "Merge Category",
@@ -447,6 +449,7 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     imageUrl: "图片 URL",
     language: "语言",
     location: "地区",
+    logout: "退出登录",
     mainCategory: "主分类",
     manualPayments: "人工付款记录",
     mergeCategory: "合并分类",

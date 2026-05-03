@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
+import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
-}
-
-function adminDevAccessAllowed() {
-  return process.env.NODE_ENV !== "production" || process.env.ADMIN_DEV_ACCESS === "true";
 }
 
 function formatDate(value: string | null) {
@@ -18,8 +15,10 @@ function formatDate(value: string | null) {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ orderNo: string }> }) {
-  if (!adminDevAccessAllowed()) {
-    return jsonError("Admin API is disabled until admin authentication is added.", 403);
+  const guard = await requireActiveAdminApi(request);
+
+  if (guard.response) {
+    return guard.response;
   }
 
   const admin = createSupabaseAdminClient();

@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { parseProductPayload, type ProductPayload } from "@/lib/admin-product-validation";
+import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
-}
-
-function adminDevAccessAllowed() {
-  return process.env.NODE_ENV !== "production" || process.env.ADMIN_DEV_ACCESS === "true";
 }
 
 async function assertUniqueProduct(
@@ -31,8 +28,10 @@ async function assertUniqueProduct(
 }
 
 export async function POST(request: Request) {
-  if (!adminDevAccessAllowed()) {
-    return jsonError("Admin API is disabled until admin authentication is added.", 403);
+  const guard = await requireActiveAdminApi(request);
+
+  if (guard.response) {
+    return guard.response;
   }
 
   const admin = createSupabaseAdminClient();

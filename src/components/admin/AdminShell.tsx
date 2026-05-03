@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AdminLanguage, translate, TranslationKey } from "@/lib/admin-i18n";
 
 type AdminI18nContextValue = {
@@ -37,13 +37,8 @@ export function useAdminI18n() {
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [language, setLanguageState] = useState<AdminLanguage>(() => {
-    if (typeof window === "undefined") {
-      return "en";
-    }
-    const stored = window.localStorage.getItem("admin-language");
-    return stored === "en" || stored === "zh" ? stored : "en";
-  });
+  const [adminProfile, setAdminProfile] = useState<{ name: string; email: string } | null>(null);
+  const [language, setLanguageState] = useState<AdminLanguage>("en");
 
   const setLanguage = useCallback((nextLanguage: AdminLanguage) => {
     setLanguageState(nextLanguage);
@@ -58,6 +53,43 @@ export function AdminShell({ children }: { children: ReactNode }) {
     }),
     [language, setLanguage],
   );
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("admin-language");
+    const nextLanguage = stored === "en" || stored === "zh" ? stored : "en";
+    queueMicrotask(() => setLanguageState(nextLanguage));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetch("/api/admin/auth/me")
+      .then((response) => response.json())
+      .then((result: { ok?: boolean; admin?: { name?: string; email?: string } }) => {
+        if (cancelled || !result.ok || !result.admin) {
+          return;
+        }
+
+        queueMicrotask(() => {
+          if (!cancelled) {
+            setAdminProfile({
+              name: result.admin?.name ?? "Admin",
+              email: result.admin?.email ?? "",
+            });
+          }
+        });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const logout = async () => {
+    await fetch("/api/admin/auth/logout", { method: "POST" });
+    window.location.href = "/admin/login";
+  };
 
   return (
     <AdminI18nContext.Provider value={value}>
@@ -124,7 +156,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     中文
                   </button>
                 </div>
-                <div className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-black text-white">{value.t("adminName")}</div>
+                <div className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-black text-white">
+                  {adminProfile?.name ?? value.t("adminName")}
+                  {adminProfile?.email ? <span className="ml-2 text-xs font-bold text-zinc-300">{adminProfile.email}</span> : null}
+                </div>
+                <button type="button" onClick={logout} className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-black text-zinc-700">
+                  {value.t("logout")}
+                </button>
               </div>
             </div>
             <nav className="flex gap-2 overflow-x-auto border-t border-zinc-100 px-4 py-2 lg:hidden">

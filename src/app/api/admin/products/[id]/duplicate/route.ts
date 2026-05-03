@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
+import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
-}
-
-function adminDevAccessAllowed() {
-  return process.env.NODE_ENV !== "production" || process.env.ADMIN_DEV_ACCESS === "true";
 }
 
 async function uniqueValue(
@@ -30,9 +27,11 @@ async function uniqueValue(
   throw new Error(`Could not create unique ${column}.`);
 }
 
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!adminDevAccessAllowed()) {
-    return jsonError("Admin API is disabled until admin authentication is added.", 403);
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const guard = await requireActiveAdminApi(request);
+
+  if (guard.response) {
+    return guard.response;
   }
 
   const admin = createSupabaseAdminClient();

@@ -5,13 +5,10 @@ import {
   type BulkImportMissingCategoryMode,
   type BulkProductCsvRow,
 } from "@/lib/admin-product-bulk-upload";
+import { requireActiveAdminApi } from "@/lib/admin-auth";
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
-}
-
-function adminDevAccessAllowed() {
-  return process.env.NODE_ENV !== "production" || process.env.ADMIN_DEV_ACCESS === "true";
 }
 
 function parseRows(value: unknown): BulkProductCsvRow[] | null {
@@ -43,8 +40,10 @@ function parseMissingCategoryMode(value: unknown): BulkImportMissingCategoryMode
 }
 
 export async function POST(request: Request) {
-  if (!adminDevAccessAllowed()) {
-    return jsonError("Admin API is disabled until admin authentication is added.", 403);
+  const guard = await requireActiveAdminApi(request);
+
+  if (guard.response) {
+    return guard.response;
   }
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
