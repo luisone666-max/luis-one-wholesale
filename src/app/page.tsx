@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { getActiveCategories, getActiveProducts } from "@/lib/mock-data";
+import { getCatalogSnapshot } from "@/lib/catalog-data";
 
 const rules = [
   "Public product prices before login",
@@ -13,14 +14,16 @@ const rules = [
   "Shipping and confirmation are handled manually later",
 ];
 
-export default function Home() {
-  const categories = getActiveCategories();
-  const products = getActiveProducts();
+export default async function Home() {
+  const catalog = await getCatalogSnapshot();
+  const categories = catalog.data.categories;
+  const products = catalog.data.products;
   const bestSellers = [...products].sort((a, b) => b.sold - a.sold).slice(0, 4);
 
   return (
     <>
       <SiteHeader />
+      <DataSourceNotice message={catalog.message} />
       <main className="bg-zinc-50">
         <section className="border-b border-orange-100 bg-white">
           <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
@@ -79,8 +82,8 @@ export default function Home() {
                   <p className="text-sm font-bold text-zinc-700">Price tiers per product</p>
                 </div>
                 <div className="rounded-md bg-zinc-50 p-4">
-                  <p className="text-3xl font-black text-zinc-950">0</p>
-                  <p className="text-sm font-bold text-zinc-700">Database or payment connection</p>
+                  <p className="text-3xl font-black text-zinc-950">{catalog.source === "supabase" ? "On" : "Mock"}</p>
+                  <p className="text-sm font-bold text-zinc-700">Catalog data source</p>
                 </div>
               </div>
             </aside>

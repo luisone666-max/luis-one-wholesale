@@ -1,29 +1,31 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailActions } from "@/components/ProductDetailActions";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { formatMoney, getActiveProductBySlug, getActiveProducts } from "@/lib/mock-data";
+import { getCatalogProductPage, getCatalogProductParams } from "@/lib/catalog-data";
+import { formatMoney } from "@/lib/mock-data";
 
-export function generateStaticParams() {
-  return getActiveProducts().map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  return getCatalogProductParams();
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getActiveProductBySlug(slug);
+  const catalog = await getCatalogProductPage(slug);
+  const { product, related } = catalog.data;
 
   if (!product) {
     notFound();
   }
 
-  const related = getActiveProducts().filter((item) => item.categorySlug === product.categorySlug && item.slug !== product.slug).slice(0, 3);
-
   return (
     <>
       <SiteHeader />
+      <DataSourceNotice message={catalog.message} />
       <main className="bg-zinc-50">
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-4 text-sm font-semibold text-zinc-500">

@@ -1,31 +1,26 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import {
-  getActiveCategories,
-  getActiveCategoryBySlug,
-  getActiveProducts,
-  getActiveProductsByCategory,
-} from "@/lib/mock-data";
+import { getCatalogCategoryPage, getCatalogCategoryParams } from "@/lib/catalog-data";
 
-export function generateStaticParams() {
-  return [{ slug: "all" }, ...getActiveCategories().map((category) => ({ slug: category.slug }))];
+export async function generateStaticParams() {
+  return getCatalogCategoryParams();
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const isAll = slug === "all";
-  const categories = getActiveCategories();
-  const category = isAll ? null : getActiveCategoryBySlug(slug);
+  const catalog = await getCatalogCategoryPage(slug);
+  const { categories, category, products: visibleProducts } = catalog.data;
 
   if (!isAll && !category) {
     notFound();
   }
 
-  const visibleProducts = isAll ? getActiveProducts() : getActiveProductsByCategory(slug);
   const title = isAll ? "All Wholesale Products" : category?.name ?? "Products";
   const description = isAll
     ? "Browse the full mock catalog with public B2B tier pricing, MOQ, stock, and product details."
@@ -34,6 +29,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   return (
     <>
       <SiteHeader />
+      <DataSourceNotice message={catalog.message} />
       <main className="bg-zinc-50">
         <section className="border-b border-orange-100 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">

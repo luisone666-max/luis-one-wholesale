@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { formatMoney, getPriceRange, Product } from "@/lib/mock-data";
+import { formatMoney, getPriceRange, type Product } from "@/lib/mock-data";
 
 export function ProductCard({ product }: { product: Product }) {
   const bulkTier = product.tiers[product.tiers.length - 1];
