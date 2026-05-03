@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { formatMoney, type Category, type PriceTier, type Product } from "@/lib/mock-data";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-labels";
 
-const facebookDirectChatUrl = "https://www.facebook.com/messages/t/61582454726803";
+const facebookDirectChatUrl = "https://www.messenger.com/t/61582454726803";
 
 export const messengerUrl = process.env.NEXT_PUBLIC_MESSENGER_URL?.includes("facebook.com/messages")
   ? process.env.NEXT_PUBLIC_MESSENGER_URL
