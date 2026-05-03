@@ -124,7 +124,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
           <h1 className="mt-2 text-lg font-bold leading-snug text-zinc-950 sm:mt-3 sm:text-2xl lg:text-[26px]">{product.name}</h1>
 
           <div className="mt-3 rounded-sm bg-[#fafafa] px-3 py-2.5 sm:mt-4 sm:px-5 sm:py-4">
-            <p className="text-2xl font-black text-[#f65f18] sm:text-3xl">
+            <p className="text-lg font-black text-[#f65f18] sm:text-3xl">
               {selectedVariant ? getVariantPriceRange(selectedVariant) : getPriceRange(product)}
             </p>
             <p className="mt-1 text-xs font-bold text-zinc-500">Public wholesale prices. Final order will be confirmed manually.</p>
@@ -194,7 +194,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
 
             <DetailRow label="Subtotal">
               <div className="flex flex-wrap items-center gap-4">
-                <span className="text-xl font-black text-[#f65f18]">{formatMoney(subtotal)}</span>
+                <span className="text-base font-black text-[#f65f18] sm:text-xl">{formatMoney(subtotal)}</span>
                 <span className="text-xs font-bold text-zinc-500">Unit price: {formatMoney(appliedTier.price)}</span>
               </div>
             </DetailRow>
