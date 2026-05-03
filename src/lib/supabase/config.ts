@@ -1,13 +1,20 @@
-export function isUsableUrl(value: string | undefined) {
+export function normalizeSupabaseUrl(value: string | undefined) {
   if (!value) {
-    return false;
+    return null;
   }
 
   try {
-    const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.includes("supabase");
+    const url = new URL(value.trim());
+
+    if (url.protocol !== "https:" || !url.hostname.includes("supabase")) {
+      return null;
+    }
+
+    // Supabase dashboard shows both the project URL and the Data API /rest/v1 URL.
+    // supabase-js needs the project root URL, so accept either and normalize safely.
+    return `${url.origin}`;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -20,14 +27,14 @@ export function isUsableKey(value: string | undefined) {
 }
 
 export function getSupabasePublicConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!isUsableUrl(url) || !isUsableKey(anonKey)) {
+  if (!url || !isUsableKey(anonKey)) {
     return null;
   }
 
-  return { url: url as string, anonKey: anonKey as string };
+  return { url, anonKey: anonKey as string };
 }
 
 export function getSupabaseServerConfig() {
