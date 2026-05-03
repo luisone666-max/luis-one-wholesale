@@ -1,3 +1,5 @@
+const fallbackSupabaseUrl = "https://ifnkxkfjkdjicxpkrlxy.supabase.co";
+
 export function normalizeSupabaseUrl(value: string | undefined) {
   if (!value) {
     return null;
@@ -27,7 +29,7 @@ export function isUsableKey(value: string | undefined) {
 }
 
 export function getSupabasePublicConfig() {
-  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL) ?? fallbackSupabaseUrl;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !isUsableKey(anonKey)) {
