@@ -58,23 +58,23 @@ function OrderDetailContent() {
   return (
     <main className="bg-zinc-50">
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-col gap-4 rounded-md border border-orange-100 bg-white p-6 shadow-sm md:flex-row md:items-end md:justify-between">
+        <div className="mb-6 flex flex-col gap-4 rounded-sm border border-orange-100 bg-white p-6 shadow-sm md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">Order Detail</p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">{order?.orderNo ?? "Loading order"}</h1>
           </div>
-          <Link href="/my-orders" className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-black text-zinc-700">
+          <Link href="/my-orders" className="rounded-sm border border-zinc-200 bg-white px-4 py-2 text-sm font-black text-zinc-700">
             Back to My Orders
           </Link>
         </div>
 
-        {loading ? <div className="rounded-md border border-zinc-200 bg-white p-6 text-sm font-bold text-zinc-600">Loading order...</div> : null}
-        {message ? <div className="rounded-md border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-orange-700">{message}</div> : null}
+        {loading ? <div className="rounded-sm border border-zinc-200 bg-white p-6 text-sm font-bold text-zinc-600">Loading order...</div> : null}
+        {message ? <div className="rounded-sm border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-orange-700">{message}</div> : null}
 
         {order ? (
           <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
             <div className="space-y-6">
-              <section className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
+              <section className="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
                 <h2 className="text-xl font-black text-zinc-950">Receiver Info</h2>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <Info label="Receiver Name" value={order.receiverName ?? ""} />
@@ -85,7 +85,7 @@ function OrderDetailContent() {
                 </div>
               </section>
 
-              <section className="overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm">
+              <section className="overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm">
                 <div className="border-b border-zinc-100 p-6">
                   <h2 className="text-xl font-black text-zinc-950">Product Items</h2>
                 </div>
@@ -116,7 +116,7 @@ function OrderDetailContent() {
               </section>
             </div>
 
-            <aside className="h-fit rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
+            <aside className="h-fit rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
               <h2 className="text-xl font-black text-zinc-950">Order Summary</h2>
               <div className="mt-5 space-y-3 text-sm">
                 <SummaryRow label="Order No" value={order.orderNo} />
@@ -135,7 +135,7 @@ function OrderDetailContent() {
 
 function Info({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
   return (
-    <div className={`rounded-md bg-zinc-50 p-4 ring-1 ring-zinc-100 ${wide ? "sm:col-span-2" : ""}`}>
+    <div className={`rounded-sm bg-zinc-50 p-4 ring-1 ring-zinc-100 ${wide ? "sm:col-span-2" : ""}`}>
       <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{label}</p>
       <p className="mt-2 font-black text-zinc-950">{value}</p>
     </div>

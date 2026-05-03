@@ -44,9 +44,9 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
   };
 
   return (
-    <div className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
-      <h2 className="text-2xl font-black text-zinc-950">Buyer Login</h2>
-      <p className="mt-2 text-sm text-zinc-600">Login with your customer email and password.</p>
+    <div className="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
+      <h2 className="text-2xl font-black text-zinc-950">Login to Your Wholesale Account</h2>
+      <p className="mt-2 text-sm text-zinc-600">Access your Luis One Supply Hub order list and wholesale orders.</p>
       {registered ? (
         <p className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
           Account created. Please login to continue.
@@ -61,7 +61,7 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
             required
             placeholder="Email address"
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-2 h-12 w-full rounded-md border border-zinc-200 px-4 outline-none focus:border-orange-500"
+            className="mt-2 h-12 w-full rounded-sm border border-zinc-200 px-4 outline-none focus:border-orange-500"
           />
         </label>
         <label className="block text-sm font-bold text-zinc-800">
@@ -72,7 +72,7 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
             required
             placeholder="Enter password"
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-2 h-12 w-full rounded-md border border-zinc-200 px-4 outline-none focus:border-orange-500"
+            className="mt-2 h-12 w-full rounded-sm border border-zinc-200 px-4 outline-none focus:border-orange-500"
           />
         </label>
         {message ? (
@@ -81,14 +81,17 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
         <button
           type="submit"
           disabled={loading}
-          className="h-12 w-full rounded-md bg-[#f65f18] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
+          className="h-12 w-full rounded-sm bg-[#f65f18] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
         >
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
-      <div className="mt-5 flex items-center justify-between text-sm">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
         <Link href="/register" className="font-black text-orange-700">
           Create Account
+        </Link>
+        <Link href="/category/all" className="font-black text-zinc-600">
+          Continue Shopping
         </Link>
         <button type="button" className="font-bold text-zinc-500">
           Forgot Password

@@ -165,11 +165,11 @@ export function CheckoutForm() {
   };
 
   return (
-    <main className="bg-zinc-50">
+    <main className="bg-[#f6f6f6]">
       <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8">
-        <div className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">Checkout</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Receiver and shipping details</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Receiver Information</h1>
           {message ? (
             <div className="mt-5 rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-700">
               {message}
@@ -183,7 +183,7 @@ export function CheckoutForm() {
               <select
                 value={receivingMethod}
                 onChange={(event) => changeReceivingMethod(event.target.value as ReceivingMethod)}
-                className="mt-2 h-12 w-full rounded-md border border-zinc-200 bg-white px-4 outline-none focus:border-orange-500"
+                className="mt-2 h-12 w-full rounded-sm border border-zinc-200 bg-white px-4 outline-none focus:border-orange-500"
               >
                 {receivingMethods.map((method) => (
                   <option key={method} value={method}>
@@ -197,7 +197,7 @@ export function CheckoutForm() {
               <select
                 value={shippingFeePayment}
                 onChange={(event) => setShippingFeePayment(event.target.value as ShippingFeePayment)}
-                className="mt-2 h-12 w-full rounded-md border border-zinc-200 bg-white px-4 outline-none focus:border-orange-500"
+                className="mt-2 h-12 w-full rounded-sm border border-zinc-200 bg-white px-4 outline-none focus:border-orange-500"
               >
                 {shippingOptions.map((option) => (
                   <option key={option} value={option}>
@@ -211,7 +211,7 @@ export function CheckoutForm() {
               <textarea
                 value={completeAddress}
                 onChange={(event) => setCompleteAddress(event.target.value)}
-                className="mt-2 min-h-24 w-full rounded-md border border-zinc-200 px-4 py-3 outline-none focus:border-orange-500"
+                className="mt-2 min-h-24 w-full rounded-sm border border-zinc-200 px-4 py-3 outline-none focus:border-orange-500"
               />
             </label>
             <label className="block text-sm font-bold text-zinc-800 sm:col-span-2">
@@ -219,13 +219,13 @@ export function CheckoutForm() {
               <textarea
                 value={orderNotes}
                 onChange={(event) => setOrderNotes(event.target.value)}
-                className="mt-2 min-h-24 w-full rounded-md border border-zinc-200 px-4 py-3 outline-none focus:border-orange-500"
+                className="mt-2 min-h-24 w-full rounded-sm border border-zinc-200 px-4 py-3 outline-none focus:border-orange-500"
               />
             </label>
           </div>
         </div>
 
-        <aside className="h-fit rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
+        <aside className="h-fit rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-black text-zinc-950">Amount to Confirm</h2>
           <div className="mt-5 space-y-3 text-sm">
             {loading ? <p className="font-bold text-zinc-600">Loading cart...</p> : null}
@@ -265,11 +265,11 @@ export function CheckoutForm() {
             type="button"
             onClick={submitOrder}
             disabled={loading || submitting || !items.length}
-            className="mt-6 block w-full rounded-md bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
+            className="mt-6 block w-full rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
           >
             {submitting ? "Submitting..." : "Place Order"}
           </button>
-          <Link href="/cart" className="mt-3 block rounded-md border border-zinc-200 bg-white px-5 py-3 text-center text-sm font-black text-zinc-700">
+          <Link href="/cart" className="mt-3 block rounded-sm border border-zinc-200 bg-white px-5 py-3 text-center text-sm font-black text-zinc-700">
             Back to Cart
           </Link>
         </aside>
@@ -295,7 +295,7 @@ function Field({
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-12 w-full rounded-md border border-zinc-200 px-4 outline-none focus:border-orange-500"
+        className="mt-2 h-12 w-full rounded-sm border border-zinc-200 px-4 outline-none focus:border-orange-500"
       />
     </label>
   );

@@ -53,9 +53,9 @@ export function RegisterForm() {
   };
 
   return (
-    <form onSubmit={submit} className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
-      <h2 className="text-2xl font-black text-zinc-950">Create Account</h2>
-      <p className="mt-2 text-sm text-zinc-600">Register to place wholesale orders.</p>
+    <form onSubmit={submit} className="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
+      <h2 className="text-2xl font-black text-zinc-950">Create Your Wholesale Account</h2>
+      <p className="mt-2 text-sm text-zinc-600">Register to place wholesale orders with Luis One Supply Hub.</p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Field label="Full Name" value={form.fullName} onChange={(value) => updateField("fullName", value)} required />
         <Field label="Phone Number" value={form.phone} onChange={(value) => updateField("phone", value)} required />
@@ -71,7 +71,7 @@ export function RegisterForm() {
           <select
             value={form.businessType}
             onChange={(event) => updateField("businessType", event.target.value)}
-            className="mt-2 h-12 w-full rounded-md border border-zinc-200 bg-white px-4 outline-none focus:border-orange-500"
+            className="mt-2 h-12 w-full rounded-sm border border-zinc-200 bg-white px-4 outline-none focus:border-orange-500"
           >
             {businessTypes.map((type) => (
               <option key={type}>{type}</option>
@@ -93,7 +93,7 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 h-12 w-full rounded-md bg-[#f65f18] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
+        className="mt-6 h-12 w-full rounded-sm bg-[#f65f18] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
       >
         {loading ? "Creating Account..." : "Register"}
       </button>
@@ -128,7 +128,7 @@ function Field({
         value={value}
         required={required}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-12 w-full rounded-md border border-zinc-200 px-4 outline-none focus:border-orange-500"
+        className="mt-2 h-12 w-full rounded-sm border border-zinc-200 px-4 outline-none focus:border-orange-500"
       />
     </label>
   );

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WholesaleHub | B2B Ordering Mockup",
-  description: "A professional wholesale shopping frontend mockup with public tier pricing.",
+  title: "Luis One Supply Hub | Wholesale Ordering",
+  description: "A professional Philippine wholesale shopping site with public tier pricing.",
 };
 
 export default function RootLayout({

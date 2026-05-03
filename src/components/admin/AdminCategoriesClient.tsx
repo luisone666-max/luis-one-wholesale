@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPageTitle, AdminToggle, StatusPill, TableShell } from "@/components/admin/AdminUi";
@@ -32,6 +33,11 @@ const text = {
     slug: "Slug",
     level: "Level",
     imageUrl: "Image URL",
+    uploadImage: "Upload Image",
+    uploadingImage: "Uploading...",
+    clearImage: "Clear image",
+    noCategoryImage: "No category image",
+    imageHelp: "JPG, PNG, or WebP. Max 2MB.",
     templateType: "Template Type",
     applyTemplate: "Apply Category Template",
     selectTemplate: "Select template",
@@ -142,9 +148,25 @@ export function AdminCategoriesClient({
 }) {
   const { t, language } = useAdminI18n();
   const copy = text[language];
+  const imageCopy = language === "zh"
+    ? {
+        uploadImage: "上传图片",
+        uploadingImage: "上传中...",
+        clearImage: "清除图片",
+        noCategoryImage: "暂无分类图片",
+        imageHelp: "支持 JPG、PNG、WebP，最大 2MB。",
+      }
+    : {
+        uploadImage: "Upload Image",
+        uploadingImage: "Uploading...",
+        clearImage: "Clear image",
+        noCategoryImage: "No category image",
+        imageHelp: "JPG, PNG, or WebP. Max 2MB.",
+      };
   const [categories, setCategories] = useState(initialCategories);
   const [draft, setDraft] = useState<CategoryDraft>(emptyDraft());
   const [message, setMessage] = useState(initialError ?? "");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [template, setTemplate] = useState("motorcycle_parts");
   const flat = useMemo(() => flatten(categories), [categories]);
   const parentOptions = flat.filter((category) => category.depth < 2 && category.id !== draft.id && !isDescendant(flat, draft.id ?? "", category.id));
@@ -241,6 +263,53 @@ export function AdminCategoriesClient({
     reload();
   };
 
+  const uploadCategoryImage = async (file?: File) => {
+    if (!file) {
+      return;
+    }
+
+    setMessage("");
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setMessage("Only JPG, PNG, and WebP image files are allowed.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage("Image file must be 2MB or smaller.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("slug", draft.slug);
+    formData.append("name", draft.nameEn);
+
+    setUploadingImage(true);
+
+    try {
+      const response = await fetch("/api/admin/categories/image-upload", {
+        method: "POST",
+        body: formData,
+      });
+      const result = (await response.json().catch(() => ({ ok: false, message: "Upload failed." }))) as {
+        ok?: boolean;
+        imageUrl?: string;
+        message?: string;
+      };
+
+      if (!response.ok || !result.ok || !result.imageUrl) {
+        setMessage(result.message ?? "Upload failed.");
+        return;
+      }
+
+      setDraft((current) => ({ ...current, imageUrl: result.imageUrl ?? "" }));
+      setMessage(language === "zh" ? "图片已上传，请保存分类。" : "Image uploaded. Save the category to keep it.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const canUseParent = (category: FlatCategory) => {
     if (!draft.id) {
       return category.depth < 2;
@@ -292,6 +361,37 @@ export function AdminCategoriesClient({
             </select>
             <Input value={draft.iconUrl} onChange={(value) => setDraft({ ...draft, iconUrl: value })} placeholder={t("iconImageUrl")} />
             <Input value={draft.imageUrl} onChange={(value) => setDraft({ ...draft, imageUrl: value })} placeholder={copy.imageUrl} />
+            <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{copy.imageUrl}</p>
+                  <p className="mt-1 text-xs font-bold text-zinc-400">{imageCopy.imageHelp}</p>
+                </div>
+                <label className="cursor-pointer rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-black text-orange-700">
+                  {uploadingImage ? imageCopy.uploadingImage : imageCopy.uploadImage}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    disabled={uploadingImage}
+                    onChange={(event) => {
+                      void uploadCategoryImage(event.target.files?.[0]);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+                <button type="button" onClick={() => setDraft({ ...draft, imageUrl: "" })} className="text-xs font-black text-orange-700">
+                  {language === "zh" ? "清除图片" : "Clear image"}
+                </button>
+              </div>
+              <div className="mt-3 aspect-[4/3] overflow-hidden rounded-md bg-white p-3 ring-1 ring-zinc-100">
+                {draft.imageUrl ? (
+                  <Image src={draft.imageUrl} alt={draft.nameEn || "Category image preview"} width={360} height={270} className="h-full w-full object-contain" unoptimized />
+                ) : (
+                  <div className="grid h-full place-items-center text-xs font-bold text-zinc-400">{language === "zh" ? "暂无分类图片" : "No category image"}</div>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Input value={String(draft.sortOrder)} onChange={(value) => setDraft({ ...draft, sortOrder: Math.max(0, Number(value) || 0) })} placeholder={t("sortOrder")} type="number" />
               <Input value={draft.templateType} onChange={(value) => setDraft({ ...draft, templateType: value })} placeholder={copy.templateType} />

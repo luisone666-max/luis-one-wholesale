@@ -103,7 +103,7 @@ function CartContent() {
           <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">Wholesale order cart</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Review items before checkout</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">
-            Quantity changes update the applied wholesale unit price. Checkout submission is not enabled yet.
+            Quantity changes update the applied wholesale unit price. Product total and shipping fee are confirmed separately.
           </p>
         </div>
 
@@ -215,7 +215,7 @@ function CartContent() {
                 <SummaryRow label="Amount to Confirm" value={formatPhp(productTotal)} strong />
               </div>
             </div>
-            <Link href="/checkout" className="mt-6 block rounded-md bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white">
+            <Link href="/checkout" className="mt-6 block rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white">
               Proceed to Checkout
             </Link>
           </aside>

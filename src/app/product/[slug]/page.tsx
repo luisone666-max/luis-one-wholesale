@@ -1,13 +1,13 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Container, MarketplaceShell, PriceTierTable, ProductImage, StockStatusBadge } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailActions } from "@/components/ProductDetailActions";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogProductPage, getCatalogProductParams } from "@/lib/catalog-data";
-import { formatMoney } from "@/lib/mock-data";
+import { getPriceRange } from "@/lib/mock-data";
 
 export async function generateStaticParams() {
   return getCatalogProductParams();
@@ -26,116 +26,84 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <>
       <SiteHeader />
       <DataSourceNotice message={catalog.message} />
-      <main className="bg-zinc-50">
-        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-4 text-sm font-semibold text-zinc-500">
-            <Link href="/" className="hover:text-orange-700">
-              Home
-            </Link>{" "}
-            /{" "}
-            <Link href={`/category/${product.categorySlug}`} className="hover:text-orange-700">
-              {product.category}
-            </Link>{" "}
-            / <span className="text-zinc-900">{product.name}</span>
+      <MarketplaceShell>
+        <Container className="py-6">
+          <div className="mb-4 text-sm font-bold text-zinc-500">
+            <Link href="/" className="hover:text-orange-700">Home</Link> /{" "}
+            <Link href={`/category/${product.categorySlug}`} className="hover:text-orange-700">{product.category}</Link> /{" "}
+            <span className="text-zinc-900">{product.name}</span>
           </div>
 
-          <div className="grid gap-6 rounded-md border border-zinc-200 bg-white p-5 shadow-sm lg:grid-cols-[520px_1fr]">
+          <section className="grid gap-6 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm lg:grid-cols-[460px_1fr_330px]">
             <div>
-              <div className="rounded-md bg-orange-50 p-6">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  width={640}
-                  height={640}
-                  priority
-                  className="aspect-square w-full object-contain"
-                />
+              <div className="aspect-square rounded-sm bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-6 ring-1 ring-orange-100">
+                <ProductImage src={product.image} alt={product.name} />
               </div>
-              <div className="mt-4 grid grid-cols-4 gap-3">
-                {product.gallery.map((image) => (
-                  <div key={image} className="rounded-md border border-orange-100 bg-white p-2">
-                    <Image
-                      src={image}
-                      alt={`${product.name} view`}
-                      width={160}
-                      height={160}
-                      className="aspect-square w-full object-contain"
-                    />
+              <div className="mt-3 grid grid-cols-5 gap-2">
+                {product.gallery.slice(0, 5).map((image) => (
+                  <div key={image} className="aspect-square rounded-sm border border-zinc-200 bg-white p-2">
+                    <ProductImage src={image} alt={`${product.name} view`} />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex flex-col">
-              <div className="border-b border-zinc-100 pb-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded bg-orange-50 px-2 py-1 text-xs font-black text-orange-700">Wholesale</span>
-                  <span className="rounded bg-zinc-100 px-2 py-1 text-xs font-bold text-zinc-600">{product.stockStatus}</span>
-                </div>
-                <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-zinc-950">{product.name}</h1>
-                <p className="mt-3 text-sm leading-6 text-zinc-600">{product.description}</p>
-                <div className="mt-4 flex flex-wrap gap-4 text-sm font-bold text-zinc-600">
-                  <span>Rating {product.rating}/5</span>
-                  <span>{product.sold.toLocaleString()} sold</span>
-                  <span>{product.stockCount.toLocaleString()} pcs stock</span>
-                  <span>MOQ {product.moq} pc</span>
-                </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-sm bg-orange-50 px-2 py-1 text-xs font-black text-orange-700 ring-1 ring-orange-100">Wholesale</span>
+                <StockStatusBadge status={product.stockStatus} />
               </div>
-
-              <div className="grid gap-6 py-5 lg:grid-cols-[1fr_320px]">
-                <div>
-                  <h2 className="text-lg font-black text-zinc-950">Wholesale price table</h2>
-                  <div className="mt-3 overflow-hidden rounded-md border border-zinc-200">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
-                        <tr>
-                          <th className="px-4 py-3">Quantity</th>
-                          <th className="px-4 py-3">Unit price</th>
-                          <th className="px-4 py-3">Hint</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-100">
-                        {product.tiers.map((tier) => (
-                          <tr key={tier.label}>
-                            <td className="px-4 py-4 font-black text-zinc-900">{tier.label}</td>
-                            <td className="px-4 py-4 font-black text-[#f65f18]">{formatMoney(tier.price)}</td>
-                            <td className="px-4 py-4 text-zinc-600">
-                              {tier.max === null ? "Best bulk tier" : `Applies from ${tier.min} pcs`}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="mt-5 rounded-md bg-zinc-50 p-5 ring-1 ring-zinc-200">
-                    <h2 className="text-lg font-black text-zinc-950">Product details</h2>
-                    <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-600">
-                      {product.details.map((detail) => (
-                        <li key={detail}>- {detail}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <ProductDetailActions product={product} />
+              <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-zinc-950">{product.name}</h1>
+              <p className="mt-3 text-3xl font-black text-[#f65f18]">{getPriceRange(product)}</p>
+              <div className="mt-4 grid gap-3 text-sm font-bold text-zinc-600 sm:grid-cols-2">
+                <Info label="SKU" value={product.sku ?? "-"} />
+                <Info label="MOQ" value={`${product.moq} pc`} />
+                <Info label="Stock Status" value={product.stockStatus === "Preorder" ? "For Order" : product.stockStatus === "In stock" ? "Ready Stock" : product.stockStatus} />
+                <Info label="Lead Time" value={product.stockStatus === "Preorder" ? "To be confirmed" : "Ready for confirmation"} />
+              </div>
+              <div className="mt-5">
+                <h2 className="mb-3 text-lg font-black text-zinc-950">Wholesale Price Table</h2>
+                <PriceTierTable tiers={product.tiers} />
               </div>
             </div>
-          </div>
+
+            <ProductDetailActions product={product} />
+          </section>
+
+          <section className="mt-6 rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-black text-zinc-950">Product Description</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-600">{product.description}</p>
+            <ul className="mt-4 grid gap-2 text-sm leading-6 text-zinc-600 sm:grid-cols-2">
+              {product.details.map((detail) => <li key={detail} className="rounded-sm bg-zinc-50 px-3 py-2">- {detail}</li>)}
+            </ul>
+          </section>
 
           {related.length ? (
             <section className="mt-8">
-              <h2 className="mb-4 text-2xl font-black text-zinc-950">Related wholesale items</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {related.map((item) => (
-                  <ProductCard key={item.slug} product={item} />
-                ))}
+              <div className="mb-4 flex items-end justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Related Products</p>
+                  <h2 className="mt-1 text-2xl font-black text-zinc-950">More wholesale items</h2>
+                </div>
+                <Link href={`/category/${product.categorySlug}`} className="text-sm font-black text-orange-700">View category</Link>
+              </div>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+                {related.map((item) => <ProductCard key={item.slug} product={item} />)}
               </div>
             </section>
           ) : null}
-        </section>
-      </main>
+        </Container>
+      </MarketplaceShell>
       <SiteFooter />
     </>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-sm bg-zinc-50 p-3 ring-1 ring-zinc-100">
+      <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-500">{label}</p>
+      <p className="mt-1 font-black text-zinc-950">{value}</p>
+    </div>
   );
 }

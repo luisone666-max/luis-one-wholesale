@@ -176,6 +176,7 @@ function mapSupabaseSnapshot(
       description: category.description ?? "Wholesale category",
       itemCount: productCountsByCategoryId.get(category.id) ?? 0,
       active: Boolean(category.active),
+      image: category.image_url || category.icon_url || undefined,
     }));
 
   return { categories, products, allCategoryRows: activeCategoryRows };
@@ -284,6 +285,7 @@ export async function getCatalogNavigationCategories(): Promise<Category[]> {
       description: category.description ?? "Wholesale category",
       itemCount: productCountsByCategorySlug.get(category.slug) ?? 0,
       active: Boolean(category.active),
+      image: category.image_url || category.icon_url || undefined,
     }));
 }
 

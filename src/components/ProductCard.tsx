@@ -1,39 +1,49 @@
-import Image from "next/image";
 import Link from "next/link";
 import { AddToOrderButton } from "@/components/AddToOrderButton";
+import { ProductImage, StockStatusBadge } from "@/components/CustomerUi";
+import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import { formatMoney, getPriceRange, type Product } from "@/lib/mock-data";
 
 export function ProductCard({ product }: { product: Product }) {
-  const bulkTier = product.tiers[product.tiers.length - 1];
+  const bulkTier = product.tiers.find((tier) => tier.min >= 6) ?? product.tiers[product.tiers.length - 1];
 
   return (
-    <div className="group overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md">
-      <Link href={`/product/${product.slug}`} className="block aspect-square bg-[#fff5ef] p-4">
-        <Image src={product.image} alt={product.name} width={420} height={420} className="h-full w-full object-contain" />
+    <article className="group overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md">
+      <Link href={`/product/${product.slug}`} className="relative block aspect-square bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-4">
+        <ProductImage src={product.image} alt={product.name} className="transition duration-200 group-hover:scale-[1.03]" />
+        <div className="absolute left-2 top-2">
+          <StockStatusBadge status={product.stockStatus} />
+        </div>
+        <div className="absolute bottom-2 right-2 rounded-sm bg-white/95 px-2 py-1 text-[11px] font-black text-orange-700 shadow-sm">
+          MOQ {product.moq}
+        </div>
       </Link>
-      <div className="space-y-3 p-4">
+      <div className="space-y-2.5 p-3">
         <div>
-          <Link href={`/product/${product.slug}`} className="block">
-            <h3 className="line-clamp-2 min-h-11 text-sm font-bold leading-5 text-zinc-900 group-hover:text-orange-700">
-              {product.name}
-            </h3>
+          <Link href={`/product/${product.slug}`}>
+            <h3 className="line-clamp-2 min-h-10 text-sm font-black leading-5 text-zinc-950 group-hover:text-orange-700">{product.name}</h3>
           </Link>
-          <p className="mt-1 text-xs font-medium text-zinc-500">{product.category}</p>
+          <p className="mt-1 truncate text-xs font-bold text-zinc-500">{product.category}</p>
         </div>
-        <div>
-          <p className="text-lg font-black text-[#f65f18]">{getPriceRange(product)}</p>
-          <p className="mt-1 text-xs text-zinc-500">
-            MOQ {product.moq} pc - {bulkTier.label} from {formatMoney(bulkTier.price)}
-          </p>
+        <div className="min-h-[52px]">
+          <p className="line-clamp-1 text-[15px] font-black leading-5 text-[#f65f18] sm:text-base">{getPriceRange(product)}</p>
+          <p className="mt-1 line-clamp-1 text-[11px] font-bold leading-4 text-zinc-500">{bulkTier.label} from {formatMoney(bulkTier.price)}</p>
         </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="rounded bg-orange-50 px-2 py-1 font-bold text-orange-700">Tier pricing</span>
-          <span className={product.stockStatus === "Low stock" ? "font-bold text-amber-600" : "font-bold text-emerald-600"}>
-            {product.stockStatus}
-          </span>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href={`/product/${product.slug}`} className="grid h-10 place-items-center rounded-sm border border-zinc-200 text-xs font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700">
+            View Details
+          </Link>
+          <ProductInquiryButton product={product} className="h-10 w-full" />
+          <div className="col-span-2">
+            <AddToOrderButton
+              productId={product.id}
+              quantity={product.moq}
+              compact
+              className="h-10 w-full rounded-sm bg-[#f65f18] px-3 text-xs font-black text-white transition hover:bg-[#df4f0d] disabled:cursor-not-allowed disabled:bg-orange-300"
+            />
+          </div>
         </div>
-        <AddToOrderButton productId={product.id} quantity={product.moq} compact />
       </div>
-    </div>
+    </article>
   );
 }

@@ -52,12 +52,12 @@ function MyOrdersContent() {
   return (
     <main className="bg-zinc-50">
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 rounded-md border border-orange-100 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-sm border border-orange-100 bg-white p-6 shadow-sm">
           <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">My Orders</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Wholesale order history</h1>
           <p className="mt-2 text-sm leading-6 text-zinc-600">Track submitted wholesale orders and manual confirmation status.</p>
         </div>
-        <div className="overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm">
           {loading ? <div className="p-6 text-sm font-bold text-zinc-600">Loading orders...</div> : null}
           {message ? <div className="m-5 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-700">{message}</div> : null}
           {!loading && !orders.length ? (
@@ -99,7 +99,7 @@ function MyOrdersContent() {
                       <td className="px-4 py-4">
                         <Link
                           href={`/my-orders/${order.orderNo}`}
-                          className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700"
+                          className="rounded-sm border border-orange-200 px-3 py-2 text-xs font-black text-orange-700"
                         >
                           View
                         </Link>
@@ -117,5 +117,5 @@ function MyOrdersContent() {
 }
 
 function Pill({ children }: { children: ReactNode }) {
-  return <span className="rounded bg-orange-50 px-2 py-1 text-xs font-black text-orange-700 ring-1 ring-orange-100">{children}</span>;
+  return <span className="rounded-sm bg-orange-50 px-2 py-1 text-xs font-black text-orange-700 ring-1 ring-orange-100">{children}</span>;
 }

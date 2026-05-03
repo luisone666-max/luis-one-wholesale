@@ -30,6 +30,7 @@ export type Category = {
   description: string;
   itemCount: number;
   active: boolean;
+  image?: string;
 };
 
 const standardTiers = (base: number): PriceTier[] => [
@@ -46,6 +47,7 @@ export const categories: Category[] = [
     description: "Fast-moving replacement parts for scooters and commuter bikes.",
     itemCount: 3,
     active: true,
+    image: "/products/topbox-bracket.svg",
   },
   {
     slug: "automotive-care",
@@ -53,6 +55,7 @@ export const categories: Category[] = [
     description: "Cleaning, maintenance, and workshop supply products.",
     itemCount: 1,
     active: true,
+    image: "/products/contact-cleaner.svg",
   },
   {
     slug: "grocery",
@@ -60,6 +63,7 @@ export const categories: Category[] = [
     description: "Shelf-ready food items for retail and food service buyers.",
     itemCount: 1,
     active: true,
+    image: "/products/chili-powder.svg",
   },
   {
     slug: "electronics",
@@ -67,6 +71,7 @@ export const categories: Category[] = [
     description: "Daily demand mobile accessories for counters and kiosks.",
     itemCount: 1,
     active: true,
+    image: "/products/phone-accessories.svg",
   },
 ];
 
