@@ -11,11 +11,24 @@ export async function generateStaticParams() {
   return getCatalogCategoryParams();
 }
 
-export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+const pageSize = 12;
+
+export default async function CategoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ page?: string }>;
+}) {
   const { slug } = await params;
+  const query = await searchParams;
   const isAll = slug === "all";
   const catalog = await getCatalogCategoryPage(slug);
   const { categories, category, products: visibleProducts } = catalog.data;
+  const totalPages = Math.max(1, Math.ceil(visibleProducts.length / pageSize));
+  const requestedPage = Number(query?.page ?? "1");
+  const currentPage = Number.isFinite(requestedPage) ? Math.min(Math.max(1, Math.floor(requestedPage)), totalPages) : 1;
+  const paginatedProducts = visibleProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (!isAll && !category) {
     notFound();
@@ -72,16 +85,24 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4">
-              {visibleProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
+              {paginatedProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
             </div>
 
-            <div className="mt-7 flex justify-center gap-2">
-              {[1, 2, 3].map((page) => (
-                <button key={page} type="button" className={`h-10 w-10 rounded-sm text-sm font-black ${page === 1 ? "bg-[#f65f18] text-white" : "border border-zinc-200 bg-white text-zinc-700"}`}>
-                  {page}
-                </button>
-              ))}
-            </div>
+            {totalPages > 1 ? (
+              <div className="mt-7 flex justify-center gap-2">
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                  <Link
+                    key={page}
+                    href={page === 1 ? `/category/${slug}` : `/category/${slug}?page=${page}`}
+                    className={`grid h-10 w-10 place-items-center rounded-sm text-sm font-black ${
+                      page === currentPage ? "bg-[#f65f18] text-white" : "border border-zinc-200 bg-white text-zinc-700"
+                    }`}
+                  >
+                    {page}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
           </div>
         </Container>
       </MarketplaceShell>
