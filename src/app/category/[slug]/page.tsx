@@ -18,23 +18,47 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ page?: string }>;
+  searchParams?: Promise<{ page?: string; q?: string }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
   const isAll = slug === "all";
   const catalog = await getCatalogCategoryPage(slug);
-  const { categories, category, products: visibleProducts } = catalog.data;
+  const { categories, category, products: categoryProducts } = catalog.data;
+  const searchQuery = (query?.q ?? "").trim();
+  const searchText = searchQuery.toLowerCase();
+  const visibleProducts = searchText
+    ? categoryProducts.filter((product) =>
+        [product.name, product.sku ?? "", product.category, product.description]
+          .join(" ")
+          .toLowerCase()
+          .includes(searchText),
+      )
+    : categoryProducts;
   const totalPages = Math.max(1, Math.ceil(visibleProducts.length / pageSize));
   const requestedPage = Number(query?.page ?? "1");
   const currentPage = Number.isFinite(requestedPage) ? Math.min(Math.max(1, Math.floor(requestedPage)), totalPages) : 1;
   const paginatedProducts = visibleProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageHref = (page: number) => {
+    const params = new URLSearchParams();
+
+    if (searchQuery) {
+      params.set("q", searchQuery);
+    }
+
+    if (page > 1) {
+      params.set("page", String(page));
+    }
+
+    const suffix = params.toString();
+    return suffix ? `/category/${slug}?${suffix}` : `/category/${slug}`;
+  };
 
   if (!isAll && !category) {
     notFound();
   }
 
-  const title = isAll ? "All Wholesale Products" : category?.name ?? "Products";
+  const title = searchQuery ? `Search: ${searchQuery}` : isAll ? "All Wholesale Products" : category?.name ?? "Products";
   const description = isAll
     ? "Browse public B2B prices, MOQ, stock status, and tier pricing across the full catalog."
     : category?.description;
@@ -88,12 +112,22 @@ export default async function CategoryPage({
               {paginatedProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
             </div>
 
+            {!paginatedProducts.length ? (
+              <div className="rounded-sm border border-dashed border-orange-200 bg-white p-8 text-center">
+                <p className="text-lg font-black text-zinc-950">No products found</p>
+                <p className="mt-2 text-sm font-bold text-zinc-500">Try another product name, SKU, or category keyword.</p>
+                <Link href="/category/all" className="mt-4 inline-flex rounded-sm bg-[#f65f18] px-4 py-2 text-sm font-black text-white">
+                  View All Products
+                </Link>
+              </div>
+            ) : null}
+
             {totalPages > 1 ? (
               <div className="mt-7 flex justify-center gap-2">
                 {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
                   <Link
                     key={page}
-                    href={page === 1 ? `/category/${slug}` : `/category/${slug}?page=${page}`}
+                    href={pageHref(page)}
                     className={`grid h-10 w-10 place-items-center rounded-sm text-sm font-black ${
                       page === currentPage ? "bg-[#f65f18] text-white" : "border border-zinc-200 bg-white text-zinc-700"
                     }`}

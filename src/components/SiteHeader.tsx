@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CustomerAuthNav } from "@/components/auth/CustomerAuthNav";
 import { messengerUrl } from "@/components/CustomerUi";
+import { ProductSearchForm } from "@/components/ProductSearchForm";
 import { getActiveCategories, type Category } from "@/lib/mock-data";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -95,16 +96,7 @@ export function SiteHeader() {
             </div>
           </div>
 
-          <div className="flex overflow-hidden rounded-sm border-2 border-[#f65f18] bg-white shadow-sm">
-            <input
-              aria-label="Search products"
-              placeholder="Search motorcycle parts, phone accessories, food, SKU..."
-              className="min-w-0 flex-1 px-3 py-2 text-sm font-semibold text-zinc-800 outline-none sm:px-4 sm:py-3"
-            />
-            <Link href="/category/all" className="bg-[#f65f18] px-4 py-2 text-sm font-black text-white transition hover:bg-[#df4f0d] sm:px-5 sm:py-3">
-              Search
-            </Link>
-          </div>
+          <ProductSearchForm />
 
           <nav className="hidden flex-wrap items-center gap-3 text-sm font-bold text-zinc-700 lg:flex">
             <Link href="/category/all" className="hidden hover:text-orange-600 lg:inline-flex">Categories</Link>
