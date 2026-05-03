@@ -1,4 +1,3 @@
-import { products } from "@/lib/mock-data";
 import type { TranslationKey } from "@/lib/admin-i18n";
 
 export const dashboardStats = [
@@ -11,16 +10,214 @@ export const dashboardStats = [
   { key: "monthlySales" as TranslationKey, value: "$48,920" },
 ];
 
-export const adminProducts = products.map((product, index) => ({
-  image: product.image,
-  sku: `WH-${String(index + 1001).padStart(4, "0")}`,
-  name: product.name,
-  category: product.category,
-  moq: product.moq,
-  priceRange: `$${product.tiers[3].price.toFixed(2)} - $${product.tiers[0].price.toFixed(2)}`,
-  stockStatus: product.stockStatus,
-  active: index !== 5,
-}));
+export type AdminProduct = {
+  sku: string;
+  name: string;
+  category: string;
+  subcategory: string;
+  childCategory: string;
+  brand: string;
+  model: string;
+  moq: number;
+  stockStatusKey: TranslationKey;
+  leadTime: string;
+  image: string;
+  description: string;
+  active: boolean;
+  priceRange: string;
+  tiers: {
+    price1: string;
+    price6: string;
+    price12: string;
+    price50: string;
+  };
+  supplierNotes: string;
+  internalCostNotes: string;
+  adminNotes: string;
+};
+
+export const adminProducts: AdminProduct[] = [
+  {
+    sku: "WH-MP-1001",
+    name: "Flat Seat Click 125 / 150 / 160",
+    category: "Motorcycle Parts",
+    subcategory: "Honda Click",
+    childCategory: "Seat",
+    brand: "OEM Style",
+    model: "Click 125/150/160",
+    moq: 1,
+    stockStatusKey: "readyStock",
+    leadTime: "1-2 days",
+    image: "/products/flat-seat-click.svg",
+    description: "Replacement flat scooter seat with reinforced base.",
+    active: true,
+    priceRange: "$17.78 - $22.50",
+    tiers: { price1: "22.50", price6: "21.15", price12: "19.80", price50: "17.78" },
+    supplierNotes: "Supplier A: black cover only this week.",
+    internalCostNotes: "Target margin checked manually. Do not auto-price.",
+    adminNotes: "Top seller for repair shops.",
+  },
+  {
+    sku: "WH-MP-1002",
+    name: "Ignition Keyset Mio / Click",
+    category: "Motorcycle Parts",
+    subcategory: "Honda Click",
+    childCategory: "Ignition / Keyset",
+    brand: "MotoKey",
+    model: "Mio / Click",
+    moq: 1,
+    stockStatusKey: "readyStock",
+    leadTime: "1-2 days",
+    image: "/products/ignition-keyset.svg",
+    description: "Ignition keyset with two keys for common scooter models.",
+    active: true,
+    priceRange: "$6.48 - $8.20",
+    tiers: { price1: "8.20", price6: "7.71", price12: "7.22", price50: "6.48" },
+    supplierNotes: "Check key blank batch before large order.",
+    internalCostNotes: "Cost changes often; verify manually.",
+    adminNotes: "Good for bundle promotions.",
+  },
+  {
+    sku: "WH-MP-1003",
+    name: "Topbox Bracket NMAX / Aerox",
+    category: "Motorcycle Parts",
+    subcategory: "NMAX",
+    childCategory: "Bracket",
+    brand: "RideMount",
+    model: "NMAX / Aerox",
+    moq: 1,
+    stockStatusKey: "lowStock",
+    leadTime: "3-5 days",
+    image: "/products/topbox-bracket.svg",
+    description: "Powder-coated rear topbox bracket.",
+    active: true,
+    priceRange: "$11.77 - $14.90",
+    tiers: { price1: "14.90", price6: "14.01", price12: "13.11", price50: "11.77" },
+    supplierNotes: "低库存，建议先确认仓库数量。",
+    internalCostNotes: "Bulky carton affects handling cost.",
+    adminNotes: "Show low stock badge.",
+  },
+  {
+    sku: "WH-AC-1004",
+    name: "Contact Cleaner Spray 450ml",
+    category: "Daily Essentials",
+    subcategory: "Cleaning Supplies",
+    childCategory: "Aerosol",
+    brand: "CleanPro",
+    model: "450ml",
+    moq: 1,
+    stockStatusKey: "readyStock",
+    leadTime: "Same day",
+    image: "/products/contact-cleaner.svg",
+    description: "Fast-drying contact cleaner spray for workshops.",
+    active: true,
+    priceRange: "$3.00 - $3.80",
+    tiers: { price1: "3.80", price6: "3.57", price12: "3.34", price50: "3.00" },
+    supplierNotes: "Aerosol cartons must be handled separately.",
+    internalCostNotes: "Manual pricing due to hazmat handling.",
+    adminNotes: "Consumable repeat item.",
+  },
+  {
+    sku: "WH-MP-1005",
+    name: "Brake Lever with Lock",
+    category: "Motorcycle Parts",
+    subcategory: "Honda Click",
+    childCategory: "Brake Lever",
+    brand: "SafeRide",
+    model: "Universal Scooter",
+    moq: 2,
+    stockStatusKey: "forOrder",
+    leadTime: "7-10 days",
+    image: "/products/topbox-bracket-alt.svg",
+    description: "Brake lever with integrated lock for scooter resale.",
+    active: true,
+    priceRange: "$4.35 - $5.50",
+    tiers: { price1: "5.50", price6: "5.17", price12: "4.84", price50: "4.35" },
+    supplierNotes: "For order only; supplier confirms every Friday.",
+    internalCostNotes: "No automatic price update.",
+    adminNotes: "Add real product image later.",
+  },
+  {
+    sku: "WH-AC-1006",
+    name: "Koby De Rust",
+    category: "Daily Essentials",
+    subcategory: "Cleaning Supplies",
+    childCategory: "Rust Remover",
+    brand: "Koby",
+    model: "De Rust",
+    moq: 6,
+    stockStatusKey: "readyStock",
+    leadTime: "2-3 days",
+    image: "/products/contact-cleaner-alt.svg",
+    description: "Rust remover for workshop and household use.",
+    active: true,
+    priceRange: "$2.29 - $2.90",
+    tiers: { price1: "2.90", price6: "2.73", price12: "2.55", price50: "2.29" },
+    supplierNotes: "中文备注：箱规 24 支。",
+    internalCostNotes: "Check leakage allowance manually.",
+    adminNotes: "Candidate for bulk upload test.",
+  },
+  {
+    sku: "WH-AC-1007",
+    name: "MKT Coolant 500ml",
+    category: "Motorcycle Parts",
+    subcategory: "NMAX",
+    childCategory: "Coolant",
+    brand: "MKT",
+    model: "500ml",
+    moq: 12,
+    stockStatusKey: "lowStock",
+    leadTime: "3-5 days",
+    image: "/products/contact-cleaner.svg",
+    description: "Motorcycle coolant bottle for service shops.",
+    active: false,
+    priceRange: "$1.74 - $2.20",
+    tiers: { price1: "2.20", price6: "2.07", price12: "1.94", price50: "1.74" },
+    supplierNotes: "Temporarily hidden until new stock arrives.",
+    internalCostNotes: "Hidden product must not show on customer frontend.",
+    adminNotes: "Review packaging image.",
+  },
+  {
+    sku: "WH-FS-1008",
+    name: "Chili Powder 100g",
+    category: "Food & Spices",
+    subcategory: "Chili",
+    childCategory: "Powder",
+    brand: "KitchenMart",
+    model: "100g pouch",
+    moq: 24,
+    stockStatusKey: "readyStock",
+    leadTime: "Same day",
+    image: "/products/chili-powder.svg",
+    description: "Retail-ready 100g chili powder pouch.",
+    active: true,
+    priceRange: "$1.26 - $1.60",
+    tiers: { price1: "1.60", price6: "1.50", price12: "1.41", price50: "1.26" },
+    supplierNotes: "Keep away from moisture.",
+    internalCostNotes: "Manual promo pricing only.",
+    adminNotes: "Food category demo item.",
+  },
+  {
+    sku: "WH-EL-1009",
+    name: "Phone Charger Cable",
+    category: "Electronics",
+    subcategory: "Phone Accessories",
+    childCategory: "Cables",
+    brand: "VoltLine",
+    model: "USB-C 1m",
+    moq: 10,
+    stockStatusKey: "unavailable",
+    leadTime: "Pending supplier",
+    image: "/products/phone-accessories.svg",
+    description: "USB-C charging cable for counter resale.",
+    active: false,
+    priceRange: "$0.79 - $1.00",
+    tiers: { price1: "1.00", price6: "0.94", price12: "0.88", price50: "0.79" },
+    supplierNotes: "Do not publish until cable certification is confirmed.",
+    internalCostNotes: "Cost pending.",
+    adminNotes: "Use as hidden product example.",
+  },
+];
 
 export type AdminCategoryNode = {
   id: string;

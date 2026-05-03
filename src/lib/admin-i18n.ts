@@ -11,6 +11,8 @@ export type TranslationKey =
   | "adminName"
   | "amount"
   | "bulkUpload"
+  | "bulkEdit"
+  | "exportCsv"
   | "businessType"
   | "cancelled"
   | "categories"
@@ -42,9 +44,12 @@ export type TranslationKey =
   | "facebookPageUrl"
   | "filterCategory"
   | "filterStock"
+  | "filterActive"
   | "hideProductsFirst"
   | "iconImageUrl"
   | "image"
+  | "productImage"
+  | "imageUrl"
   | "language"
   | "location"
   | "mainCategory"
@@ -55,6 +60,9 @@ export type TranslationKey =
   | "messengerUrl"
   | "monthlySales"
   | "moq"
+  | "model"
+  | "brand"
+  | "leadTime"
   | "move"
   | "moveCategory"
   | "moveProducts"
@@ -78,9 +86,14 @@ export type TranslationKey =
   | "phone"
   | "phoneNumber"
   | "priceRange"
+  | "price1"
+  | "price6"
+  | "price12"
+  | "price50"
   | "productCount"
   | "productManagement"
   | "productName"
+  | "productEditor"
   | "productTotal"
   | "products"
   | "readyForPickup"
@@ -90,6 +103,35 @@ export type TranslationKey =
   | "reports"
   | "save"
   | "searchProducts"
+  | "view"
+  | "duplicate"
+  | "hide"
+  | "unhide"
+  | "hidden"
+  | "activeHiddenStatus"
+  | "supplierNotesIndicator"
+  | "supplierNotes"
+  | "internalCostNotes"
+  | "adminNotes"
+  | "supplierNotesAdminOnly"
+  | "supplierInternalFields"
+  | "basicInfo"
+  | "categoryTab"
+  | "wholesalePricesTab"
+  | "imagesTab"
+  | "supplierNotesTab"
+  | "adminNotesTab"
+  | "readyStock"
+  | "forOrder"
+  | "lowStock"
+  | "unavailable"
+  | "noAutomaticPricing"
+  | "bulkUploadTitle"
+  | "downloadCsvTemplate"
+  | "uploadCsvArea"
+  | "previewImport"
+  | "validationResult"
+  | "csvColumns"
   | "settings"
   | "shippingFeePayment"
   | "showHomepage"
@@ -126,6 +168,8 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     adminName: "Admin Luis",
     amount: "Amount",
     bulkUpload: "Bulk Upload",
+    bulkEdit: "Bulk Edit",
+    exportCsv: "Export CSV",
     businessType: "Business Type",
     cancelled: "Cancelled",
     categories: "Categories",
@@ -157,9 +201,12 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     facebookPageUrl: "Facebook Page URL",
     filterCategory: "Filter by category",
     filterStock: "Filter by stock status",
+    filterActive: "Filter by active/hidden status",
     hideProductsFirst: "Move or hide products first.",
     iconImageUrl: "Icon / Image URL",
     image: "Image",
+    productImage: "Product Image",
+    imageUrl: "Image URL",
     language: "Language",
     location: "Location",
     mainCategory: "Main Category",
@@ -170,6 +217,9 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     messengerUrl: "Messenger URL",
     monthlySales: "Monthly Sales",
     moq: "MOQ",
+    model: "Model",
+    brand: "Brand",
+    leadTime: "Lead Time",
     move: "Move",
     moveCategory: "Move Category",
     moveProducts: "Move Products",
@@ -193,9 +243,14 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     phone: "Phone",
     phoneNumber: "Phone Number",
     priceRange: "Price Range",
+    price1: "1-5 pcs price",
+    price6: "6-11 pcs price",
+    price12: "12-49 pcs price",
+    price50: "50+ pcs price",
     productCount: "Product Count",
     productManagement: "Product Management",
     productName: "Product Name",
+    productEditor: "Product Editor",
     productTotal: "Product Total",
     products: "Products",
     readyForPickup: "Ready for Pickup",
@@ -205,6 +260,35 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     reports: "Reports",
     save: "Save",
     searchProducts: "Search by SKU or product name",
+    view: "View",
+    duplicate: "Duplicate",
+    hide: "Hide",
+    unhide: "Unhide",
+    hidden: "Hidden",
+    activeHiddenStatus: "Active / Hidden",
+    supplierNotesIndicator: "Supplier Notes",
+    supplierNotes: "Supplier Notes",
+    internalCostNotes: "Internal Cost Notes",
+    adminNotes: "Admin Notes",
+    supplierNotesAdminOnly: "Supplier notes are admin-only and never appear on the customer frontend.",
+    supplierInternalFields: "Supplier / Internal Fields",
+    basicInfo: "Basic Info",
+    categoryTab: "Category",
+    wholesalePricesTab: "Wholesale Prices",
+    imagesTab: "Images",
+    supplierNotesTab: "Supplier Notes",
+    adminNotesTab: "Admin Notes",
+    readyStock: "Ready Stock",
+    forOrder: "For Order",
+    lowStock: "Low Stock",
+    unavailable: "Unavailable",
+    noAutomaticPricing: "Customer prices are manually set by tier. No automatic cost-based pricing.",
+    bulkUploadTitle: "Bulk Upload Mockup",
+    downloadCsvTemplate: "Download CSV Template",
+    uploadCsvArea: "Upload CSV area",
+    previewImport: "Preview Import",
+    validationResult: "Validation result area",
+    csvColumns: "CSV Columns",
     settings: "Settings",
     shippingFeePayment: "Shipping Fee Payment",
     showHomepage: "Show on Homepage",
@@ -240,6 +324,8 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     adminName: "管理员 Luis",
     amount: "金额",
     bulkUpload: "批量上传",
+    bulkEdit: "批量编辑",
+    exportCsv: "导出 CSV",
     businessType: "业务类型",
     cancelled: "已取消",
     categories: "分类",
@@ -271,9 +357,12 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     facebookPageUrl: "Facebook 主页 URL",
     filterCategory: "按分类筛选",
     filterStock: "按库存状态筛选",
+    filterActive: "按上架/隐藏状态筛选",
     hideProductsFirst: "请先移动或隐藏商品。",
     iconImageUrl: "图标 / 图片 URL",
     image: "图片",
+    productImage: "商品图片",
+    imageUrl: "图片 URL",
     language: "语言",
     location: "地区",
     mainCategory: "主分类",
@@ -284,6 +373,9 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     messengerUrl: "Messenger URL",
     monthlySales: "月销售额",
     moq: "起订量",
+    model: "型号",
+    brand: "品牌",
+    leadTime: "交期",
     move: "移动",
     moveCategory: "移动分类",
     moveProducts: "移动商品",
@@ -307,9 +399,14 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     phone: "电话",
     phoneNumber: "电话号码",
     priceRange: "价格范围",
+    price1: "1-5 件价格",
+    price6: "6-11 件价格",
+    price12: "12-49 件价格",
+    price50: "50+ 件价格",
     productCount: "商品数量",
     productManagement: "商品管理",
     productName: "商品名称",
+    productEditor: "商品编辑器",
     productTotal: "商品总额",
     products: "商品",
     readyForPickup: "待取货",
@@ -319,6 +416,35 @@ export const adminDictionaries: Record<AdminLanguage, Record<TranslationKey, str
     reports: "报表",
     save: "保存",
     searchProducts: "按 SKU 或商品名称搜索",
+    view: "查看",
+    duplicate: "复制",
+    hide: "隐藏",
+    unhide: "取消隐藏",
+    hidden: "隐藏",
+    activeHiddenStatus: "上架 / 隐藏",
+    supplierNotesIndicator: "供应商备注",
+    supplierNotes: "供应商备注",
+    internalCostNotes: "内部成本备注",
+    adminNotes: "管理员备注",
+    supplierNotesAdminOnly: "供应商备注仅后台可见，绝不会显示在客户前台。",
+    supplierInternalFields: "供应商 / 内部字段",
+    basicInfo: "基础信息",
+    categoryTab: "分类",
+    wholesalePricesTab: "批发价格",
+    imagesTab: "图片",
+    supplierNotesTab: "供应商备注",
+    adminNotesTab: "管理员备注",
+    readyStock: "现货",
+    forOrder: "预订",
+    lowStock: "低库存",
+    unavailable: "不可用",
+    noAutomaticPricing: "客户价格由批发阶梯手动设置，不做自动成本加价。",
+    bulkUploadTitle: "批量上传 Mockup",
+    downloadCsvTemplate: "下载 CSV 模板",
+    uploadCsvArea: "上传 CSV 区域",
+    previewImport: "预览导入",
+    validationResult: "校验结果区域",
+    csvColumns: "CSV 字段",
     settings: "设置",
     shippingFeePayment: "运费到付/付款",
     showHomepage: "首页显示",
