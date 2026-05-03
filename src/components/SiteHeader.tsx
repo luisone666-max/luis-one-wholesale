@@ -1,9 +1,52 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { CustomerAuthNav } from "@/components/auth/CustomerAuthNav";
-import { getActiveCategories } from "@/lib/mock-data";
+import { getActiveCategories, type Category } from "@/lib/mock-data";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function SiteHeader() {
-  const categories = getActiveCategories();
+  const [categories, setCategories] = useState<Category[]>(() => getActiveCategories());
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabaseClient();
+
+    if (!supabase) {
+      return;
+    }
+
+    queueMicrotask(() => {
+      void (async () => {
+        const { data, error } = await supabase
+          .from("categories")
+          .select("slug,name_en,description,active,show_in_navigation,sort_order")
+          .eq("active", true)
+          .eq("show_in_navigation", true)
+          .eq("level", 1)
+          .order("sort_order", { ascending: true });
+
+        if (!active || error || !data?.length) {
+          return;
+        }
+
+        setCategories(
+          data.map((category) => ({
+            slug: category.slug,
+            name: category.name_en,
+            description: category.description ?? "Wholesale category",
+            itemCount: 0,
+            active: Boolean(category.active),
+          })),
+        );
+      })();
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/95 backdrop-blur">

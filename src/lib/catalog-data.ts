@@ -266,6 +266,27 @@ export async function getCatalogCategoryParams() {
   return [{ slug: "all" }, ...result.data.categories.map((category) => ({ slug: category.slug }))];
 }
 
+export async function getCatalogNavigationCategories(): Promise<Category[]> {
+  const result = await getCatalogSnapshot();
+
+  if (result.source === "mock") {
+    return getMockActiveCategories();
+  }
+
+  const productCountsByCategorySlug = new Map(result.data.categories.map((category) => [category.slug, category.itemCount]));
+
+  return result.data.allCategoryRows
+    .filter((category) => category.level === 1 && category.active && category.show_in_navigation)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((category) => ({
+      slug: category.slug,
+      name: category.name_en,
+      description: category.description ?? "Wholesale category",
+      itemCount: productCountsByCategorySlug.get(category.slug) ?? 0,
+      active: Boolean(category.active),
+    }));
+}
+
 export async function getCatalogProductParams() {
   const result = await getCatalogSnapshot();
   return result.data.products.map((product) => ({ slug: product.slug }));
