@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { messengerUrl } from "@/components/CustomerUi";
 import { getCustomerOrderDetail, type CustomerOrderDetail } from "@/lib/customer-orders";
 import { getReceivingMethodLabel, getShippingFeePaymentLabel } from "@/lib/order-labels";
 import { formatPhp } from "@/lib/wholesale-pricing";
@@ -73,7 +74,7 @@ export function OrderSuccessDetails() {
         <Link href="/my-orders" className="rounded-sm bg-[#f65f18] px-5 py-3 text-sm font-black text-white">
           View My Orders
         </Link>
-        <Link href={process.env.NEXT_PUBLIC_MESSENGER_URL || "https://m.me/"} className="rounded-sm border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-black text-orange-700">
+        <Link href={messengerUrl} className="rounded-sm border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-black text-orange-700">
           Chat on Messenger
         </Link>
         <Link href="/category/all" className="rounded-sm border border-zinc-200 bg-white px-5 py-3 text-sm font-black text-zinc-700">
