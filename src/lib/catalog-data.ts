@@ -195,7 +195,7 @@ const readSupabaseCatalog = cache(async (): Promise<CatalogSnapshot | null> => {
       .eq("active", true)
       .order("sort_order", { ascending: true }),
     supabase
-      .from("products")
+      .from("customer_products")
       .select(
         "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,stock_status,lead_time,image_url,description,active",
       )

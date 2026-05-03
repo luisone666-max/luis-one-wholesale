@@ -1,4 +1,4 @@
-create extension if not exists pgcrypto;
+﻿create extension if not exists pgcrypto;
 
 create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
@@ -160,21 +160,20 @@ for each row execute function public.set_updated_at();
 insert into public.categories
   (id, name_en, name_zh, slug, parent_id, level, icon_url, image_url, active, show_on_homepage, show_in_navigation, sort_order, template_type, description)
 values
-  ('00000000-0000-0000-0000-000000000001', 'Motorcycle Parts', '摩托车配件', 'motorcycle-parts', null, 1, '/products/topbox-bracket.svg', '/products/topbox-bracket.svg', true, true, true, 1, 'marketplace', 'Fast-moving scooter and motorcycle replacement parts.'),
-  ('00000000-0000-0000-0000-000000000002', 'Honda Click', '本田 Click', 'honda-click', '00000000-0000-0000-0000-000000000001', 2, '/products/flat-seat-click.svg', '/products/flat-seat-click.svg', true, true, true, 1, 'marketplace', 'Parts for Honda Click models.'),
-  ('00000000-0000-0000-0000-000000000003', 'Seat', '坐垫', 'seat', '00000000-0000-0000-0000-000000000002', 3, '/products/flat-seat-click.svg', '/products/flat-seat-click.svg', true, true, true, 1, 'marketplace', 'Seat products for scooter replacement demand.'),
-  ('00000000-0000-0000-0000-000000000004', 'Ignition / Keyset', '点火/钥匙套', 'ignition-keyset', '00000000-0000-0000-0000-000000000002', 3, '/products/ignition-keyset.svg', '/products/ignition-keyset.svg', true, false, true, 2, 'marketplace', 'Ignition and keyset replacements.'),
-  ('00000000-0000-0000-0000-000000000005', 'Bracket', '支架', 'bracket', '00000000-0000-0000-0000-000000000002', 3, '/products/topbox-bracket.svg', '/products/topbox-bracket.svg', true, false, true, 3, 'marketplace', 'Mounting and support brackets.'),
-  ('00000000-0000-0000-0000-000000000006', 'Yamaha Mio', '雅马哈 Mio', 'yamaha-mio', '00000000-0000-0000-0000-000000000001', 2, '/products/ignition-keyset-alt.svg', '/products/ignition-keyset-alt.svg', true, false, true, 2, 'marketplace', 'Parts for Yamaha Mio models.'),
+  ('00000000-0000-0000-0000-000000000001', 'Motorcycle Parts', 'Motorcycle Parts', 'motorcycle-parts', null, 1, '/products/topbox-bracket.svg', '/products/topbox-bracket.svg', true, true, true, 1, 'marketplace', 'Fast-moving scooter and motorcycle replacement parts.'),
+  ('00000000-0000-0000-0000-000000000002', 'Honda Click', 'Honda Click', 'honda-click', '00000000-0000-0000-0000-000000000001', 2, '/products/flat-seat-click.svg', '/products/flat-seat-click.svg', true, true, true, 1, 'marketplace', 'Parts for Honda Click models.'),
+  ('00000000-0000-0000-0000-000000000003', 'Seat', 'Seat', 'seat', '00000000-0000-0000-0000-000000000002', 3, '/products/flat-seat-click.svg', '/products/flat-seat-click.svg', true, true, true, 1, 'marketplace', 'Seat products for scooter replacement demand.'),
+  ('00000000-0000-0000-0000-000000000004', 'Ignition / Keyset', 'Ignition / Keyset', 'ignition-keyset', '00000000-0000-0000-0000-000000000002', 3, '/products/ignition-keyset.svg', '/products/ignition-keyset.svg', true, false, true, 2, 'marketplace', 'Ignition and keyset replacements.'),
+  ('00000000-0000-0000-0000-000000000005', 'Bracket', 'Bracket', 'bracket', '00000000-0000-0000-0000-000000000002', 3, '/products/topbox-bracket.svg', '/products/topbox-bracket.svg', true, false, true, 3, 'marketplace', 'Mounting and support brackets.'),
+  ('00000000-0000-0000-0000-000000000006', 'Yamaha Mio', 'Yamaha Mio', 'yamaha-mio', '00000000-0000-0000-0000-000000000001', 2, '/products/ignition-keyset-alt.svg', '/products/ignition-keyset-alt.svg', true, false, true, 2, 'marketplace', 'Parts for Yamaha Mio models.'),
   ('00000000-0000-0000-0000-000000000007', 'NMAX', 'NMAX', 'nmax', '00000000-0000-0000-0000-000000000001', 2, '/products/topbox-bracket.svg', '/products/topbox-bracket.svg', true, true, true, 3, 'marketplace', 'NMAX parts and accessories.'),
   ('00000000-0000-0000-0000-000000000008', 'Aerox', 'Aerox', 'aerox', '00000000-0000-0000-0000-000000000001', 2, '/products/topbox-bracket-alt.svg', '/products/topbox-bracket-alt.svg', true, false, true, 4, 'marketplace', 'Aerox parts and accessories.'),
-  ('00000000-0000-0000-0000-000000000009', 'Daily Essentials', '日用品', 'daily-essentials', null, 1, '/products/contact-cleaner.svg', '/products/contact-cleaner.svg', true, true, true, 2, 'marketplace', 'Everyday wholesale supplies.'),
-  ('00000000-0000-0000-0000-000000000010', 'Tissue', '纸巾', 'tissue', '00000000-0000-0000-0000-000000000009', 2, '/products/contact-cleaner-alt.svg', '/products/contact-cleaner-alt.svg', true, true, true, 1, 'marketplace', 'Tissue and paper goods.'),
-  ('00000000-0000-0000-0000-000000000011', 'Electronics', '电子产品', 'electronics', null, 1, '/products/phone-accessories.svg', '/products/phone-accessories.svg', true, true, true, 3, 'marketplace', 'Phone accessories and electronics.'),
-  ('00000000-0000-0000-0000-000000000012', 'Phone Accessories', '手机配件', 'phone-accessories', '00000000-0000-0000-0000-000000000011', 2, '/products/phone-accessories.svg', '/products/phone-accessories.svg', true, true, true, 1, 'marketplace', 'Phone accessory wholesale items.'),
-  ('00000000-0000-0000-0000-000000000013', 'Food & Spices', '食品与香料', 'food-spices', null, 1, '/products/chili-powder.svg', '/products/chili-powder.svg', true, true, true, 4, 'marketplace', 'Food and spice wholesale products.'),
-  ('00000000-0000-0000-0000-000000000014', 'Chili', '辣椒', 'chili', '00000000-0000-0000-0000-000000000013', 2, '/products/chili-powder.svg', '/products/chili-powder.svg', true, true, true, 1, 'marketplace', 'Chili products.')
-on conflict (slug) do update set
+  ('00000000-0000-0000-0000-000000000009', 'Daily Essentials', 'Daily Essentials', 'daily-essentials', null, 1, '/products/contact-cleaner.svg', '/products/contact-cleaner.svg', true, true, true, 2, 'marketplace', 'Everyday wholesale supplies.'),
+  ('00000000-0000-0000-0000-000000000010', 'Tissue', 'Tissue', 'tissue', '00000000-0000-0000-0000-000000000009', 2, '/products/contact-cleaner-alt.svg', '/products/contact-cleaner-alt.svg', true, true, true, 1, 'marketplace', 'Tissue and paper goods.'),
+  ('00000000-0000-0000-0000-000000000011', 'Electronics', 'Electronics', 'electronics', null, 1, '/products/phone-accessories.svg', '/products/phone-accessories.svg', true, true, true, 3, 'marketplace', 'Phone accessories and electronics.'),
+  ('00000000-0000-0000-0000-000000000012', 'Phone Accessories', 'Phone Accessories', 'phone-accessories', '00000000-0000-0000-0000-000000000011', 2, '/products/phone-accessories.svg', '/products/phone-accessories.svg', true, true, true, 1, 'marketplace', 'Phone accessory wholesale items.'),
+  ('00000000-0000-0000-0000-000000000013', 'Food & Spices', 'Food & Spices', 'food-spices', null, 1, '/products/chili-powder.svg', '/products/chili-powder.svg', true, true, true, 4, 'marketplace', 'Food and spice wholesale products.'),
+  ('00000000-0000-0000-0000-000000000014', 'Chili', 'Chili', 'chili', '00000000-0000-0000-0000-000000000013', 2, '/products/chili-powder.svg', '/products/chili-powder.svg', true, true, true, 1, 'marketplace', 'Chili products.')on conflict (slug) do update set
   name_en = excluded.name_en,
   name_zh = excluded.name_zh,
   parent_id = excluded.parent_id,
@@ -314,4 +313,5 @@ insert into public.payment_records
 values
   ('30000000-0000-0000-0000-000000000002', 'GCash', 500.00, 'GC-771203', 'verified', '2026-05-02 12:00:00+00', '2026-05-02 13:00:00+00'),
   ('30000000-0000-0000-0000-000000000003', 'Bank Transfer', 1500.00, 'BPI-552019', 'pending', '2026-05-01 11:00:00+00', null);
+
 

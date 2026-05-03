@@ -1,8 +1,10 @@
-import Link from "next/link";
+import { LoginForm } from "@/components/auth/LoginForm";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ registered?: string }> }) {
+  const params = await searchParams;
+
   return (
     <>
       <SiteHeader />
@@ -17,38 +19,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-black text-zinc-950">Buyer Login</h2>
-            <p className="mt-2 text-sm text-zinc-600">Mock form only. No authentication will run.</p>
-            <form className="mt-6 space-y-4">
-              <label className="block text-sm font-bold text-zinc-800">
-                Phone Number or Email
-                <input
-                  placeholder="Phone number or email"
-                  className="mt-2 h-12 w-full rounded-md border border-zinc-200 px-4 outline-none focus:border-orange-500"
-                />
-              </label>
-              <label className="block text-sm font-bold text-zinc-800">
-                Password
-                <input
-                  type="password"
-                  placeholder="Enter password"
-                  className="mt-2 h-12 w-full rounded-md border border-zinc-200 px-4 outline-none focus:border-orange-500"
-                />
-              </label>
-              <button type="button" className="h-12 w-full rounded-md bg-[#f65f18] text-sm font-black text-white">
-                Login Mockup
-              </button>
-            </form>
-            <div className="mt-5 flex items-center justify-between text-sm">
-              <Link href="/register" className="font-black text-orange-700">
-                Create Account
-              </Link>
-              <button type="button" className="font-bold text-zinc-500">
-                Forgot Password
-              </button>
-            </div>
-          </div>
+          <LoginForm registered={params.registered === "1"} />
         </section>
       </main>
       <SiteFooter />

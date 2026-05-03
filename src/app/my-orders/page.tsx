@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { CustomerAuthGate } from "@/components/auth/CustomerAuthGate";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { customerOrders } from "@/lib/customer-mock-data";
@@ -8,8 +9,9 @@ export default function MyOrdersPage() {
   return (
     <>
       <SiteHeader />
-      <main className="bg-zinc-50">
-        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <CustomerAuthGate>
+        <main className="bg-zinc-50">
+          <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 rounded-md border border-orange-100 bg-white p-6 shadow-sm">
             <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">My Orders</p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Wholesale order history</h1>
@@ -49,8 +51,9 @@ export default function MyOrdersPage() {
               </table>
             </div>
           </div>
-        </section>
-      </main>
+          </section>
+        </main>
+      </CustomerAuthGate>
       <SiteFooter />
     </>
   );

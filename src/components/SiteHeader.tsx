@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CustomerAuthNav } from "@/components/auth/CustomerAuthNav";
 import { getActiveCategories } from "@/lib/mock-data";
 
 export function SiteHeader() {
@@ -53,13 +54,7 @@ export function SiteHeader() {
               </Link>
             </div>
             <nav className="flex items-center gap-3 text-sm font-semibold text-zinc-700">
-              <Link href="/login" className="hover:text-orange-600">
-                Login
-              </Link>
-              <span className="text-zinc-300">|</span>
-              <Link href="/register" className="hover:text-orange-600">
-                Register
-              </Link>
+              <CustomerAuthNav />
               <Link
                 href="/cart"
                 className="hidden rounded-md bg-orange-50 px-4 py-3 font-bold text-orange-700 ring-1 ring-orange-200 hover:bg-orange-100 lg:inline-flex"

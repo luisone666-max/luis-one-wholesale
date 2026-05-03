@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { CustomerAuthGate } from "@/components/auth/CustomerAuthGate";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { customerCartItems, formatPhp, getTierForCustomerQuantity } from "@/lib/customer-mock-data";
@@ -49,8 +50,9 @@ export default function CheckoutPage() {
   return (
     <>
       <SiteHeader />
-      <main className="bg-zinc-50">
-        <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8">
+      <CustomerAuthGate>
+        <main className="bg-zinc-50">
+          <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8">
           <div className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">Checkout mockup</p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Receiver and shipping details</h1>
@@ -119,8 +121,9 @@ export default function CheckoutPage() {
               Place Order Mockup
             </Link>
           </aside>
-        </section>
-      </main>
+          </section>
+        </main>
+      </CustomerAuthGate>
       <SiteFooter />
     </>
   );

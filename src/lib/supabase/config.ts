@@ -43,3 +43,17 @@ export function getSupabaseServerConfig() {
     key: isUsableKey(serviceRoleKey) ? (serviceRoleKey as string) : publicConfig.anonKey,
   };
 }
+
+export function getSupabaseAdminConfig() {
+  const publicConfig = getSupabasePublicConfig();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!publicConfig || !isUsableKey(serviceRoleKey)) {
+    return null;
+  }
+
+  return {
+    url: publicConfig.url,
+    serviceRoleKey: serviceRoleKey as string,
+  };
+}

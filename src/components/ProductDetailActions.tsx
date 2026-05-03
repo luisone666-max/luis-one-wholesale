@@ -1,13 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatMoney, getTierForQuantity, Product } from "@/lib/mock-data";
+import { getCurrentCustomerSession } from "@/lib/customer-auth";
+import { formatMoney, getTierForQuantity, type Product } from "@/lib/mock-data";
 
 export function ProductDetailActions({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState("");
   const appliedTier = useMemo(() => getTierForQuantity(product, quantity), [product, quantity]);
   const subtotal = appliedTier.price * quantity;
+  const addToOrder = async () => {
+    const session = await getCurrentCustomerSession();
+
+    if (!session.user) {
+      setMessage("Please login or register to place order.");
+      return;
+    }
+
+    setMessage("Item added to your mock order cart. Real order submission is not enabled yet.");
+  };
 
   return (
     <div className="rounded-md border border-orange-200 bg-orange-50/70 p-5">
@@ -39,7 +50,7 @@ export function ProductDetailActions({ product }: { product: Product }) {
       </div>
       <button
         type="button"
-        onClick={() => setMessage("Please login or register to place order.")}
+        onClick={addToOrder}
         className="mt-4 h-12 w-full rounded-md bg-[#f65f18] px-5 text-sm font-black text-white transition hover:bg-[#df4f0d]"
       >
         Add to Order
