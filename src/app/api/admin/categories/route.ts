@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseCategoryPayload, type CategoryPayload } from "@/lib/admin-category-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
@@ -97,6 +98,8 @@ export async function POST(request: Request) {
     if (error || !data) {
       return jsonError(error?.message ?? "Category creation failed.", 500);
     }
+
+    revalidateCatalogPages();
 
     return NextResponse.json({ ok: true, categoryId: (data as { id: string }).id });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseCategoryPayload, type CategoryPayload } from "@/lib/admin-category-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
@@ -143,6 +144,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return jsonError(error.message, 500);
     }
 
+    revalidateCatalogPages();
+
     return NextResponse.json({ ok: true });
   }
 
@@ -158,6 +161,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (error) {
       return jsonError(error.message, 500);
     }
+
+    revalidateCatalogPages();
 
     return NextResponse.json({ ok: true });
   }
@@ -208,6 +213,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (error) {
       return jsonError(error.message, 500);
     }
+
+    revalidateCatalogPages();
 
     return NextResponse.json({ ok: true });
   } catch (error) {
@@ -260,6 +267,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (error) {
     return jsonError(error.message, 500);
   }
+
+  revalidateCatalogPages();
 
   return NextResponse.json({ ok: true });
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 type TemplateCategory = {
@@ -168,6 +169,7 @@ export async function POST(request: Request) {
 
   try {
     const created = await createMissing(admin, template, null);
+    revalidateCatalogPages();
     return NextResponse.json({ ok: true, created });
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "Template apply failed.", 500);

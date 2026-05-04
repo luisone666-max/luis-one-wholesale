@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import {
   categories as mockCategories,
   getActiveCategories as getMockActiveCategories,
@@ -49,6 +50,9 @@ type CatalogSnapshot = {
   products: Product[];
   allCategoryRows: CategoryRow[];
 };
+
+export const CATALOG_CACHE_SECONDS = 60;
+export const CATALOG_CACHE_TAG = "customer-catalog";
 
 export type CatalogResult<T> = {
   data: T;
@@ -260,7 +264,7 @@ function mapSupabaseSnapshot(
   return { categories, products, allCategoryRows: activeCategoryRows };
 }
 
-const readSupabaseCatalog = cache(async (): Promise<CatalogSnapshot | null> => {
+async function readSupabaseCatalogUncached(): Promise<CatalogSnapshot | null> {
   const supabase = createServerSupabaseClient();
 
   if (!supabase) {
@@ -316,7 +320,14 @@ const readSupabaseCatalog = cache(async (): Promise<CatalogSnapshot | null> => {
     variantsResult.error ? [] : variantsResult.data ?? [],
     variantTiersResult.error ? [] : variantTiersResult.data ?? [],
   );
-});
+}
+
+const readSupabaseCatalog = cache(
+  unstable_cache(readSupabaseCatalogUncached, ["customer-catalog-v2"], {
+    revalidate: CATALOG_CACHE_SECONDS,
+    tags: [CATALOG_CACHE_TAG],
+  }),
+);
 
 export async function getCatalogSnapshot(): Promise<CatalogResult<CatalogSnapshot>> {
   try {
