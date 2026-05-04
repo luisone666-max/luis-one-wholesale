@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getCatalogSnapshot } from "@/lib/catalog-data";
 import { buildMetaCatalogCsv } from "@/lib/meta-catalog";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   const catalog = await getCatalogSnapshot();
@@ -11,7 +12,7 @@ export async function GET() {
   return new NextResponse(csv, {
     headers: {
       "content-type": "text/csv; charset=utf-8",
-      "cache-control": "public, s-maxage=300, stale-while-revalidate=3600",
+      "cache-control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
       "content-disposition": 'inline; filename="luis-one-meta-catalog-feed.csv"',
     },
   });
