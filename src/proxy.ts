@@ -10,49 +10,20 @@ function jsonDenied(message = "You do not have admin access.") {
   return NextResponse.json({ ok: false, message }, { status: 403 });
 }
 
-async function checkAdminAccess(token: string): Promise<AdminCheckResult> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  // Server-side proxy only. Never move this service role check into a client component.
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-    return { allowed: false, message: "Supabase admin auth is not configured." };
-  }
-
-  const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+async function checkAdminAccess(request: NextRequest): Promise<AdminCheckResult> {
+  const response = await fetch(new URL("/api/admin/auth/me", request.url), {
     headers: {
-      apikey: anonKey,
-      authorization: `Bearer ${token}`,
+      cookie: request.headers.get("cookie") ?? "",
     },
+    cache: "no-store",
   });
 
-  if (!userResponse.ok) {
-    return { allowed: false, message: "Admin login is required." };
+  if (!response.ok) {
+    const result = (await response.json().catch(() => ({}))) as { message?: string };
+    return { allowed: false, message: result.message ?? "Admin login is required." };
   }
 
-  const user = (await userResponse.json()) as { id?: string };
-
-  if (!user.id) {
-    return { allowed: false, message: "Admin login is required." };
-  }
-
-  const adminResponse = await fetch(
-    `${supabaseUrl}/rest/v1/admin_users?auth_user_id=eq.${encodeURIComponent(user.id)}&active=eq.true&select=id`,
-    {
-      headers: {
-        apikey: serviceRoleKey,
-        authorization: `Bearer ${serviceRoleKey}`,
-      },
-    },
-  );
-
-  if (!adminResponse.ok) {
-    return { allowed: false, message: "Admin access check failed." };
-  }
-
-  const admins = (await adminResponse.json()) as Array<{ id: string }>;
-  return admins.length ? { allowed: true } : { allowed: false, message: "You do not have admin access." };
+  return { allowed: true };
 }
 
 export async function proxy(request: NextRequest) {
@@ -78,7 +49,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  const result = await checkAdminAccess(token);
+  const result = await checkAdminAccess(request);
 
   if (!result.allowed) {
     const response = isAdminApi ? jsonDenied(result.message) : NextResponse.redirect(new URL("/admin/login", request.url));
