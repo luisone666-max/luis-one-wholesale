@@ -23,6 +23,7 @@ export type Product = {
   description: string;
   details: string[];
   tiers: PriceTier[];
+  searchText?: string;
   variants?: ProductVariant[];
 };
 

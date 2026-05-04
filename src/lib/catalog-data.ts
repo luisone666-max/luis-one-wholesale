@@ -223,6 +223,21 @@ function mapSupabaseSnapshot(
       details,
       tiers: tiers.length ? tiers : [{ label: "1+ pcs", min: 1, max: null, price: 0 }],
       variants,
+      searchText: [
+        product.sku,
+        product.name,
+        product.slug,
+        product.brand,
+        product.model,
+        product.description,
+        category?.name_en,
+        category?.slug,
+        ...categoryPathSlugs,
+        ...variants.flatMap((variant) => [variant.name, variant.sku, variant.model, variant.fits, variant.leadTime]),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase(),
     };
   });
 

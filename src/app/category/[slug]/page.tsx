@@ -28,6 +28,29 @@ function getHighestPrice(product: { tiers: { price: number }[] }) {
   return prices.length ? Math.max(...prices) : 0;
 }
 
+function normalizeSearch(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function productMatchesSearch(product: { name: string; sku?: string; category: string; description: string; details: string[]; searchText?: string }, query: string) {
+  const words = normalizeSearch(query).split(" ").filter(Boolean);
+
+  if (!words.length) {
+    return true;
+  }
+
+  const haystack = normalizeSearch([
+    product.name,
+    product.sku ?? "",
+    product.category,
+    product.description,
+    product.details.join(" "),
+    product.searchText ?? "",
+  ].join(" "));
+
+  return words.every((word) => haystack.includes(word));
+}
+
 export default async function CategoryPage({
   params,
   searchParams,
@@ -44,12 +67,7 @@ export default async function CategoryPage({
   const searchText = searchQuery.toLowerCase();
   const selectedSort = sortOptions.some((option) => option.value === query?.sort) ? query?.sort ?? "popular" : "popular";
   const searchedProducts = searchText
-    ? categoryProducts.filter((product) =>
-        [product.name, product.sku ?? "", product.category, product.description]
-          .join(" ")
-          .toLowerCase()
-          .includes(searchText),
-      )
+    ? categoryProducts.filter((product) => productMatchesSearch(product, searchText))
     : categoryProducts;
   const visibleProducts = searchedProducts
     .sort((a, b) => {
@@ -147,7 +165,9 @@ export default async function CategoryPage({
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600 sm:text-xs">Product Listing</p>
                 <h1 className="mt-1 text-xl font-black tracking-tight text-zinc-950 sm:text-2xl">{title}</h1>
-                <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-zinc-600 sm:block">{description}</p>
+                <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-zinc-600 sm:block">
+                  {searchQuery ? `Showing products matching "${searchQuery}" by name, SKU, category, brand, model, or fitment.` : description}
+                </p>
               </div>
               <div className="w-fit rounded-sm bg-orange-50 px-3 py-2 text-xs font-black text-orange-700 ring-1 ring-orange-200">
                 {visibleProducts.length} products / Public wholesale prices
@@ -175,7 +195,9 @@ export default async function CategoryPage({
             {!paginatedProducts.length ? (
               <div className="rounded-sm border border-dashed border-orange-200 bg-white p-8 text-center">
                 <p className="text-lg font-black text-zinc-950">No products found</p>
-                <p className="mt-2 text-sm font-bold text-zinc-500">Try another product name, SKU, or category keyword.</p>
+                <p className="mt-2 text-sm font-bold text-zinc-500">
+                  Try a simpler keyword, SKU, model, category, or fitment. Example: brake, click, nmax, cable, oil.
+                </p>
                 <Link href="/category/all" className="mt-4 inline-flex rounded-sm bg-[#f65f18] px-4 py-2 text-sm font-black text-white">
                   View All Products
                 </Link>
