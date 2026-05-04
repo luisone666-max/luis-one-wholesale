@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
@@ -78,7 +77,39 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { product, related } = catalog.data;
 
   if (!product) {
-    notFound();
+    return (
+      <>
+        <SiteHeader />
+        <DataSourceNotice message={catalog.message} />
+        <MarketplaceShell>
+          <Container className="py-10">
+            <div className="mx-auto max-w-2xl rounded-sm border border-zinc-200 bg-white p-8 text-center shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Product unavailable</p>
+              <h1 className="mt-3 text-3xl font-black text-zinc-950">This product is no longer available</h1>
+              <p className="mt-3 text-sm leading-7 text-zinc-600">
+                This item may have been hidden, deleted, or replaced. Please browse the current wholesale catalog or contact
+                us on Messenger for help finding the right product.
+              </p>
+              <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                <Link
+                  href="/category/all"
+                  className="rounded-sm bg-orange-600 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-orange-700"
+                >
+                  Browse Products
+                </Link>
+                <Link
+                  href="/"
+                  className="rounded-sm border border-zinc-200 bg-white px-5 py-3 text-sm font-black text-zinc-900 hover:border-orange-200 hover:text-orange-700"
+                >
+                  Back to Home
+                </Link>
+              </div>
+            </div>
+          </Container>
+        </MarketplaceShell>
+        <SiteFooter />
+      </>
+    );
   }
 
   return (
