@@ -29,6 +29,11 @@ function adminLoginSuccessPage(request: Request) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="refresh" content="1;url=${adminUrl}" />
     <title>Opening Admin Dashboard</title>
+    <script>
+      window.setTimeout(function () {
+        window.location.replace("${adminUrl}");
+      }, 250);
+    </script>
     <style>
       body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; color: #18181b; }
       main { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
