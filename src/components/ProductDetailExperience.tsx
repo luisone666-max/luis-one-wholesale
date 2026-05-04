@@ -5,6 +5,7 @@ import { messengerUrl, ProductImage, StockStatusBadge } from "@/components/Custo
 import { trackMetaEvent } from "@/components/MetaPixel";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import { addProductToCart } from "@/lib/customer-cart";
+import { metaCatalogItemId } from "@/lib/meta-catalog";
 import { formatMoney, getPriceRange, getTierForQuantity, getVariantPriceRange, type Product, type ProductVariant } from "@/lib/mock-data";
 
 function variantToProduct(product: Product, variant: ProductVariant): Product {
@@ -59,7 +60,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
 
     if (result.ok) {
       trackMetaEvent("AddToCart", {
-        content_ids: [selectedVariant?.sku || product.sku],
+        content_ids: [metaCatalogItemId(product, selectedVariant)],
         content_name: displayProduct.name,
         content_type: "product",
         currency: "PHP",
