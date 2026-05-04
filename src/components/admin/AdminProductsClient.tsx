@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { formatImageBytes, prepareAdminUploadImage } from "@/lib/admin-image-compression";
@@ -253,8 +253,16 @@ export function AdminProductsClient({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categoryPanelOpen, setCategoryPanelOpen] = useState(true);
   const [message, setMessage] = useState(initialError ?? "");
+  const [editorOpen, setEditorOpen] = useState(false);
+  const editorRef = useRef<HTMLDivElement | null>(null);
 
-  const refreshProducts = async () => {
+  const focusEditor = () => {
+    window.setTimeout(() => {
+      editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  const refreshProducts = async (preferredProductId?: string) => {
     const response = await fetch("/api/admin/products", { cache: "no-store" });
     const result = (await response.json().catch(() => ({ ok: false, message: "Product list refresh failed." }))) as ProductsListResponse;
 
@@ -265,12 +273,19 @@ export function AdminProductsClient({
 
     setProducts(result.products);
     setSelectedProduct((current) => {
+      const preferred = preferredProductId ? result.products?.find((item) => item.id === preferredProductId) : null;
+
+      if (preferred) {
+        return preferred;
+      }
+
       if (!current) {
-        return result.products?.[0] ?? null;
+        return null;
       }
 
       return result.products?.find((item) => item.id === current.id) ?? result.products?.[0] ?? null;
     });
+
     return true;
   };
 
@@ -317,16 +332,22 @@ export function AdminProductsClient({
   const startCreate = () => {
     setSelectedProduct(null);
     setEditorMode("create");
+    setEditorOpen(true);
+    focusEditor();
   };
 
   const startEdit = (product: AdminProductRecord) => {
     setSelectedProduct(product);
     setEditorMode("edit");
+    setEditorOpen(true);
+    focusEditor();
   };
 
   const startView = (product: AdminProductRecord) => {
     setSelectedProduct(product);
     setEditorMode("view");
+    setEditorOpen(true);
+    focusEditor();
   };
 
   const toggleVisibility = async (product: AdminProductRecord) => {
@@ -476,6 +497,33 @@ export function AdminProductsClient({
         </div>
       </div>
 
+      {editorOpen ? (
+        <div ref={editorRef} className="scroll-mt-4">
+          <ProductEditor
+            key={`${editorMode}-${selectedProduct?.id ?? "new"}`}
+            mode={editorMode}
+            product={selectedProduct}
+            categories={categories}
+            mainCategories={mainCategories}
+            onMessage={setMessage}
+            onSaved={refreshProducts}
+            onClose={() => setEditorOpen(false)}
+          />
+        </div>
+      ) : (
+        <div className="mb-4 rounded-md border border-orange-100 bg-orange-50 p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-black text-zinc-950">Product workspace is closed</p>
+              <p className="mt-1 text-sm font-bold text-orange-700">Click Add Product or click any product card to edit it here.</p>
+            </div>
+            <button type="button" onClick={startCreate} className="h-10 rounded-md bg-[#f65f18] px-4 text-sm font-black text-white">
+              {t("addProduct")}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={`grid gap-4 ${categoryPanelOpen ? "xl:grid-cols-[280px_1fr]" : "xl:grid-cols-1"}`}>
         {categoryPanelOpen ? (
           <CategoryBrowser
@@ -589,16 +637,6 @@ export function AdminProductsClient({
           </div>
         </TableShell>
       </div>
-
-      <ProductEditor
-        key={`${editorMode}-${selectedProduct?.id ?? "new"}`}
-        mode={editorMode}
-        product={selectedProduct}
-        categories={categories}
-        mainCategories={mainCategories}
-        onMessage={setMessage}
-        onSaved={refreshProducts}
-      />
     </>
   );
 }
@@ -610,13 +648,15 @@ function ProductEditor({
   mainCategories,
   onMessage,
   onSaved,
+  onClose,
 }: {
   mode: EditorMode;
   product: AdminProductRecord | null;
   categories: AdminCategoryOption[];
   mainCategories: AdminCategoryOption[];
   onMessage: (message: string) => void;
-  onSaved: () => Promise<boolean>;
+  onSaved: (preferredProductId?: string) => Promise<boolean>;
+  onClose: () => void;
 }) {
   const { t, language } = useAdminI18n();
   const copy = text[language];
@@ -841,7 +881,11 @@ function ProductEditor({
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Save failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: "Save failed." }))) as {
+      ok?: boolean;
+      message?: string;
+      productId?: string;
+    };
 
     if (!response.ok || !result.ok) {
       onMessage(result.message ?? "Save failed.");
@@ -849,7 +893,7 @@ function ProductEditor({
     }
 
     const successMessage = mode === "create" ? "Product uploaded successfully." : "Product saved successfully.";
-    const refreshed = await onSaved();
+    const refreshed = await onSaved(mode === "create" ? undefined : result.productId ?? draft.id);
     setSuccessDialog(refreshed ? successMessage : `${successMessage} Refresh the page if the product is not visible yet.`);
     onMessage(successMessage);
     } finally {
@@ -867,6 +911,9 @@ function ProductEditor({
         </div>
         <div className="flex flex-wrap gap-2">
           <StatusPill tone="orange">{t("noAutomaticPricing")}</StatusPill>
+          <button type="button" onClick={onClose} className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700">
+            Close
+          </button>
           {mode !== "view" ? (
             <button type="button" onClick={() => void submit()} disabled={saving || uploadingImage} className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60">
               {saving ? "Saving..." : mode === "create" ? copy.createProduct : copy.saveProduct}
@@ -1137,7 +1184,12 @@ function ProductEditor({
             <p className="mt-2 text-sm font-bold text-zinc-500">Product list updated.</p>
             <button
               type="button"
-              onClick={() => setSuccessDialog("")}
+              onClick={() => {
+                setSuccessDialog("");
+                if (mode === "create") {
+                  onClose();
+                }
+              }}
               className="mt-5 h-10 rounded-md bg-[#f65f18] px-5 text-sm font-black text-white"
             >
               OK
