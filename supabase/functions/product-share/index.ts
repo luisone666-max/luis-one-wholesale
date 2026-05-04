@@ -193,7 +193,7 @@ Deno.serve(async (request) => {
 
   const prices = priceRange(tiers ?? []);
   const category = categoryRows?.[0]?.name_en ?? "Wholesale";
-  const title = `${product.name} | ${prices}`;
+  const title = `${prices} | ${product.name}`;
   const description = `${category} wholesale item. MOQ ${product.moq ?? 1} pc. Price range: ${prices}.`;
 
   return new Response(pageHtml({
