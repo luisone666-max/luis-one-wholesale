@@ -6,6 +6,7 @@ import {
   type BulkProductCsvRow,
 } from "@/lib/admin-product-bulk-upload";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
   try {
     if (mode === "import") {
       const result = await importBulkProductRows(rows, missingCategoryMode);
+      revalidateCatalogPages();
       return NextResponse.json({ ok: true, ...result });
     }
 

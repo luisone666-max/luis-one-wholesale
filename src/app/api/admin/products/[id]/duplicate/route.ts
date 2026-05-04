@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
@@ -179,6 +180,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         }
       }
     }
+
+    revalidateCatalogPages();
 
     return NextResponse.json({ ok: true, productId });
   } catch (error) {

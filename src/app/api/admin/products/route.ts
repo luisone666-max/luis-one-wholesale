@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assertUniqueVariantSkus, saveProductVariants } from "@/lib/admin-product-variants";
 import { parseProductPayload, type ProductPayload } from "@/lib/admin-product-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
@@ -112,6 +113,8 @@ export async function POST(request: Request) {
     await admin.from("products").delete().eq("id", productId);
     return jsonError(variantError, 500);
   }
+
+  revalidateCatalogPages();
 
   return NextResponse.json({ ok: true, productId });
 }
