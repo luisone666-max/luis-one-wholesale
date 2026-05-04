@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Container, MarketplaceShell, ProductFilters } from "@/components/CustomerUi";
+import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -10,7 +10,7 @@ export async function generateStaticParams() {
   return getCatalogCategoryParams();
 }
 
-const pageSize = 12;
+const pageSize = 48;
 const sortOptions = [
   { label: "Popular", value: "popular" },
   { label: "Latest", value: "latest" },
@@ -39,7 +39,7 @@ export default async function CategoryPage({
   const query = await searchParams;
   const isAll = slug === "all";
   const catalog = await getCatalogCategoryPage(slug);
-  const { categories, category, products: categoryProducts } = catalog.data;
+  const { category, products: categoryProducts } = catalog.data;
   const searchQuery = (query?.q ?? "").trim();
   const searchText = searchQuery.toLowerCase();
   const selectedSort = sortOptions.some((option) => option.value === query?.sort) ? query?.sort ?? "popular" : "popular";
@@ -142,34 +142,21 @@ export default async function CategoryPage({
       <DataSourceNotice message={catalog.message} />
       <MarketplaceShell>
         <section className="border-b border-orange-100 bg-white">
-          <Container className="py-3 sm:py-6">
+          <Container className="py-3 sm:py-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600 sm:text-sm">Product Listing</p>
-                <h1 className="mt-1 text-xl font-black tracking-tight text-zinc-950 sm:mt-2 sm:text-3xl">{title}</h1>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600 sm:text-xs">Product Listing</p>
+                <h1 className="mt-1 text-xl font-black tracking-tight text-zinc-950 sm:text-2xl">{title}</h1>
                 <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-zinc-600 sm:block">{description}</p>
               </div>
-              <div className="w-fit rounded-sm bg-orange-50 px-3 py-2 text-xs font-black text-orange-700 ring-1 ring-orange-200 sm:px-4 sm:py-3 sm:text-sm">
+              <div className="w-fit rounded-sm bg-orange-50 px-3 py-2 text-xs font-black text-orange-700 ring-1 ring-orange-200">
                 {visibleProducts.length} products / Public wholesale prices
               </div>
             </div>
           </Container>
         </section>
 
-        <Container className="grid gap-3 py-3 sm:gap-6 sm:py-6 lg:grid-cols-[260px_1fr]">
-          <div className="lg:hidden">
-            <details className="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
-              <summary className="cursor-pointer text-sm font-black text-zinc-950">Open filters</summary>
-              <div className="mt-4">
-                <ProductFilters categories={categories} activeSlug={slug} />
-              </div>
-            </details>
-          </div>
-          <div className="hidden lg:block">
-            <ProductFilters categories={categories} activeSlug={slug} />
-          </div>
-
-          <div>
+        <Container className="py-3 sm:py-4">
             <div className="mb-3 flex flex-col gap-2 rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
               <div className="flex gap-1.5 overflow-x-auto text-xs font-black sm:flex-wrap sm:gap-2 sm:text-sm">
                 {sortOptions.map((item) => (
@@ -181,7 +168,7 @@ export default async function CategoryPage({
               <Link href="/cart" className="text-xs font-black text-orange-700 sm:text-sm">View Order List</Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 xl:grid-cols-6">
               {paginatedProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
             </div>
 
@@ -210,7 +197,6 @@ export default async function CategoryPage({
                 ))}
               </div>
             ) : null}
-          </div>
         </Container>
       </MarketplaceShell>
       <SiteFooter />
