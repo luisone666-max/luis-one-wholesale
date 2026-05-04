@@ -54,8 +54,35 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const product = catalog.data.product;
 
   if (!product) {
+    const url = `${getSiteUrl()}/product/${slug}`;
+
     return {
       title: "Product not found | Luis One Supply Hub",
+      description: "Browse current wholesale products from Luis One Supply Hub.",
+      alternates: {
+        canonical: url,
+      },
+      openGraph: {
+        title: "Luis One Supply Hub | Wholesale Ordering",
+        description: "Browse current wholesale products from Luis One Supply Hub.",
+        url,
+        siteName: "Luis One Supply Hub",
+        type: "website",
+        images: [
+          {
+            url: absoluteUrl("/brand/luis-one-logo.jpg"),
+            width: 1200,
+            height: 1200,
+            alt: "Luis One Supply Hub",
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: "Luis One Supply Hub | Wholesale Ordering",
+        description: "Browse current wholesale products from Luis One Supply Hub.",
+        images: [absoluteUrl("/brand/luis-one-logo.jpg")],
+      },
     };
   }
 
@@ -67,6 +94,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title,
     description,
+    alternates: {
+      canonical: url,
+    },
     openGraph: {
       title,
       description,

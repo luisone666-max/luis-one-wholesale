@@ -7,4 +7,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://luis-one-wholesale.vercel.app/sitemap.xml
+Sitemap: https://luisonesupplyhub.com/sitemap.xml
