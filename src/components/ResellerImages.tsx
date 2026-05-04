@@ -34,7 +34,7 @@ export function ResellerImages({ product }: { product: Product }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Reseller Images</p>
-          <h2 className="mt-1 text-xl font-black text-zinc-950">Reseller Images / 代理拿图</h2>
+          <h2 className="mt-1 text-xl font-black text-zinc-950">Reseller Images</h2>
         </div>
         <p className="text-xs font-bold text-zinc-500 sm:text-right">Download original product images for reseller posting.</p>
       </div>
