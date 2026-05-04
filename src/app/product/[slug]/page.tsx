@@ -127,8 +127,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <ProductDetailExperience product={product} />
 
-          <ResellerImages product={product} />
-
           <section className="mt-6 rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-black text-zinc-950">Product Description</h2>
             <p className="mt-3 text-sm leading-7 text-zinc-600">{product.description}</p>
@@ -136,6 +134,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {product.details.map((detail) => <li key={detail} className="rounded-sm bg-zinc-50 px-3 py-2">- {detail}</li>)}
             </ul>
           </section>
+
+          <ResellerImages product={product} />
 
           {related.length ? (
             <section className="mt-8">
