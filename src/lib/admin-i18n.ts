@@ -87,6 +87,7 @@ export type TranslationKey =
   | "phone"
   | "phoneNumber"
   | "priceRange"
+  | "retailPrice"
   | "price1"
   | "price6"
   | "price12"
@@ -292,6 +293,7 @@ export const adminDictionaries: Record<AdminLanguage, Partial<Record<Translation
     phone: "Phone",
     phoneNumber: "Phone Number",
     priceRange: "Price Range",
+    retailPrice: "Retail Price",
     price1: "1-5 pcs price",
     price6: "6-11 pcs price",
     price12: "12-49 pcs price",
@@ -496,6 +498,7 @@ export const adminDictionaries: Record<AdminLanguage, Partial<Record<Translation
     phone: "电话",
     phoneNumber: "电话号码",
     priceRange: "价格范围",
+    retailPrice: "零售价",
     price1: "1-5 件价格",
     price6: "6-11 件价格",
     price12: "12-49 件价格",

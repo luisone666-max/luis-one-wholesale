@@ -71,6 +71,7 @@ type ParsedBulkRow = {
   brand: string | null;
   model: string | null;
   moq: number | null;
+  retailPrice: number | null;
   stockStatus: string;
   leadTime: string | null;
   imageUrl: string | null;
@@ -119,6 +120,7 @@ export const bulkUploadTemplateHeaders = [
   "Brand",
   "Model",
   "MOQ",
+  "Retail Price",
   "Stock Status",
   "Lead Time",
   "Image URL",
@@ -221,6 +223,8 @@ function parseRows(rows: BulkProductCsvRow[]) {
     const moqValue = clean(row.data["MOQ"]);
     const moqNumber = Number(moqValue);
     const moq = Number.isInteger(moqNumber) && moqNumber > 0 ? moqNumber : null;
+    const retailPriceValue = clean(row.data["Retail Price"]);
+    const retailPrice = retailPriceValue ? parsePositiveNumber(retailPriceValue) : null;
     const stockStatus = clean(row.data["Stock Status"]) || "for_order";
     const active = parseBoolean(clean(row.data["Active"]));
     const prices = priceColumns.flatMap((column) => {
@@ -254,6 +258,10 @@ function parseRows(rows: BulkProductCsvRow[]) {
 
     if (!moq) {
       errors.push("MOQ must be a positive number.");
+    }
+
+    if (retailPriceValue && retailPrice === null) {
+      errors.push("Retail Price must be a valid number.");
     }
 
     if (!stockStatuses.has(stockStatus)) {
@@ -293,6 +301,7 @@ function parseRows(rows: BulkProductCsvRow[]) {
       brand: nullableText(row.data["Brand"]),
       model: nullableText(row.data["Model"]),
       moq,
+      retailPrice,
       stockStatus,
       leadTime: nullableText(row.data["Lead Time"]),
       imageUrl: nullableText(row.data["Image URL"]),
@@ -676,6 +685,7 @@ export async function importBulkProductRows(
             brand: row.brand,
             model: row.model,
             moq: row.moq ?? 1,
+            retail_price: row.retailPrice,
             stock_status: row.stockStatus,
             lead_time: row.leadTime,
             image_url: row.imageUrl,
@@ -705,6 +715,7 @@ export async function importBulkProductRows(
             brand: row.brand,
             model: row.model,
             moq: row.moq ?? 1,
+            retail_price: row.retailPrice,
             stock_status: row.stockStatus,
             lead_time: row.leadTime,
             image_url: row.imageUrl,

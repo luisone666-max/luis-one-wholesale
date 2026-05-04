@@ -16,6 +16,7 @@ export type Product = {
   image: string;
   gallery: string[];
   moq: number;
+  retailPrice?: number | null;
   stockStatus: "In stock" | "Low stock" | "Preorder";
   stockCount: number;
   sold: number;

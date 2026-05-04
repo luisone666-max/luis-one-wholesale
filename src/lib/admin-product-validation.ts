@@ -14,6 +14,7 @@ export type ProductPayload = {
   brand: string | null;
   model: string | null;
   moq: number;
+  retailPrice: number | null;
   stockStatus: string;
   leadTime: string | null;
   imageUrl: string | null;
@@ -57,6 +58,15 @@ function toNumber(value: unknown) {
   return Number.isFinite(number) ? number : NaN;
 }
 
+function optionalPositiveNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : NaN;
+}
+
 export function validateTierRules(tiers: ProductTierInput[]) {
   const sorted = [...tiers].sort((a, b) => a.minQty - b.minQty);
 
@@ -97,6 +107,7 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
   const categoryId = clean(raw.categoryId);
   const stockStatus = clean(raw.stockStatus) || "for_order";
   const moq = toNumber(raw.moq);
+  const retailPrice = optionalPositiveNumber(raw.retailPrice);
   const tiers = Array.isArray(raw.tiers)
     ? raw.tiers.map((tier) => {
         const item = tier as Record<string, unknown>;
@@ -163,6 +174,10 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
     return { error: "MOQ must be greater than 0." };
   }
 
+  if (Number.isNaN(retailPrice)) {
+    return { error: "Retail Price must be greater than 0." };
+  }
+
   if (!stockStatuses.has(stockStatus)) {
     return { error: "Invalid stock status." };
   }
@@ -214,6 +229,7 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
       brand: nullableText(raw.brand),
       model: nullableText(raw.model),
       moq,
+      retailPrice,
       stockStatus,
       leadTime: nullableText(raw.leadTime),
       imageUrl: nullableText(raw.imageUrl),

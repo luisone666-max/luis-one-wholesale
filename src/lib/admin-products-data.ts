@@ -21,6 +21,7 @@ type ProductRow = {
   brand: string | null;
   model: string | null;
   moq: number | null;
+  retail_price: number | string | null;
   stock_status: string | null;
   lead_time: string | null;
   image_url: string | null;
@@ -101,6 +102,7 @@ export type AdminProductRecord = {
   brand: string;
   model: string;
   moq: number;
+  retailPrice: number | null;
   stockStatus: string;
   leadTime: string;
   image: string;
@@ -141,7 +143,7 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
     supabase
       .from("products")
       .select(
-        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,stock_status,lead_time,image_url,description,supplier_notes,internal_cost_notes,admin_notes,active,created_at",
+        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,supplier_notes,internal_cost_notes,admin_notes,active,created_at",
       )
       .order("created_at", { ascending: false }),
     supabase.from("categories").select("id,name_en,slug,parent_id,level,active,sort_order").order("sort_order", { ascending: true }),
@@ -257,6 +259,7 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
       brand: product.brand ?? "",
       model: product.model ?? "",
       moq: product.moq ?? 1,
+      retailPrice: product.retail_price === null ? null : Number(product.retail_price),
       stockStatus: product.stock_status ?? "for_order",
       leadTime: product.lead_time ?? "",
       image: product.image_url ?? "/products/phone-accessories.svg",

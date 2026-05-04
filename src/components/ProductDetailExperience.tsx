@@ -124,6 +124,11 @@ export function ProductDetailExperience({ product }: { product: Product }) {
           <h1 className="mt-2 text-lg font-bold leading-snug text-zinc-950 sm:mt-3 sm:text-2xl lg:text-[26px]">{product.name}</h1>
 
           <div className="mt-3 rounded-sm bg-[#fafafa] px-3 py-2.5 sm:mt-4 sm:px-5 sm:py-4">
+            {displayProduct.retailPrice ? (
+              <p className="mb-1 text-xs font-bold text-zinc-500">
+                Retail price: <span className="text-zinc-700">{formatMoney(displayProduct.retailPrice)}</span>
+              </p>
+            ) : null}
             <p className="text-lg font-black text-[#f65f18] sm:text-3xl">
               {selectedVariant ? getVariantPriceRange(selectedVariant) : getPriceRange(product)}
             </p>

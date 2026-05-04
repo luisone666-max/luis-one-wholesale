@@ -26,6 +26,7 @@ type ProductRow = Pick<
   | "brand"
   | "model"
   | "moq"
+  | "retail_price"
   | "stock_status"
   | "lead_time"
   | "image_url"
@@ -215,6 +216,7 @@ function mapSupabaseSnapshot(
       image,
       gallery: gallery.length ? gallery : [image],
       moq: product.moq ?? 1,
+      retailPrice: product.retail_price === null ? null : Number(product.retail_price),
       stockStatus: toStockStatus(product.stock_status),
       stockCount: 0,
       sold: 900 - index * 37,
@@ -276,7 +278,7 @@ const readSupabaseCatalog = cache(async (): Promise<CatalogSnapshot | null> => {
     supabase
       .from("customer_products")
       .select(
-        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,stock_status,lead_time,image_url,description,active",
+        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,active",
       )
       .eq("active", true)
       .order("name", { ascending: true }),

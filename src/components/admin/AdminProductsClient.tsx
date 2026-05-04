@@ -20,6 +20,7 @@ type ProductDraft = {
   brand: string;
   model: string;
   moq: number;
+  retailPrice: number | null;
   stockStatus: string;
   leadTime: string;
   imageUrl: string;
@@ -155,6 +156,7 @@ function productToDraft(product: AdminProductRecord): ProductDraft {
     brand: product.brand,
     model: product.model,
     moq: product.moq,
+    retailPrice: product.retailPrice,
     stockStatus: product.stockStatus,
     leadTime: product.leadTime,
     imageUrl: product.image,
@@ -193,6 +195,7 @@ function blankDraft(categories: AdminCategoryOption[]): ProductDraft {
     brand: "",
     model: "",
     moq: 1,
+    retailPrice: null,
     stockStatus: "for_order",
     leadTime: "",
     imageUrl: "/products/phone-accessories.svg",
@@ -345,6 +348,7 @@ export function AdminProductsClient({
       "Subcategory",
       "Child Category",
       "MOQ",
+      "Retail Price",
       "Stock Status",
       "Active",
       "Price Range",
@@ -358,6 +362,7 @@ export function AdminProductsClient({
       product.subcategory,
       product.childCategory,
       product.moq,
+      product.retailPrice ?? "",
       labelForStock(t, product.stockStatus),
       product.active ? "Active" : "Hidden",
       product.priceRange,
@@ -516,6 +521,7 @@ export function AdminProductsClient({
                   <div className="flex items-center justify-between gap-2 border-t border-zinc-100 pt-2">
                     <div className="min-w-0">
                       <p className="truncate text-xs font-black text-[#f65f18]">{product.priceRange}</p>
+                      {product.retailPrice ? <p className="truncate text-[10px] font-bold text-zinc-500">{t("retailPrice")}: PHP {product.retailPrice.toLocaleString("en-US")}</p> : null}
                       <p className="truncate text-[10px] font-bold text-zinc-500">{labelForStock(t, product.stockStatus)}</p>
                     </div>
                     <div className="flex gap-1">
@@ -815,6 +821,13 @@ function ProductEditor({
                 <CategorySelect label={t("subcategory")} value={draft.subcategoryId} categories={subcategories} disabled={disabled} onChange={(value) => updateDraft({ subcategoryId: value, childCategoryId: "" })} optional />
                 <CategorySelect label={t("childCategory")} value={draft.childCategoryId} categories={childCategories} disabled={disabled} onChange={(value) => updateDraft({ childCategoryId: value })} optional />
                 <Input label={t("moq")} type="number" value={String(draft.moq)} onChange={(value) => updateDraft({ moq: Number(value) || 1 })} disabled={disabled} />
+                <Input
+                  label={t("retailPrice")}
+                  type="number"
+                  value={draft.retailPrice === null ? "" : String(draft.retailPrice)}
+                  onChange={(value) => updateDraft({ retailPrice: value === "" ? null : Number(value) || null })}
+                  disabled={disabled}
+                />
                 <label className="text-sm font-bold text-zinc-700">
                   {t("stockStatus")}
                   <select disabled={disabled} value={draft.stockStatus} onChange={(event) => updateDraft({ stockStatus: event.target.value })} className="mt-2 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-700">

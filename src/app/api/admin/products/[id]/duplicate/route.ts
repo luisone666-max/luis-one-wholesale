@@ -98,6 +98,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         brand: row.brand,
         model: row.model,
         moq: row.moq,
+        retail_price: row.retail_price,
         stock_status: row.stock_status,
         lead_time: row.lead_time,
         image_url: row.image_url,

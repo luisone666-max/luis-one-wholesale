@@ -27,6 +27,11 @@ export function ProductCard({ product }: { product: Product }) {
           <p className="mt-1 hidden truncate text-xs font-bold text-zinc-500 sm:block">{product.category}</p>
         </div>
         <div className="min-h-[34px] sm:min-h-[48px]">
+          {product.retailPrice ? (
+            <p className="truncate text-[9px] font-bold leading-3 text-zinc-400 sm:text-[11px]">
+              Retail {formatMoney(product.retailPrice)}
+            </p>
+          ) : null}
           <p className="truncate text-[12px] font-black leading-4 text-[#f65f18] sm:text-base sm:leading-5" title={getPriceRange(product)}>
             <span className="sm:hidden">{compactPrice}</span>
             <span className="hidden sm:inline">{getPriceRange(product)}</span>

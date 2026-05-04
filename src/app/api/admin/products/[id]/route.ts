@@ -85,6 +85,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       brand: payload.brand,
       model: payload.model,
       moq: payload.moq,
+      retail_price: payload.retailPrice,
       stock_status: payload.stockStatus,
       lead_time: payload.leadTime,
       image_url: payload.imageUrl,

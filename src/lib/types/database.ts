@@ -55,6 +55,7 @@ export type Database = {
           brand: string | null;
           model: string | null;
           moq: number | null;
+          retail_price: number | null;
           stock_status: string | null;
           lead_time: string | null;
           image_url: string | null;
@@ -77,6 +78,7 @@ export type Database = {
           brand?: string | null;
           model?: string | null;
           moq?: number | null;
+          retail_price?: number | null;
           stock_status?: string | null;
           lead_time?: string | null;
           image_url?: string | null;
