@@ -20,6 +20,9 @@ export const metadata: Metadata = {
     icon: "/brand/luis-one-logo.jpg",
     apple: "/brand/luis-one-logo.jpg",
   },
+  verification: {
+    google: "r77e8LP4lW3rg86Bu7f3LonWcWu0JCeb162YeGaF7X0",
+  },
   openGraph: {
     title: "Luis One Supply Hub | Wholesale Ordering",
     description: "Wholesale supply for resellers and shops with public tier pricing.",
