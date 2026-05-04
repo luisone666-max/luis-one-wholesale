@@ -4,6 +4,7 @@ import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailExperience } from "@/components/ProductDetailExperience";
+import { ResellerImages } from "@/components/ResellerImages";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogProductPage, getCatalogProductParams } from "@/lib/catalog-data";
@@ -125,6 +126,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
 
           <ProductDetailExperience product={product} />
+
+          <ResellerImages product={product} />
 
           <section className="mt-6 rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-black text-zinc-950">Product Description</h2>
