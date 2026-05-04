@@ -65,13 +65,13 @@ export function ProductDetailExperience({ product }: { product: Product }) {
       ? fallbackSiteUrl
       : configuredSiteUrl || fallbackSiteUrl)
   ).replace(/\/$/, "");
-  const currentProductUrl = `${siteUrl}/product/${product.slug}`;
-  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentProductUrl)}`;
+  const shareProductUrl = `${siteUrl}/share/product/${product.slug}`;
+  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareProductUrl)}`;
   const shareText = [
     "Luis One Supply Hub product:",
     product.name,
     `Price: ${selectedVariant ? getVariantPriceRange(selectedVariant) : getPriceRange(product)}`,
-    `Link: ${currentProductUrl}`,
+    `Link: ${shareProductUrl}`,
   ].join("\n");
 
   const shareToMessenger = async () => {
