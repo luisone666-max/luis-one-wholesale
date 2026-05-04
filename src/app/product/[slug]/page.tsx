@@ -10,6 +10,9 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogProductPage, getCatalogProductParams } from "@/lib/catalog-data";
 import { getPriceRange } from "@/lib/mock-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function getSiteUrl() {
   return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 }

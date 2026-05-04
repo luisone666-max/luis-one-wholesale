@@ -170,7 +170,7 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
     return { error: "Product Name is required." };
   }
 
-  const slug = rawSlug || slugifyProduct(name || sku);
+  const slug = slugifyProduct(rawSlug || name || sku);
 
   if (!categoryId) {
     return { error: "Category is required." };

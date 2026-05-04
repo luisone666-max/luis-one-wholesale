@@ -6,6 +6,9 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogCategoryPage, getCatalogCategoryParams } from "@/lib/catalog-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function generateStaticParams() {
   return getCatalogCategoryParams();
 }

@@ -6,6 +6,9 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogSnapshot } from "@/lib/catalog-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function Home() {
   const catalog = await getCatalogSnapshot();
   const products = [...catalog.data.products].sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0));
