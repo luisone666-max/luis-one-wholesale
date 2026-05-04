@@ -31,6 +31,7 @@ export function SiteFooter() {
             <Link href="/cart" className="block hover:text-orange-700">Order List</Link>
             <Link href="/my-orders" className="block hover:text-orange-700">My Orders</Link>
             <Link href="/register" className="block hover:text-orange-700">Create Account</Link>
+            <Link href="/wholesale-guides" className="block hover:text-orange-700">Wholesale Guides</Link>
           </div>
         </div>
         <div>
