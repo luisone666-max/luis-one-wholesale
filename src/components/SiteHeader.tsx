@@ -69,7 +69,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-3 py-1.5 sm:px-6 sm:py-4 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 py-1 sm:px-6 sm:py-4 lg:px-8">
         <div className="grid gap-2 sm:gap-4 lg:grid-cols-[300px_1fr_auto] lg:items-center">
           <div className="flex items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-3">
@@ -106,7 +106,7 @@ export function SiteHeader() {
       </div>
 
       <nav className="border-t border-zinc-100 bg-white">
-        <div className="mx-auto flex max-w-7xl gap-1.5 overflow-x-auto px-3 py-1 text-xs font-black text-zinc-700 sm:gap-2 sm:px-6 sm:py-2 sm:text-sm lg:px-8">
+        <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3 py-1 text-[11px] font-black text-zinc-700 sm:gap-2 sm:px-6 sm:py-2 sm:text-sm lg:px-8">
           <Link href="/category/all" className="shrink-0 rounded-sm bg-zinc-100 px-3 py-1.5 hover:bg-orange-50 hover:text-orange-700 sm:px-4 sm:py-2">All Products</Link>
           {categories.map((category) => (
             <Link key={category.slug} href={`/category/${category.slug}`} className="shrink-0 rounded-sm px-3 py-1.5 hover:bg-orange-50 hover:text-orange-700 sm:px-4 sm:py-2">

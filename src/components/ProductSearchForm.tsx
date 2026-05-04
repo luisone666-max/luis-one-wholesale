@@ -20,10 +20,10 @@ export function ProductSearchForm() {
         aria-label="Search products"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search product, SKU, model, Click, NMAX..."
-        className="min-w-0 flex-1 px-3 py-2 text-sm font-semibold text-zinc-800 outline-none sm:px-4 sm:py-3"
+        placeholder="Search SKU, model, Click, NMAX..."
+        className="min-w-0 flex-1 px-3 py-2 text-xs font-semibold text-zinc-800 outline-none sm:px-4 sm:py-3 sm:text-sm"
       />
-      <button type="submit" className="bg-[#f65f18] px-3 py-2 text-sm font-black text-white transition hover:bg-[#df4f0d] sm:px-5 sm:py-3">
+      <button type="submit" className="bg-[#f65f18] px-3 py-2 text-xs font-black text-white transition hover:bg-[#df4f0d] sm:px-5 sm:py-3 sm:text-sm">
         Search
       </button>
     </form>
