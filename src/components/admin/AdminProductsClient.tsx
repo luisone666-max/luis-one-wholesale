@@ -43,6 +43,50 @@ type ProductsListResponse = {
 const defaultPageSize = 24;
 const stockStatuses = ["ready_stock", "for_order", "low_stock", "unavailable"];
 const productTabs: TranslationKey[] = ["basicInfo", "imagesTab", "wholesalePricesTab", "variantsTab", "supplierNotesTab", "adminNotesTab"];
+const bulkUploadTemplateHeaders = [
+  "SKU",
+  "Product Name",
+  "Category",
+  "Subcategory",
+  "Child Category",
+  "Brand",
+  "Model",
+  "MOQ",
+  "Retail Price",
+  "Stock Status",
+  "Lead Time",
+  "Image URL",
+  "Description",
+  "Price 1pc",
+  "Price 6pcs",
+  "Price 12pcs",
+  "Price 50pcs",
+  "Supplier Notes",
+  "Internal Cost Notes",
+  "Active",
+];
+const bulkUploadTemplateSample = [
+  "BULK-001",
+  "Sample Wholesale Product",
+  "Motorcycle Parts",
+  "Honda Click",
+  "Seat",
+  "Sample Brand",
+  "Universal",
+  "1",
+  "180",
+  "for_order",
+  "3-7 days",
+  "/products/flat-seat.svg",
+  "Sample CSV product description.",
+  "135",
+  "125",
+  "118",
+  "110",
+  "Admin-only supplier note",
+  "Admin-only cost note",
+  "true",
+];
 
 const text = {
   en: {
@@ -82,6 +126,8 @@ const text = {
     variantsHint: "Use variants when one product has multiple models, fitments, images, MOQ, stock, or prices.",
     noVariants: "No variants yet. Products without variants still use the main product price tiers.",
     variantImageHint: "Variant image URL overrides the main product image after customer selection.",
+    downloadTemplate: "Download Upload Template",
+    templateDownloaded: "Bulk upload CSV template downloaded.",
   },
   zh: {
     addTier: "\u65b0\u589e\u4ef7\u683c\u9636\u68af",
@@ -97,6 +143,8 @@ const text = {
     duplicateDone: "\u5546\u54c1\u5df2\u590d\u5236\u3002",
     hiddenFromFrontend: "\u9690\u85cf\u5546\u54c1\u4e0d\u4f1a\u663e\u793a\u5728\u5ba2\u6237\u524d\u53f0\u3002",
     deleteBlocked: "\u5982\u679c\u5546\u54c1\u6709\u8ba2\u5355\u5386\u53f2\uff0c\u8bf7\u9690\u85cf\u5546\u54c1\uff0c\u4e0d\u8981\u5220\u9664\u3002",
+    downloadTemplate: "\u4e0b\u8f7d\u6279\u91cf\u4e0a\u4f20\u6a21\u677f",
+    templateDownloaded: "\u6279\u91cf\u4e0a\u4f20 CSV \u6a21\u677f\u5df2\u4e0b\u8f7d\u3002",
   },
 };
 
@@ -227,6 +275,20 @@ function slugifyProduct(value: string) {
 
 function labelForStock(t: (key: TranslationKey) => string, value: string) {
   return t(stockStatusKeyByValue[value] ?? "forOrder");
+}
+
+function escapeTemplateCsvCell(value: string) {
+  if (/[",\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+
+  return value;
+}
+
+function buildBulkUploadTemplateCsv() {
+  return [bulkUploadTemplateHeaders, bulkUploadTemplateSample]
+    .map((row) => row.map(escapeTemplateCsvCell).join(","))
+    .join("\r\n");
 }
 
 export function AdminProductsClient({
@@ -437,6 +499,18 @@ export function AdminProductsClient({
     setMessage(`Exported ${filteredProducts.length} products.`);
   };
 
+  const downloadBulkUploadTemplate = () => {
+    const csv = buildBulkUploadTemplateCsv();
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "wholesale-product-upload-template.csv";
+    link.click();
+    window.URL.revokeObjectURL(url);
+    setMessage(copy.templateDownloaded);
+  };
+
   return (
     <>
       <AdminPageTitle titleKey="productManagement" />
@@ -462,6 +536,9 @@ export function AdminProductsClient({
             </button>
             <button type="button" onClick={startCreate} className="h-11 rounded-md bg-[#f65f18] px-4 text-sm font-black text-white">
               {t("addProduct")}
+            </button>
+            <button type="button" onClick={downloadBulkUploadTemplate} className="h-11 rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700">
+              {copy.downloadTemplate}
             </button>
             <Link href="/admin/products/bulk-upload" className="grid h-11 place-items-center rounded-md border border-orange-200 bg-orange-50 px-4 text-sm font-black text-orange-700">
               {t("bulkUpload")}
