@@ -204,7 +204,7 @@ function blankDraft(categories: AdminCategoryOption[]): ProductDraft {
     supplierNotes: "",
     internalCostNotes: "",
     adminNotes: "",
-    tiers: defaultTiers(),
+    tiers: [],
     variants: [],
   };
 }
@@ -614,7 +614,7 @@ function ProductEditor({
           leadTime: current.leadTime,
           active: true,
           sortOrder: current.variants.length,
-          tiers: current.tiers.length ? current.tiers.map((tier) => ({ ...tier, id: undefined })) : defaultTiers(),
+          tiers: current.tiers.length ? current.tiers.map((tier) => ({ ...tier, id: undefined })) : [],
         },
       ],
     }));
@@ -1183,32 +1183,38 @@ function WholesalePriceEditor({
           {addTierLabel}
         </button>
       </div>
-      <div className="overflow-x-auto rounded-md border border-orange-100 bg-white">
-        <table className="w-full min-w-[680px] text-left text-sm">
-          <thead className="bg-orange-50 text-xs uppercase tracking-[0.14em] text-orange-700">
-            <tr>
-              <th className="px-4 py-3">min_qty</th>
-              <th className="px-4 py-3">max_qty</th>
-              <th className="px-4 py-3">unit_price</th>
-              <th className="px-4 py-3">{t("actions")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-orange-100">
-            {tiers.map((tier, index) => (
-              <tr key={index}>
-                <td className="px-4 py-3"><SmallNumber value={tier.minQty} disabled={disabled} onChange={(value) => onUpdateTier(index, { minQty: value })} /></td>
-                <td className="px-4 py-3"><SmallNumber value={tier.maxQty ?? ""} disabled={disabled} placeholder={maxQtyBlank} onChange={(value) => onUpdateTier(index, { maxQty: value || null })} /></td>
-                <td className="px-4 py-3"><SmallNumber value={tier.unitPrice} disabled={disabled} onChange={(value) => onUpdateTier(index, { unitPrice: value })} /></td>
-                <td className="px-4 py-3">
-                  <button type="button" disabled={disabled} onClick={() => onDeleteTier(index)} className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-40">
-                    {t("delete")}
-                  </button>
-                </td>
+      {tiers.length ? (
+        <div className="overflow-x-auto rounded-md border border-orange-100 bg-white">
+          <table className="w-full min-w-[680px] text-left text-sm">
+            <thead className="bg-orange-50 text-xs uppercase tracking-[0.14em] text-orange-700">
+              <tr>
+                <th className="px-4 py-3">min_qty</th>
+                <th className="px-4 py-3">max_qty</th>
+                <th className="px-4 py-3">unit_price</th>
+                <th className="px-4 py-3">{t("actions")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-orange-100">
+              {tiers.map((tier, index) => (
+                <tr key={index}>
+                  <td className="px-4 py-3"><SmallNumber value={tier.minQty} disabled={disabled} onChange={(value) => onUpdateTier(index, { minQty: value })} /></td>
+                  <td className="px-4 py-3"><SmallNumber value={tier.maxQty ?? ""} disabled={disabled} placeholder={maxQtyBlank} onChange={(value) => onUpdateTier(index, { maxQty: value || null })} /></td>
+                  <td className="px-4 py-3"><SmallNumber value={tier.unitPrice} disabled={disabled} onChange={(value) => onUpdateTier(index, { unitPrice: value })} /></td>
+                  <td className="px-4 py-3">
+                    <button type="button" disabled={disabled} onClick={() => onDeleteTier(index)} className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-40">
+                      {t("delete")}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="rounded-md border border-dashed border-orange-200 bg-white p-6 text-sm font-bold text-zinc-500">
+          No wholesale price tiers yet. Click Add Tier to create only the price levels you need.
+        </div>
+      )}
     </section>
   );
 }
