@@ -33,7 +33,7 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ page?: string; q?: string; sort?: string; stock?: string; moq?: string; minPrice?: string; maxPrice?: string }>;
+  searchParams?: Promise<{ page?: string; q?: string; sort?: string }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -43,10 +43,6 @@ export default async function CategoryPage({
   const searchQuery = (query?.q ?? "").trim();
   const searchText = searchQuery.toLowerCase();
   const selectedSort = sortOptions.some((option) => option.value === query?.sort) ? query?.sort ?? "popular" : "popular";
-  const selectedStock = query?.stock ?? "";
-  const selectedMoq = Number(query?.moq ?? "");
-  const minPrice = Number(query?.minPrice ?? "");
-  const maxPrice = Number(query?.maxPrice ?? "");
   const searchedProducts = searchText
     ? categoryProducts.filter((product) =>
         [product.name, product.sku ?? "", product.category, product.description]
@@ -56,10 +52,6 @@ export default async function CategoryPage({
       )
     : categoryProducts;
   const visibleProducts = searchedProducts
-    .filter((product) => (selectedStock ? product.stockStatus === selectedStock : true))
-    .filter((product) => (Number.isFinite(selectedMoq) && selectedMoq > 0 ? product.moq >= selectedMoq : true))
-    .filter((product) => (Number.isFinite(minPrice) && minPrice > 0 ? getHighestPrice(product) >= minPrice : true))
-    .filter((product) => (Number.isFinite(maxPrice) && maxPrice > 0 ? getLowestPrice(product) <= maxPrice : true))
     .sort((a, b) => {
       if (selectedSort === "latest") {
         return b.slug.localeCompare(a.slug);
@@ -90,22 +82,6 @@ export default async function CategoryPage({
       params.set("sort", selectedSort);
     }
 
-    if (selectedStock) {
-      params.set("stock", selectedStock);
-    }
-
-    if (Number.isFinite(selectedMoq) && selectedMoq > 0) {
-      params.set("moq", String(selectedMoq));
-    }
-
-    if (Number.isFinite(minPrice) && minPrice > 0) {
-      params.set("minPrice", String(minPrice));
-    }
-
-    if (Number.isFinite(maxPrice) && maxPrice > 0) {
-      params.set("maxPrice", String(maxPrice));
-    }
-
     if (page > 1) {
       params.set("page", String(page));
     }
@@ -122,22 +98,6 @@ export default async function CategoryPage({
 
     if (sort !== "popular") {
       params.set("sort", sort);
-    }
-
-    if (selectedStock) {
-      params.set("stock", selectedStock);
-    }
-
-    if (Number.isFinite(selectedMoq) && selectedMoq > 0) {
-      params.set("moq", String(selectedMoq));
-    }
-
-    if (Number.isFinite(minPrice) && minPrice > 0) {
-      params.set("minPrice", String(minPrice));
-    }
-
-    if (Number.isFinite(maxPrice) && maxPrice > 0) {
-      params.set("maxPrice", String(maxPrice));
     }
 
     const suffix = params.toString();
@@ -201,12 +161,12 @@ export default async function CategoryPage({
             <details className="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
               <summary className="cursor-pointer text-sm font-black text-zinc-950">Open filters</summary>
               <div className="mt-4">
-                <ProductFilters categories={categories} activeSlug={slug} filters={{ q: searchQuery, sort: selectedSort, stock: selectedStock, moq: selectedMoq || "", minPrice: minPrice || "", maxPrice: maxPrice || "" }} />
+                <ProductFilters categories={categories} activeSlug={slug} />
               </div>
             </details>
           </div>
           <div className="hidden lg:block">
-            <ProductFilters categories={categories} activeSlug={slug} filters={{ q: searchQuery, sort: selectedSort, stock: selectedStock, moq: selectedMoq || "", minPrice: minPrice || "", maxPrice: maxPrice || "" }} />
+            <ProductFilters categories={categories} activeSlug={slug} />
           </div>
 
           <div>

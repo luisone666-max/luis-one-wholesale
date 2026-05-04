@@ -99,6 +99,7 @@ function toCategory(row: CategoryRow, itemCount = 0): Category {
     itemCount,
     active: Boolean(row.active),
     image: row.image_url || row.icon_url || undefined,
+    level: row.level,
   };
 }
 
@@ -378,6 +379,13 @@ export async function getCatalogCategoryPage(slug: string): Promise<CatalogResul
     : categoryRow
       ? toCategory(categoryRow, products.length)
       : result.data.categories.find((item) => item.slug === slug) ?? null;
+  const filterCategories =
+    result.source === "supabase"
+      ? result.data.allCategoryRows
+          .slice()
+          .sort((a, b) => (a.level - b.level) || ((a.sort_order ?? 0) - (b.sort_order ?? 0)) || a.name_en.localeCompare(b.name_en))
+          .map((item) => toCategory(item))
+      : result.data.categories;
 
   if (!isAll && !category && result.source === "mock") {
     const mockCategory = mockCategories.find((item) => item.slug === slug) ?? null;
@@ -393,7 +401,7 @@ export async function getCatalogCategoryPage(slug: string): Promise<CatalogResul
   }
 
   return {
-    data: { categories: result.data.categories, products, category },
+    data: { categories: filterCategories, products, category },
     source: result.source,
     message: result.message,
   };

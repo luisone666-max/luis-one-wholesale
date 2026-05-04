@@ -160,103 +160,33 @@ function CategoryPlaceholder({ name }: { name: string }) {
   );
 }
 
-type ProductFilterValues = {
-  q?: string;
-  sort?: string;
-  stock?: string;
-  moq?: number | "";
-  minPrice?: number | "";
-  maxPrice?: number | "";
-};
-
-export function ProductFilters({ categories, activeSlug, filters = {} }: { categories: Category[]; activeSlug: string; filters?: ProductFilterValues }) {
+export function ProductFilters({ categories, activeSlug }: { categories: Category[]; activeSlug: string }) {
   return (
     <aside className="h-fit rounded-sm border border-zinc-200 bg-white shadow-sm">
       <div className="border-b border-zinc-100 px-4 py-3">
-        <p className="text-sm font-black text-zinc-950">Filters</p>
+        <p className="text-sm font-black text-zinc-950">Categories</p>
       </div>
       <div className="space-y-6 p-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">Category</p>
-          <div className="mt-3 space-y-1 text-sm">
+          <div className="max-h-[68vh] space-y-1 overflow-y-auto pr-1 text-sm">
             <FilterLink href="/category/all" active={activeSlug === "all"}>All Products</FilterLink>
             {categories.map((category) => (
-              <FilterLink key={category.slug} href={`/category/${category.slug}`} active={activeSlug === category.slug}>
+              <FilterLink key={category.slug} href={`/category/${category.slug}`} active={activeSlug === category.slug} level={category.level ?? 1}>
                 {category.name}
               </FilterLink>
             ))}
           </div>
         </div>
-        <form action={`/category/${activeSlug}`} className="space-y-5">
-          {filters.q ? <input type="hidden" name="q" value={filters.q} /> : null}
-          {filters.sort && filters.sort !== "popular" ? <input type="hidden" name="sort" value={filters.sort} /> : null}
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">Stock Status</span>
-            <select
-              name="stock"
-              defaultValue={filters.stock ?? ""}
-              className="mt-3 h-10 w-full rounded-sm border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-700 outline-none focus:border-orange-500"
-            >
-              <option value="">All Stock Status</option>
-              <option value="In stock">Ready Stock</option>
-              <option value="Preorder">For Order</option>
-              <option value="Low stock">Low Stock</option>
-            </select>
-          </label>
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">MOQ</span>
-            <select
-              name="moq"
-              defaultValue={filters.moq ? String(filters.moq) : ""}
-              className="mt-3 h-10 w-full rounded-sm border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-700 outline-none focus:border-orange-500"
-            >
-              <option value="">All MOQ</option>
-              <option value="1">MOQ 1 pc up</option>
-              <option value="6">MOQ 6 pcs up</option>
-              <option value="12">MOQ 12 pcs up</option>
-              <option value="50">MOQ 50 pcs up</option>
-            </select>
-          </label>
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">Price Range</p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <input
-                name="minPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                defaultValue={filters.minPrice ? String(filters.minPrice) : ""}
-                placeholder="Min"
-                className="h-10 rounded-sm border border-zinc-200 px-3 text-sm outline-none focus:border-orange-500"
-              />
-              <input
-                name="maxPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                defaultValue={filters.maxPrice ? String(filters.maxPrice) : ""}
-                placeholder="Max"
-                className="h-10 rounded-sm border border-zinc-200 px-3 text-sm outline-none focus:border-orange-500"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="submit" className="h-10 rounded-sm bg-[#f65f18] text-sm font-black text-white hover:bg-[#df4f0d]">
-              Apply
-            </button>
-            <Link href={`/category/${activeSlug}${filters.q ? `?q=${encodeURIComponent(filters.q)}` : ""}`} className="grid h-10 place-items-center rounded-sm border border-zinc-200 text-sm font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700">
-              Clear
-            </Link>
-          </div>
-        </form>
       </div>
     </aside>
   );
 }
 
-function FilterLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+function FilterLink({ href, active, children, level = 1 }: { href: string; active: boolean; children: ReactNode; level?: number }) {
+  const indent = level === 1 ? "pl-3" : level === 2 ? "pl-6" : "pl-9";
+
   return (
-    <Link href={href} className={`block rounded-sm px-3 py-2 font-bold ${active ? "bg-orange-50 text-[#f65f18]" : "text-zinc-600 hover:bg-zinc-50 hover:text-orange-700"}`}>
+    <Link href={href} className={`block rounded-sm py-2 pr-3 font-bold ${indent} ${active ? "bg-orange-50 text-[#f65f18]" : "text-zinc-600 hover:bg-zinc-50 hover:text-orange-700"}`}>
       {children}
     </Link>
   );

@@ -49,6 +49,7 @@ export type Category = {
   itemCount: number;
   active: boolean;
   image?: string;
+  level?: number;
 };
 
 const standardTiers = (base: number): PriceTier[] => [
