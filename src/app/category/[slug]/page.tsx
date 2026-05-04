@@ -31,17 +31,49 @@ function getHighestPrice(product: { tiers: { price: number }[] }) {
 }
 
 function normalizeSearch(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return value
+    .toLowerCase()
+    .replace(/([a-z])([0-9])/g, "$1 $2")
+    .replace(/([0-9])([a-z])/g, "$1 $2")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
-function productMatchesSearch(product: { name: string; sku?: string; category: string; description: string; details: string[]; searchText?: string }, query: string) {
-  const words = normalizeSearch(query).split(" ").filter(Boolean);
+function compactSearch(value: string) {
+  return normalizeSearch(value).replace(/\s+/g, "");
+}
+
+type SearchableProduct = {
+  name: string;
+  sku?: string;
+  category: string;
+  description: string;
+  details: string[];
+  searchText?: string;
+};
+
+function productSearchScore(product: SearchableProduct, query: string) {
+  const words = normalizeSearch(query)
+    .split(" ")
+    .filter((word) => word.length > 1);
 
   if (!words.length) {
-    return true;
+    return 1;
   }
 
-  const haystack = normalizeSearch([
+  const fields = {
+    sku: normalizeSearch(product.sku ?? ""),
+    name: normalizeSearch(product.name),
+    category: normalizeSearch(product.category),
+    description: normalizeSearch(product.description),
+    details: normalizeSearch(product.details.join(" ")),
+    extra: normalizeSearch(product.searchText ?? ""),
+  };
+  const haystack = Object.values(fields).join(" ");
+  const haystackWords = new Set(haystack.split(" ").filter(Boolean));
+  const normalizedQuery = normalizeSearch(query);
+  const compactQuery = compactSearch(query);
+  const compactHaystack = compactSearch([
     product.name,
     product.sku ?? "",
     product.category,
@@ -49,8 +81,49 @@ function productMatchesSearch(product: { name: string; sku?: string; category: s
     product.details.join(" "),
     product.searchText ?? "",
   ].join(" "));
+  let score = 0;
+  let matchedWords = 0;
 
-  return words.every((word) => haystack.includes(word));
+  if (compactQuery && compactHaystack.includes(compactQuery)) {
+    score += 90;
+    matchedWords = words.length;
+  }
+
+  if (normalizedQuery && fields.name.includes(normalizedQuery)) {
+    score += 70;
+  }
+
+  if (compactQuery && compactSearch(fields.sku).includes(compactQuery)) {
+    score += 120;
+  }
+
+  for (const word of words) {
+    let matched = false;
+
+    if (haystackWords.has(word)) {
+      score += 16;
+      matched = true;
+    } else if (haystack.includes(word)) {
+      score += 8;
+      matched = true;
+    }
+
+    if (fields.name.includes(word)) {
+      score += 10;
+    }
+
+    if (fields.sku.includes(word)) {
+      score += 14;
+    }
+
+    if (matched) {
+      matchedWords += 1;
+    }
+  }
+
+  const requiredMatches = words.length >= 3 ? words.length - 1 : 1;
+
+  return matchedWords >= requiredMatches ? score : 0;
 }
 
 export default async function CategoryPage({
@@ -68,11 +141,7 @@ export default async function CategoryPage({
   const searchQuery = (query?.q ?? "").trim();
   const searchText = searchQuery.toLowerCase();
   const selectedSort = sortOptions.some((option) => option.value === query?.sort) ? query?.sort ?? "popular" : "popular";
-  const searchedProducts = searchText
-    ? categoryProducts.filter((product) => productMatchesSearch(product, searchText))
-    : categoryProducts;
-  const visibleProducts = searchedProducts
-    .sort((a, b) => {
+  const compareProducts = (a: (typeof categoryProducts)[number], b: (typeof categoryProducts)[number]) => {
       if (selectedSort === "latest") {
         return b.slug.localeCompare(a.slug);
       }
@@ -86,7 +155,14 @@ export default async function CategoryPage({
       }
 
       return (b.sold ?? 0) - (a.sold ?? 0);
-    });
+  };
+  const visibleProducts = searchText
+    ? categoryProducts
+        .map((product) => ({ product, score: productSearchScore(product, searchText) }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score || compareProducts(a.product, b.product))
+        .map((item) => item.product)
+    : [...categoryProducts].sort(compareProducts);
   const totalPages = Math.max(1, Math.ceil(visibleProducts.length / pageSize));
   const requestedPage = Number(query?.page ?? "1");
   const currentPage = Number.isFinite(requestedPage) ? Math.min(Math.max(1, Math.floor(requestedPage)), totalPages) : 1;
