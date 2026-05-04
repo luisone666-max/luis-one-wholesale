@@ -34,7 +34,7 @@ type ProductDraft = {
 
 const defaultPageSize = 24;
 const stockStatuses = ["ready_stock", "for_order", "low_stock", "unavailable"];
-const productTabs: TranslationKey[] = ["basicInfo", "categoryTab", "variantsTab", "imagesTab", "supplierNotesTab", "adminNotesTab"];
+const productTabs: TranslationKey[] = ["basicInfo", "wholesalePricesTab", "variantsTab", "imagesTab", "supplierNotesTab", "adminNotesTab"];
 
 const text = {
   en: {
@@ -778,61 +778,82 @@ function ProductEditor({
         </div>
       </div>
 
-      <div className="mt-5 flex gap-2 overflow-x-auto border-b border-zinc-100 pb-3">
-        {productTabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            className={`shrink-0 rounded-md px-4 py-2 text-sm font-black ${activeTab === tab ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700"}`}
-          >
-            {t(tab)}
-          </button>
-        ))}
+      <div className="mt-5 grid gap-3 border-b border-zinc-100 pb-4 sm:grid-cols-2 xl:grid-cols-6">
+        {productTabs.map((tab) => {
+          const badge = tab === "wholesalePricesTab" ? draft.tiers.length : tab === "variantsTab" ? draft.variants.length : null;
+
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`rounded-md border px-4 py-3 text-left text-sm font-black transition ${
+                activeTab === tab
+                  ? "border-[#f65f18] bg-[#f65f18] text-white shadow-sm"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-orange-200 hover:bg-orange-50"
+              }`}
+            >
+              <span className="flex items-center justify-between gap-3">
+                <span>{t(tab)}</span>
+                {badge !== null ? (
+                  <span className={`rounded-full px-2 py-0.5 text-xs ${activeTab === tab ? "bg-white/20 text-white" : "bg-orange-50 text-orange-700"}`}>{badge}</span>
+                ) : null}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-5">
         {activeTab === "basicInfo" ? (
           <div className="space-y-5">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <Input label={t("sku")} value={draft.sku} onChange={(value) => updateDraft({ sku: value })} disabled={disabled} />
-              <Input label={t("productName")} value={draft.name} onChange={(value) => updateDraft({ name: value })} disabled={disabled} />
-              <Input label="Slug" value={draft.slug} onChange={(value) => updateDraft({ slug: value })} disabled={disabled} />
-              <Input label={t("brand")} value={draft.brand} onChange={(value) => updateDraft({ brand: value })} disabled={disabled} />
-              <Input label={t("model")} value={draft.model} onChange={(value) => updateDraft({ model: value })} disabled={disabled} />
-              <Input label={t("moq")} type="number" value={String(draft.moq)} onChange={(value) => updateDraft({ moq: Number(value) || 1 })} disabled={disabled} />
-              <label className="text-sm font-bold text-zinc-700">
-                {t("stockStatus")}
-                <select disabled={disabled} value={draft.stockStatus} onChange={(event) => updateDraft({ stockStatus: event.target.value })} className="mt-2 h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-700">
-                  {stockStatuses.map((status) => <option key={status} value={status}>{labelForStock(t, status)}</option>)}
-                </select>
-              </label>
-              <Input label={t("leadTime")} value={draft.leadTime} onChange={(value) => updateDraft({ leadTime: value })} disabled={disabled} />
-              <label className="flex items-center gap-3 text-sm font-bold text-zinc-700">
-                <input type="checkbox" checked={draft.active} disabled={disabled} onChange={(event) => updateDraft({ active: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
-                {draft.active ? t("activeToggle") : t("hidden")}
-              </label>
-              <Textarea label={t("description")} value={draft.description} onChange={(value) => updateDraft({ description: value })} disabled={disabled} wide />
-            </div>
-            <WholesalePriceEditor
-              disabled={disabled}
-              tiers={draft.tiers}
-              t={t}
-              maxQtyBlank={copy.maxQtyBlank}
-              addTierLabel={copy.addTier}
-              onUpdateTier={updateTier}
-              onDeleteTier={(index) => updateDraft({ tiers: draft.tiers.filter((_, tierIndex) => tierIndex !== index) })}
-              onAddTier={() => updateDraft({ tiers: [...draft.tiers, { minQty: 1, maxQty: null, unitPrice: 1 }] })}
-            />
+            <section className="rounded-md border border-zinc-200 bg-zinc-50/60 p-4">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Input label={t("sku")} value={draft.sku} onChange={(value) => updateDraft({ sku: value })} disabled={disabled} />
+                <Input label={t("productName")} value={draft.name} onChange={(value) => updateDraft({ name: value })} disabled={disabled} />
+                <CategorySelect label={t("category")} value={draft.categoryId} categories={mainCategories} disabled={disabled} onChange={(value) => updateDraft({ categoryId: value, subcategoryId: "", childCategoryId: "" })} />
+                <CategorySelect label={t("subcategory")} value={draft.subcategoryId} categories={subcategories} disabled={disabled} onChange={(value) => updateDraft({ subcategoryId: value, childCategoryId: "" })} optional />
+                <CategorySelect label={t("childCategory")} value={draft.childCategoryId} categories={childCategories} disabled={disabled} onChange={(value) => updateDraft({ childCategoryId: value })} optional />
+                <Input label={t("moq")} type="number" value={String(draft.moq)} onChange={(value) => updateDraft({ moq: Number(value) || 1 })} disabled={disabled} />
+                <label className="text-sm font-bold text-zinc-700">
+                  {t("stockStatus")}
+                  <select disabled={disabled} value={draft.stockStatus} onChange={(event) => updateDraft({ stockStatus: event.target.value })} className="mt-2 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-700">
+                    {stockStatuses.map((status) => <option key={status} value={status}>{labelForStock(t, status)}</option>)}
+                  </select>
+                </label>
+                <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-700">
+                  <input type="checkbox" checked={draft.active} disabled={disabled} onChange={(event) => updateDraft({ active: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                  {draft.active ? t("activeToggle") : t("hidden")}
+                </label>
+                <Textarea label={t("description")} value={draft.description} onChange={(value) => updateDraft({ description: value })} disabled={disabled} wide />
+              </div>
+            </section>
+
+            <details className="rounded-md border border-zinc-200 bg-white p-4">
+              <summary className="cursor-pointer text-sm font-black text-zinc-800">
+                Slug / {t("brand")} / {t("model")} / {t("leadTime")}
+              </summary>
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Input label="Slug" value={draft.slug} onChange={(value) => updateDraft({ slug: value })} disabled={disabled} />
+                <Input label={t("brand")} value={draft.brand} onChange={(value) => updateDraft({ brand: value })} disabled={disabled} />
+                <Input label={t("model")} value={draft.model} onChange={(value) => updateDraft({ model: value })} disabled={disabled} />
+                <Input label={t("leadTime")} value={draft.leadTime} onChange={(value) => updateDraft({ leadTime: value })} disabled={disabled} />
+              </div>
+            </details>
           </div>
         ) : null}
 
-        {activeTab === "categoryTab" ? (
-          <div className="grid gap-4 md:grid-cols-3">
-            <CategorySelect label={t("category")} value={draft.categoryId} categories={mainCategories} disabled={disabled} onChange={(value) => updateDraft({ categoryId: value, subcategoryId: "", childCategoryId: "" })} />
-            <CategorySelect label={t("subcategory")} value={draft.subcategoryId} categories={subcategories} disabled={disabled} onChange={(value) => updateDraft({ subcategoryId: value, childCategoryId: "" })} optional />
-            <CategorySelect label={t("childCategory")} value={draft.childCategoryId} categories={childCategories} disabled={disabled} onChange={(value) => updateDraft({ childCategoryId: value })} optional />
-          </div>
+        {activeTab === "wholesalePricesTab" ? (
+          <WholesalePriceEditor
+            disabled={disabled}
+            tiers={draft.tiers}
+            t={t}
+            maxQtyBlank={copy.maxQtyBlank}
+            addTierLabel={copy.addTier}
+            onUpdateTier={updateTier}
+            onDeleteTier={(index) => updateDraft({ tiers: draft.tiers.filter((_, tierIndex) => tierIndex !== index) })}
+            onAddTier={() => updateDraft({ tiers: [...draft.tiers, { minQty: 1, maxQty: null, unitPrice: 1 }] })}
+          />
         ) : null}
 
         {activeTab === "variantsTab" ? (
