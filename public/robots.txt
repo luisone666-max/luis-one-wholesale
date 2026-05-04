@@ -1,0 +1,10 @@
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Facebot
+Allow: /
+
+User-agent: *
+Allow: /
+
+Sitemap: https://luis-one-wholesale.vercel.app/sitemap.xml
