@@ -209,6 +209,14 @@ function blankDraft(categories: AdminCategoryOption[]): ProductDraft {
   };
 }
 
+function slugifyProduct(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "product";
+}
+
 function labelForStock(t: (key: TranslationKey) => string, value: string) {
   return t(stockStatusKeyByValue[value] ?? "forOrder");
 }
@@ -586,6 +594,8 @@ function ProductEditor({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageStatus, setImageStatus] = useState("");
+  const [saving, setSaving] = useState(false);
   const subcategories = categories.filter((category) => category.parentId === draft.categoryId);
   const childCategories = categories.filter((category) => category.parentId === draft.subcategoryId);
   const disabled = mode === "view";
@@ -654,11 +664,13 @@ function ProductEditor({
 
     if (!allowedImageTypes.has(file.type)) {
       onMessage(imageCopy.imageInvalidType);
+      setImageStatus(imageCopy.imageInvalidType);
       return;
     }
 
     if (file.size > maxImageSize) {
       onMessage(imageCopy.imageTooLarge);
+      setImageStatus(imageCopy.imageTooLarge);
       return;
     }
 
@@ -668,15 +680,18 @@ function ProductEditor({
 
     setSelectedImage(file);
     setSelectedImagePreview(window.URL.createObjectURL(file));
+    setImageStatus(`${file.name} selected. Click Save Product or Upload Image Now.`);
   };
 
   const uploadImage = async () => {
     if (!selectedImage) {
       onMessage(imageCopy.imageInvalidType);
-      return;
+      setImageStatus(imageCopy.imageInvalidType);
+      return "";
     }
 
     setUploadingImage(true);
+    setImageStatus("Uploading image...");
 
     try {
       const formData = new FormData();
@@ -695,7 +710,8 @@ function ProductEditor({
 
       if (!response.ok || !result.ok || !result.imageUrl) {
         onMessage(result.message ?? imageCopy.imageUploadFailed);
-        return;
+        setImageStatus(result.message ?? imageCopy.imageUploadFailed);
+        return "";
       }
 
       updateDraft({ imageUrl: result.imageUrl });
@@ -705,6 +721,8 @@ function ProductEditor({
       }
       setSelectedImagePreview("");
       onMessage(imageCopy.imageUploadSuccess);
+      setImageStatus(imageCopy.imageUploadSuccess);
+      return result.imageUrl;
     } finally {
       setUploadingImage(false);
     }
@@ -750,11 +768,30 @@ function ProductEditor({
   };
 
   const submit = async () => {
+    setSaving(true);
+    onMessage("");
+
+    try {
+      const payload: ProductDraft = {
+        ...draft,
+        slug: draft.slug || slugifyProduct(draft.name || draft.sku),
+      };
+
+      if (selectedImage) {
+        const uploadedImageUrl = await uploadImage();
+
+        if (!uploadedImageUrl) {
+          return;
+        }
+
+        payload.imageUrl = uploadedImageUrl;
+      }
+
     const endpoint = mode === "create" ? "/api/admin/products" : `/api/admin/products/${draft.id}`;
     const response = await fetch(endpoint, {
       method: mode === "create" ? "POST" : "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(draft),
+      body: JSON.stringify(payload),
     });
     const result = (await response.json().catch(() => ({ ok: false, message: "Save failed." }))) as { ok?: boolean; message?: string };
 
@@ -764,6 +801,9 @@ function ProductEditor({
     }
 
     window.location.reload();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -777,8 +817,8 @@ function ProductEditor({
         <div className="flex flex-wrap gap-2">
           <StatusPill tone="orange">{t("noAutomaticPricing")}</StatusPill>
           {mode !== "view" ? (
-            <button type="button" onClick={submit} className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white">
-              {mode === "create" ? copy.createProduct : copy.saveProduct}
+            <button type="button" onClick={() => void submit()} disabled={saving || uploadingImage} className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60">
+              {saving ? "Saving..." : mode === "create" ? copy.createProduct : copy.saveProduct}
             </button>
           ) : null}
         </div>
@@ -985,7 +1025,7 @@ function ProductEditor({
                   onClick={() => void uploadImage()}
                   className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white disabled:opacity-40"
                 >
-                  {draft.imageUrl ? imageCopy.replaceImage : imageCopy.uploadImage}
+                  {uploadingImage ? "Uploading..." : draft.imageUrl ? imageCopy.replaceImage : "Upload Image Now"}
                 </button>
                 <button
                   type="button"
@@ -1003,6 +1043,7 @@ function ProductEditor({
                   {imageCopy.removeImage}
                 </button>
               </div>
+              {imageStatus ? <p className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-600">{imageStatus}</p> : null}
               <Input label={t("imageUrl")} value={draft.imageUrl} onChange={(value) => updateDraft({ imageUrl: value })} disabled={disabled} />
             </div>
           </div>
@@ -1020,6 +1061,23 @@ function ProductEditor({
 
         {activeTab === "adminNotesTab" ? <Textarea label={t("adminNotes")} value={draft.adminNotes} onChange={(value) => updateDraft({ adminNotes: value })} disabled={disabled} /> : null}
       </div>
+      {mode !== "view" ? (
+        <div className="sticky bottom-0 z-20 mt-6 -mx-5 -mb-5 border-t border-zinc-200 bg-white/95 px-5 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-bold text-zinc-500">
+              {selectedImage ? "Selected image will upload automatically when you save." : "Review product details, prices, images, and variants before saving."}
+            </p>
+            <button
+              type="button"
+              onClick={() => void submit()}
+              disabled={saving || uploadingImage}
+              className="h-11 rounded-md bg-[#f65f18] px-6 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60"
+            >
+              {saving ? "Saving..." : mode === "create" ? copy.createProduct : copy.saveProduct}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

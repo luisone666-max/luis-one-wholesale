@@ -107,17 +107,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return jsonError(deleteTiersError.message, 500);
   }
 
-  const { error: tiersError } = await admin.from("product_price_tiers").insert(
-    payload.tiers.map((tier) => ({
-      product_id: id,
-      min_qty: tier.minQty,
-      max_qty: tier.maxQty,
-      unit_price: tier.unitPrice,
-    })),
-  );
+  if (payload.tiers.length) {
+    const { error: tiersError } = await admin.from("product_price_tiers").insert(
+      payload.tiers.map((tier) => ({
+        product_id: id,
+        min_qty: tier.minQty,
+        max_qty: tier.maxQty,
+        unit_price: tier.unitPrice,
+      })),
+    );
 
-  if (tiersError) {
-    return jsonError(tiersError.message, 500);
+    if (tiersError) {
+      return jsonError(tiersError.message, 500);
+    }
   }
 
   const variantError = await saveProductVariants(admin, id, payload.variants);

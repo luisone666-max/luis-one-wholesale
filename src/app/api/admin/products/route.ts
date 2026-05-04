@@ -90,18 +90,20 @@ export async function POST(request: Request) {
   }
 
   const productId = (product as { id: string }).id;
-  const { error: tiersError } = await admin.from("product_price_tiers").insert(
-    payload.tiers.map((tier) => ({
-      product_id: productId,
-      min_qty: tier.minQty,
-      max_qty: tier.maxQty,
-      unit_price: tier.unitPrice,
-    })),
-  );
+  if (payload.tiers.length) {
+    const { error: tiersError } = await admin.from("product_price_tiers").insert(
+      payload.tiers.map((tier) => ({
+        product_id: productId,
+        min_qty: tier.minQty,
+        max_qty: tier.maxQty,
+        unit_price: tier.unitPrice,
+      })),
+    );
 
-  if (tiersError) {
-    await admin.from("products").delete().eq("id", productId);
-    return jsonError(tiersError.message, 500);
+    if (tiersError) {
+      await admin.from("products").delete().eq("id", productId);
+      return jsonError(tiersError.message, 500);
+    }
   }
 
   const variantError = await saveProductVariants(admin, productId, payload.variants);

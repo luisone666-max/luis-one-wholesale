@@ -67,6 +67,14 @@ function optionalPositiveNumber(value: unknown) {
   return Number.isFinite(number) && number > 0 ? number : NaN;
 }
 
+function slugifyProduct(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "product";
+}
+
 export function validateTierRules(tiers: ProductTierInput[]) {
   const sorted = [...tiers].sort((a, b) => a.minQty - b.minQty);
 
@@ -103,7 +111,7 @@ export function validateTierRules(tiers: ProductTierInput[]) {
 export function parseProductPayload(raw: Record<string, unknown>): { value: ProductPayload } | { error: string } {
   const sku = clean(raw.sku);
   const name = clean(raw.name);
-  const slug = clean(raw.slug);
+  const rawSlug = clean(raw.slug);
   const categoryId = clean(raw.categoryId);
   const stockStatus = clean(raw.stockStatus) || "for_order";
   const moq = toNumber(raw.moq);
@@ -162,9 +170,7 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
     return { error: "Product Name is required." };
   }
 
-  if (!slug) {
-    return { error: "Slug is required." };
-  }
+  const slug = rawSlug || slugifyProduct(name || sku);
 
   if (!categoryId) {
     return { error: "Category is required." };
