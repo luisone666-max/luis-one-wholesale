@@ -56,7 +56,9 @@ export function ProductDetailExperience({ product }: { product: Product }) {
     setSuccess(result.ok);
     setMessage(result.message);
   };
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || (typeof window === "undefined" ? "" : window.location.origin)).replace(/\/$/, "");
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const browserSiteUrl = typeof window === "undefined" ? "" : window.location.origin;
+  const siteUrl = (browserSiteUrl || (configuredSiteUrl.includes("supabase.co") ? "https://luis-one-wholesale.vercel.app" : configuredSiteUrl)).replace(/\/$/, "");
   const currentProductUrl = `${siteUrl}/product/${product.slug}`;
   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentProductUrl)}`;
   const shareText = [
