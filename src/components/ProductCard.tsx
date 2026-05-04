@@ -3,7 +3,7 @@ import { ProductImage, StockStatusBadge } from "@/components/CustomerUi";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import { formatMoney, getPriceRange, type Product } from "@/lib/mock-data";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const bulkTier = product.tiers.find((tier) => tier.min >= 6) ?? product.tiers[product.tiers.length - 1];
   const prices = product.tiers.map((tier) => tier.price);
   const compactPrice = `${formatMoney(Math.min(...prices))}+`;
@@ -11,7 +11,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md">
       <Link href={`/product/${product.slug}`} className="relative block aspect-square bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-0.5 sm:p-4">
-        <ProductImage src={product.image} alt={product.name} className="transition duration-200 group-hover:scale-[1.03]" />
+        <ProductImage src={product.image} alt={product.name} priority={priority} className="transition duration-200 group-hover:scale-[1.03]" />
         <div className="absolute left-1.5 top-1.5 [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-[9px] sm:left-2 sm:top-2 sm:[&>span]:px-2 sm:[&>span]:py-1 sm:[&>span]:text-[11px]">
           <StockStatusBadge status={product.stockStatus} />
         </div>

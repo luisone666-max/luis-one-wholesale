@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   },
   images: {
+    minimumCacheTTL: 86400,
     remotePatterns: [
       {
         protocol: "https",

@@ -428,7 +428,7 @@ export default async function CategoryPage({
             </div>
 
             <div className="grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4 xl:grid-cols-6">
-              {paginatedProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
+              {paginatedProducts.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} />)}
             </div>
 
             {!paginatedProducts.length ? (

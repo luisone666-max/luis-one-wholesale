@@ -192,13 +192,27 @@ function FilterLink({ href, active, children, level = 1 }: { href: string; activ
   );
 }
 
-export function ProductImage({ src, alt, className = "" }: { src?: string; alt: string; className?: string }) {
+export function ProductImage({
+  src,
+  alt,
+  className = "",
+  priority = false,
+  sizes = "(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw",
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+  priority?: boolean;
+  sizes?: string;
+}) {
   return (
     <Image
       src={src || "/products/phone-accessories.svg"}
       alt={alt}
       width={520}
       height={520}
+      sizes={sizes}
+      priority={priority}
       className={`h-full w-full object-contain ${className}`}
     />
   );
