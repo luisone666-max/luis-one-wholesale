@@ -11,7 +11,8 @@ declare global {
   }
 }
 
-const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+const defaultMetaPixelId = "909127758753748";
+const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID || defaultMetaPixelId;
 
 export function trackMetaEvent(eventName: string, data?: Record<string, unknown>) {
   if (typeof window === "undefined" || !window.fbq || !metaPixelId) {
