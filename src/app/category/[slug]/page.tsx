@@ -99,6 +99,8 @@ function getHighestPrice(product: { tiers: { price: number }[] }) {
 function normalizeSearch(value: string) {
   return value
     .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/\+/g, " plus ")
     .replace(/([a-z])([0-9])/g, "$1 $2")
     .replace(/([0-9])([a-z])/g, "$1 $2")
     .replace(/[^a-z0-9]+/g, " ")
@@ -107,6 +109,71 @@ function normalizeSearch(value: string) {
 
 function compactSearch(value: string) {
   return normalizeSearch(value).replace(/\s+/g, "");
+}
+
+const searchAliases: Record<string, string[]> = {
+  accessory: ["accessories"],
+  accessories: ["accessory"],
+  absorber: ["shock", "suspension"],
+  bracket: ["mount", "holder"],
+  cable: ["wire", "charger"],
+  cables: ["wire", "charger"],
+  cleaner: ["cleaning", "spray"],
+  click: ["honda"],
+  coolant: ["fluid"],
+  key: ["keyset", "ignition", "switch"],
+  keyset: ["key", "ignition", "switch"],
+  lock: ["security"],
+  locks: ["security"],
+  mio: ["yamaha"],
+  nmax: ["yamaha"],
+  seat: ["saddle"],
+  shock: ["absorber", "suspension"],
+  switch: ["ignition", "keyset"],
+};
+
+function expandSearchWords(words: string[]) {
+  const expanded = new Set(words);
+
+  for (const word of words) {
+    const singular = word.endsWith("s") && word.length > 3 ? word.slice(0, -1) : "";
+    const aliases = searchAliases[word] ?? [];
+
+    if (singular) {
+      expanded.add(singular);
+    }
+
+    for (const alias of aliases) {
+      expanded.add(alias);
+    }
+  }
+
+  return Array.from(expanded);
+}
+
+function wordDistance(a: string, b: string) {
+  if (a === b) {
+    return 0;
+  }
+
+  if (Math.abs(a.length - b.length) > 2) {
+    return 3;
+  }
+
+  let edits = 0;
+  const length = Math.min(a.length, b.length);
+
+  for (let index = 0; index < length; index += 1) {
+    if (a[index] !== b[index]) {
+      edits += 1;
+    }
+
+    if (edits > 2) {
+      return edits;
+    }
+  }
+
+  return edits + Math.abs(a.length - b.length);
 }
 
 type SearchableProduct = {
@@ -119,11 +186,12 @@ type SearchableProduct = {
 };
 
 function productSearchScore(product: SearchableProduct, query: string) {
-  const words = normalizeSearch(query)
+  const originalWords = normalizeSearch(query)
     .split(" ")
     .filter((word) => word.length > 1);
+  const words = expandSearchWords(originalWords);
 
-  if (!words.length) {
+  if (!originalWords.length) {
     return 1;
   }
 
@@ -136,7 +204,8 @@ function productSearchScore(product: SearchableProduct, query: string) {
     extra: normalizeSearch(product.searchText ?? ""),
   };
   const haystack = Object.values(fields).join(" ");
-  const haystackWords = new Set(haystack.split(" ").filter(Boolean));
+  const haystackWordList = haystack.split(" ").filter(Boolean);
+  const haystackWords = new Set(haystackWordList);
   const normalizedQuery = normalizeSearch(query);
   const compactQuery = compactSearch(query);
   const compactHaystack = compactSearch([
@@ -149,10 +218,12 @@ function productSearchScore(product: SearchableProduct, query: string) {
   ].join(" "));
   let score = 0;
   let matchedWords = 0;
+  let originalMatchedWords = 0;
 
   if (compactQuery && compactHaystack.includes(compactQuery)) {
     score += 90;
     matchedWords = words.length;
+    originalMatchedWords = originalWords.length;
   }
 
   if (normalizedQuery && fields.name.includes(normalizedQuery)) {
@@ -172,6 +243,12 @@ function productSearchScore(product: SearchableProduct, query: string) {
     } else if (haystack.includes(word)) {
       score += 8;
       matched = true;
+    } else if (haystackWordList.some((item) => item.startsWith(word) || word.startsWith(item))) {
+      score += 6;
+      matched = true;
+    } else if (word.length > 4 && haystackWordList.some((item) => item.length > 4 && wordDistance(word, item) <= 1)) {
+      score += 4;
+      matched = true;
     }
 
     if (fields.name.includes(word)) {
@@ -184,10 +261,17 @@ function productSearchScore(product: SearchableProduct, query: string) {
 
     if (matched) {
       matchedWords += 1;
+      if (originalWords.includes(word)) {
+        originalMatchedWords += 1;
+      }
     }
   }
 
-  return matchedWords > 0 ? score : 0;
+  if (originalWords.length > 1 && originalMatchedWords < Math.ceil(originalWords.length / 2)) {
+    return 0;
+  }
+
+  return matchedWords > 0 ? score + originalMatchedWords * 12 : 0;
 }
 
 export default async function CategoryPage({
