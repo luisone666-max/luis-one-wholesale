@@ -12,6 +12,7 @@ export type Product = {
   name: string;
   category: string;
   categorySlug: string;
+  categoryPathSlugs?: string[];
   image: string;
   gallery: string[];
   moq: number;

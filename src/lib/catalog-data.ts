@@ -91,6 +91,17 @@ function toStockStatus(status: string | null): Product["stockStatus"] {
   return "Preorder";
 }
 
+function toCategory(row: CategoryRow, itemCount = 0): Category {
+  return {
+    slug: row.slug,
+    name: row.name_en,
+    description: row.description ?? "Wholesale category",
+    itemCount,
+    active: Boolean(row.active),
+    image: row.image_url || row.icon_url || undefined,
+  };
+}
+
 function activePathIsVisible(product: ProductRow, activeCategoryIds: Set<string>) {
   return [product.category_id, product.subcategory_id, product.child_category_id]
     .filter((id): id is string => Boolean(id))
@@ -147,6 +158,9 @@ function mapSupabaseSnapshot(
 
   const products = visibleProductRows.map((product, index): Product => {
     const category = product.category_id ? categoriesById.get(product.category_id) : undefined;
+    const categoryPathSlugs = [product.category_id, product.subcategory_id, product.child_category_id]
+      .map((id) => (id ? categoriesById.get(id)?.slug : undefined))
+      .filter((slug): slug is string => Boolean(slug));
     const image = product.image_url || "/products/phone-accessories.svg";
     const gallery = (imagesByProductId.get(product.id) ?? [])
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -196,6 +210,7 @@ function mapSupabaseSnapshot(
       name: product.name,
       category: category?.name_en ?? "Wholesale",
       categorySlug: category?.slug ?? "all",
+      categoryPathSlugs,
       image,
       gallery: gallery.length ? gallery : [image],
       moq: product.moq ?? 1,
@@ -222,14 +237,7 @@ function mapSupabaseSnapshot(
   const categories = activeCategoryRows
     .filter((category) => category.level === 1 && category.show_on_homepage)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((category): Category => ({
-      slug: category.slug,
-      name: category.name_en,
-      description: category.description ?? "Wholesale category",
-      itemCount: productCountsByCategoryId.get(category.id) ?? 0,
-      active: Boolean(category.active),
-      image: category.image_url || category.icon_url || undefined,
-    }));
+    .map((category): Category => toCategory(category, productCountsByCategoryId.get(category.id) ?? 0));
 
   return { categories, products, allCategoryRows: activeCategoryRows };
 }
@@ -296,7 +304,7 @@ export async function getCatalogSnapshot(): Promise<CatalogResult<CatalogSnapsho
   try {
     const snapshot = await readSupabaseCatalog();
 
-    if (snapshot && snapshot.categories.length) {
+    if (snapshot && snapshot.allCategoryRows.length) {
       return { data: snapshot, source: "supabase" };
     }
 
@@ -324,6 +332,11 @@ export async function getCatalogSnapshot(): Promise<CatalogResult<CatalogSnapsho
 
 export async function getCatalogCategoryParams() {
   const result = await getCatalogSnapshot();
+
+  if (result.source === "supabase") {
+    return [{ slug: "all" }, ...result.data.allCategoryRows.map((category) => ({ slug: category.slug }))];
+  }
+
   return [{ slug: "all" }, ...result.data.categories.map((category) => ({ slug: category.slug }))];
 }
 
@@ -334,19 +347,18 @@ export async function getCatalogNavigationCategories(): Promise<Category[]> {
     return getMockActiveCategories();
   }
 
-  const productCountsByCategorySlug = new Map(result.data.categories.map((category) => [category.slug, category.itemCount]));
+  const productCountsByCategorySlug = new Map<string, number>();
+
+  for (const product of result.data.products) {
+    for (const slug of new Set([product.categorySlug, ...(product.categoryPathSlugs ?? [])])) {
+      productCountsByCategorySlug.set(slug, (productCountsByCategorySlug.get(slug) ?? 0) + 1);
+    }
+  }
 
   return result.data.allCategoryRows
     .filter((category) => category.level === 1 && category.active && category.show_in_navigation)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((category) => ({
-      slug: category.slug,
-      name: category.name_en,
-      description: category.description ?? "Wholesale category",
-      itemCount: productCountsByCategorySlug.get(category.slug) ?? 0,
-      active: Boolean(category.active),
-      image: category.image_url || category.icon_url || undefined,
-    }));
+    .map((category) => toCategory(category, productCountsByCategorySlug.get(category.slug) ?? 0));
 }
 
 export async function getCatalogProductParams() {
@@ -357,8 +369,15 @@ export async function getCatalogProductParams() {
 export async function getCatalogCategoryPage(slug: string): Promise<CatalogResult<{ categories: Category[]; products: Product[]; category: Category | null }>> {
   const result = await getCatalogSnapshot();
   const isAll = slug === "all";
-  const category = isAll ? null : result.data.categories.find((item) => item.slug === slug) ?? null;
-  const products = isAll ? result.data.products : result.data.products.filter((product) => product.categorySlug === slug);
+  const categoryRow = isAll ? null : result.data.allCategoryRows.find((item) => item.slug === slug) ?? null;
+  const products = isAll
+    ? result.data.products
+    : result.data.products.filter((product) => product.categorySlug === slug || product.categoryPathSlugs?.includes(slug));
+  const category = isAll
+    ? null
+    : categoryRow
+      ? toCategory(categoryRow, products.length)
+      : result.data.categories.find((item) => item.slug === slug) ?? null;
 
   if (!isAll && !category && result.source === "mock") {
     const mockCategory = mockCategories.find((item) => item.slug === slug) ?? null;
