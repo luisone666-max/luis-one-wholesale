@@ -56,16 +56,11 @@ export function ProductDetailExperience({ product }: { product: Product }) {
     setSuccess(result.ok);
     setMessage(result.message);
   };
-  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const browserSiteUrl = typeof window === "undefined" ? "" : window.location.origin;
-  const fallbackSiteUrl = "https://luisonesupplyhub.com";
-  const siteUrl = (
-    browserSiteUrl ||
-    (configuredSiteUrl.includes("supabase.co") || configuredSiteUrl.includes("luis-one-wholesale.vercel.app")
-      ? fallbackSiteUrl
-      : configuredSiteUrl || fallbackSiteUrl)
+  const shareBaseUrl = (
+    process.env.NEXT_PUBLIC_PRODUCT_SHARE_URL ||
+    "https://ifnkxkfjkdjicxpkrlxy.supabase.co/functions/v1/product-share"
   ).replace(/\/$/, "");
-  const shareProductUrl = `${siteUrl}/share/product/${product.slug}`;
+  const shareProductUrl = `${shareBaseUrl}?slug=${encodeURIComponent(product.slug)}`;
   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareProductUrl)}`;
   const shareText = [
     "Luis One Supply Hub product:",
