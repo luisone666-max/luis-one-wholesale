@@ -45,12 +45,22 @@ export function ResellerImages({ product }: { product: Product }) {
             <div className="aspect-square bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-2">
               <ProductImage src={image} alt={`${product.name} reseller image ${index + 1}`} />
             </div>
-            <div className="border-t border-zinc-100 p-2 sm:p-3">
+            <div className="space-y-2 border-t border-zinc-100 p-2 sm:p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">Image {index + 1}</p>
               <a
                 href={downloadHref(image, product, index)}
                 className="grid h-10 place-items-center rounded-sm bg-[#f65f18] px-3 text-xs font-black text-white shadow-sm transition hover:bg-[#df4f0d] sm:text-sm"
               >
                 Download Image
+              </a>
+              <a
+                href={image}
+                target="_blank"
+                rel="noreferrer"
+                className="block truncate rounded-sm bg-zinc-50 px-2 py-1.5 text-[11px] font-bold text-zinc-500 hover:text-orange-700"
+                title={image}
+              >
+                Open original image
               </a>
             </div>
           </article>
