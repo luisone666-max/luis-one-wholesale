@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { BrandLogo } from "@/components/BrandLogo";
 import { messengerUrl } from "@/components/CustomerUi";
 
 export function SiteFooter() {
@@ -8,13 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 text-sm text-zinc-600 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8">
         <div>
           <div className="flex items-center gap-3">
-            <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-white shadow-sm ring-2 ring-orange-100">
-              <Image src="/brand/luis-one-logo.jpg" alt="Luis One Supply Hub logo" width={48} height={48} className="h-full w-full object-cover" />
-            </span>
-            <div>
-              <p className="text-xl font-black leading-5 text-zinc-950">Luis One</p>
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Supply Hub</p>
-            </div>
+            <BrandLogo size="md" />
           </div>
           <p className="mt-3 max-w-sm leading-6">
             Wholesale Supply for Resellers & Shops across motorcycle parts, daily essentials, electronics, food, and spices.

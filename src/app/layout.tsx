@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Luis One Supply Hub | Wholesale Ordering",
   description: "A professional Philippine wholesale shopping site with public tier pricing.",
+  icons: {
+    icon: "/brand/luis-one-logo.jpg",
+    apple: "/brand/luis-one-logo.jpg",
+  },
 };
 
 export default function RootLayout({

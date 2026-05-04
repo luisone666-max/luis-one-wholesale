@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CustomerAuthNav } from "@/components/auth/CustomerAuthNav";
+import { BrandLogo } from "@/components/BrandLogo";
 import { CartIconLink } from "@/components/CartIconLink";
 import { messengerUrl } from "@/components/CustomerUi";
 import { ProductSearchForm } from "@/components/ProductSearchForm";
@@ -73,13 +73,7 @@ export function SiteHeader() {
         <div className="grid gap-2 sm:gap-4 lg:grid-cols-[300px_1fr_auto] lg:items-center">
           <div className="flex items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-white shadow-sm ring-2 ring-orange-100 sm:h-12 sm:w-12">
-                <Image src="/brand/luis-one-logo.jpg" alt="Luis One Supply Hub logo" width={48} height={48} className="h-full w-full object-cover" priority />
-              </span>
-              <span>
-                <span className="block text-base font-black leading-4 tracking-tight text-zinc-950 sm:text-xl sm:leading-5">Luis One</span>
-                <span className="block text-[9px] font-black uppercase tracking-[0.16em] text-orange-600 sm:text-[11px] sm:tracking-[0.18em]">Supply Hub</span>
-              </span>
+              <BrandLogo size="md" priority />
             </Link>
             <div className="flex items-center gap-2 lg:hidden">
               <CartIconLink className="h-9 w-9" />
