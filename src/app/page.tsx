@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogSnapshot } from "@/lib/catalog-data";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -15,6 +16,10 @@ export default async function Home() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd(), websiteJsonLd()]) }}
+      />
       <SiteHeader />
       <DataSourceNotice message={catalog.message} />
       <MarketplaceShell>

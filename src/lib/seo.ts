@@ -1,0 +1,146 @@
+import type { Category, Product } from "@/lib/mock-data";
+
+export const productionSiteUrl = "https://luisonesupplyhub.com";
+export const siteName = "Luis One Supply Hub";
+export const siteDescription =
+  "Wholesale supply for resellers and shops in the Philippines with public tier pricing and manual order confirmation.";
+
+export function getSiteUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+
+  const siteUrl =
+    configuredUrl && !configuredUrl.includes("supabase.co") && !configuredUrl.includes("luis-one-wholesale.vercel.app")
+      ? configuredUrl
+      : process.env.NODE_ENV === "production"
+        ? productionSiteUrl
+        : vercelUrl
+          ? `https://${vercelUrl}`
+          : productionSiteUrl;
+
+  return siteUrl.replace(/\/$/, "");
+}
+
+export function absoluteUrl(pathOrUrl: string | undefined) {
+  const fallback = "/brand/luis-one-logo.jpg";
+  const value = pathOrUrl || fallback;
+
+  if (value.toLowerCase().endsWith(".svg")) {
+    return `${getSiteUrl()}${fallback}`;
+  }
+
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+
+  return `${getSiteUrl()}${value.startsWith("/") ? value : `/${value}`}`;
+}
+
+export function stripText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+export function getProductPriceBounds(product: Product) {
+  const prices = [
+    ...product.tiers.map((tier) => tier.price),
+    ...(product.variants ?? []).flatMap((variant) => variant.tiers.map((tier) => tier.price)),
+  ].filter((price) => Number.isFinite(price) && price > 0);
+
+  if (!prices.length) {
+    return { lowPrice: 0, highPrice: 0 };
+  }
+
+  return {
+    lowPrice: Math.min(...prices),
+    highPrice: Math.max(...prices),
+  };
+}
+
+function stockAvailability(product: Product) {
+  if (product.stockStatus === "In stock") {
+    return "https://schema.org/InStock";
+  }
+
+  if (product.stockStatus === "Low stock") {
+    return "https://schema.org/LimitedAvailability";
+  }
+
+  return "https://schema.org/PreOrder";
+}
+
+export function productJsonLd(product: Product) {
+  const url = `${getSiteUrl()}/product/${product.slug}`;
+  const { lowPrice, highPrice } = getProductPriceBounds(product);
+  const images = Array.from(new Set([product.image, ...(product.gallery ?? [])].map(absoluteUrl)));
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    sku: product.sku,
+    image: images,
+    description: stripText(product.description),
+    category: product.category,
+    brand: {
+      "@type": "Brand",
+      name: siteName,
+    },
+    offers: {
+      "@type": "AggregateOffer",
+      url,
+      priceCurrency: "PHP",
+      lowPrice,
+      highPrice,
+      availability: stockAvailability(product),
+      offerCount: product.tiers.length + (product.variants?.length ?? 0),
+    },
+  };
+}
+
+export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
+export function organizationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteName,
+    url: getSiteUrl(),
+    logo: absoluteUrl("/brand/luis-one-logo.jpg"),
+    sameAs: ["https://www.facebook.com/profile.php?id=61582454726803"],
+  };
+}
+
+export function websiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    url: getSiteUrl(),
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${getSiteUrl()}/category/all?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+export function categoryDescription(category: Category | null) {
+  if (!category) {
+    return "Browse public wholesale prices, MOQ, stock status, and tier pricing for resellers and shops in the Philippines.";
+  }
+
+  return stripText(
+    `${category.description} Browse ${category.name} wholesale products with public prices, MOQ, and manual order confirmation.`,
+  );
+}

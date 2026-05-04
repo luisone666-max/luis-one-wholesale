@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogProductPage, getCatalogProductParams } from "@/lib/catalog-data";
 import { getPriceRange } from "@/lib/mock-data";
+import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -162,8 +163,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     );
   }
 
+  const structuredData = [
+    productJsonLd(product),
+    breadcrumbJsonLd([
+      { name: "Home", url: getSiteUrl() },
+      { name: product.category, url: `${getSiteUrl()}/category/${product.categorySlug}` },
+      { name: product.name, url: `${getSiteUrl()}/product/${product.slug}` },
+    ]),
+  ];
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <SiteHeader />
       <DataSourceNotice message={catalog.message} />
       <MarketplaceShell>

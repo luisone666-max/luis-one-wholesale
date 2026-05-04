@@ -1,15 +1,81 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCatalogCategoryPage, getCatalogCategoryParams } from "@/lib/catalog-data";
+import { absoluteUrl, categoryDescription, getSiteUrl, siteName } from "@/lib/seo";
 
 export const revalidate = 60;
 
 export async function generateStaticParams() {
   return getCatalogCategoryParams();
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ q?: string; sort?: string; page?: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const query = await searchParams;
+  const catalog = await getCatalogCategoryPage(slug);
+  const { category } = catalog.data;
+  const isAll = slug === "all";
+  const searchQuery = (query?.q ?? "").trim();
+  const page = query?.page ? Number(query.page) : 1;
+  const canonical = `${getSiteUrl()}/category/${slug}`;
+
+  if (!isAll && !category) {
+    return {
+      title: `Category not found | ${siteName}`,
+      description: "Browse current wholesale product categories from Luis One Supply Hub.",
+      alternates: { canonical },
+      robots: { index: false, follow: true },
+    };
+  }
+
+  const title = searchQuery
+    ? `Search ${searchQuery} Wholesale Products | ${siteName}`
+    : isAll
+      ? `Wholesale Products Philippines | ${siteName}`
+      : `${category?.name} Wholesale Philippines | ${siteName}`;
+  const description = searchQuery
+    ? `Search public wholesale products for "${searchQuery}" at Luis One Supply Hub. Browse prices, MOQ, stock status, and order online.`
+    : categoryDescription(category);
+  const image = absoluteUrl(category?.image ?? "/brand/luis-one-logo.jpg");
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    robots: searchQuery || page > 1 ? { index: false, follow: true } : undefined,
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      siteName,
+      type: "website",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 1200,
+          alt: category?.name ?? siteName,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
 }
 
 const pageSize = 48;
