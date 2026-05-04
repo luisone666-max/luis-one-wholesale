@@ -28,8 +28,13 @@ async function checkAdminAccess(request: NextRequest): Promise<AdminCheckResult>
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  const isDevDiagnostic = path === "/dev/supabase-test";
   const isAdminPage = path === "/admin" || path.startsWith("/admin/");
   const isAdminApi = path.startsWith("/api/admin/");
+
+  if (isDevDiagnostic && process.env.NODE_ENV === "production") {
+    return new NextResponse("Not Found", { status: 404 });
+  }
 
   if (path === "/admin/login" || path.startsWith("/api/admin/auth/")) {
     return NextResponse.next();
@@ -61,5 +66,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/dev/supabase-test"],
 };
