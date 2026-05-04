@@ -25,9 +25,10 @@ export function SiteFooter() {
           <p className="font-black text-zinc-950">Categories</p>
           <div className="mt-3 space-y-2">
             <Link href="/category/all" className="block hover:text-orange-700">All Products</Link>
-            <Link href="/category/motorcycle-parts" className="block hover:text-orange-700">Motorcycle Parts</Link>
+            <Link href="/category/automotive" className="block hover:text-orange-700">Automotive</Link>
             <Link href="/category/electronics" className="block hover:text-orange-700">Electronics</Link>
-            <Link href="/category/food-spices" className="block hover:text-orange-700">Food & Spices</Link>
+            <Link href="/category/groceries" className="block hover:text-orange-700">Groceries</Link>
+            <Link href="/category/home-and-living" className="block hover:text-orange-700">Home & Living</Link>
           </div>
         </div>
         <div>

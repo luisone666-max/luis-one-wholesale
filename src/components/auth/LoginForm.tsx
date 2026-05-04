@@ -11,17 +11,21 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setMessage("");
+    setSuccessMessage(false);
 
     const supabase = createBrowserSupabaseClient();
 
     if (!supabase) {
       setMessage("Supabase Auth is not configured yet. Please check environment variables.");
+      setSuccessMessage(false);
       setLoading(false);
       return;
     }
@@ -35,12 +39,49 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
 
     if (error) {
       setMessage(getFriendlyAuthError(error.message));
+      setSuccessMessage(false);
       return;
     }
 
     const redirectTo = new URLSearchParams(window.location.search).get("redirect") || "/";
     router.push(redirectTo);
     router.refresh();
+  };
+
+  const sendPasswordReset = async () => {
+    const supabase = createBrowserSupabaseClient();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      setMessage("Please enter your email address first, then click Forgot Password.");
+      setSuccessMessage(false);
+      return;
+    }
+
+    if (!supabase) {
+      setMessage("Supabase Auth is not configured yet. Please check environment variables.");
+      setSuccessMessage(false);
+      return;
+    }
+
+    setResetLoading(true);
+    setMessage("");
+    setSuccessMessage(false);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    setResetLoading(false);
+
+    if (error) {
+      setMessage(getFriendlyAuthError(error.message));
+      setSuccessMessage(false);
+      return;
+    }
+
+    setSuccessMessage(true);
+    setMessage("Password reset email sent. Please check your inbox.");
   };
 
   return (
@@ -76,7 +117,7 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
           />
         </label>
         {message ? (
-          <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{message}</p>
+          <p className={`rounded-md border px-4 py-3 text-sm font-bold ${successMessage ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}>{message}</p>
         ) : null}
         <button
           type="submit"
@@ -93,8 +134,8 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
         <Link href="/category/all" className="font-black text-zinc-600">
           Continue Shopping
         </Link>
-        <button type="button" className="font-bold text-zinc-500">
-          Forgot Password
+        <button type="button" onClick={sendPasswordReset} disabled={resetLoading} className="font-bold text-zinc-500 hover:text-orange-700 disabled:opacity-60">
+          {resetLoading ? "Sending..." : "Forgot Password"}
         </button>
       </div>
     </div>

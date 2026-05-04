@@ -132,6 +132,8 @@ export function AdminOrdersClient({
   const [orderStatus, setOrderStatus] = useState("all");
   const [paymentStatus, setPaymentStatus] = useState("all");
   const [receivingMethod, setReceivingMethod] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState(initialError ?? "");
   const selectedOrder = orders.find((order) => order.orderNo === selectedOrderNo) ?? orders[0] ?? null;
@@ -149,10 +151,13 @@ export function AdminOrdersClient({
       const orderStatusMatch = orderStatus === "all" || order.orderStatus === orderStatus;
       const paymentStatusMatch = paymentStatus === "all" || order.paymentStatus === paymentStatus;
       const receivingMethodMatch = receivingMethod === "all" || order.receivingMethod === receivingMethod;
+      const orderTime = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+      const fromMatch = dateFrom ? orderTime >= new Date(`${dateFrom}T00:00:00`).getTime() : true;
+      const toMatch = dateTo ? orderTime <= new Date(`${dateTo}T23:59:59`).getTime() : true;
 
-      return orderMatch && customerMatch && orderStatusMatch && paymentStatusMatch && receivingMethodMatch;
+      return orderMatch && customerMatch && orderStatusMatch && paymentStatusMatch && receivingMethodMatch && fromMatch && toMatch;
     });
-  }, [customerSearch, orderNoSearch, orderStatus, orders, paymentStatus, receivingMethod]);
+  }, [customerSearch, dateFrom, dateTo, orderNoSearch, orderStatus, orders, paymentStatus, receivingMethod]);
 
   const pageCount = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
   const visibleOrders = filteredOrders.slice((page - 1) * pageSize, page * pageSize);
@@ -219,7 +224,7 @@ export function AdminOrdersClient({
             <StatusPill tone="neutral">{t("freightCollect")}</StatusPill>
             <StatusPill tone="neutral">{t("noAutomaticPricing")}</StatusPill>
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
             <input
               value={orderNoSearch}
               onChange={(event) => {
@@ -241,9 +246,26 @@ export function AdminOrdersClient({
             <FilterSelect value={orderStatus} onChange={setOrderStatus} allLabel={copy.allOrderStatuses} values={orderStatuses} map={statusKeyByValue} />
             <FilterSelect value={paymentStatus} onChange={setPaymentStatus} allLabel={copy.allPaymentStatuses} values={paymentStatuses} map={statusKeyByValue} />
             <FilterSelect value={receivingMethod} onChange={setReceivingMethod} allLabel={copy.allReceivingMethods} values={receivingMethods} map={receivingMethodKeyByValue} />
-            <div className="flex h-11 items-center rounded-md border border-dashed border-zinc-200 px-3 text-sm font-bold text-zinc-400">
-              {copy.dateRangePlaceholder}
-            </div>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(event) => {
+                setDateFrom(event.target.value);
+                setPage(1);
+              }}
+              aria-label="Date from"
+              className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold text-zinc-700 outline-none focus:border-orange-500"
+            />
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(event) => {
+                setDateTo(event.target.value);
+                setPage(1);
+              }}
+              aria-label="Date to"
+              className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold text-zinc-700 outline-none focus:border-orange-500"
+            />
           </div>
         </div>
 

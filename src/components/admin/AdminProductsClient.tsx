@@ -337,6 +337,43 @@ export function AdminProductsClient({
     setMessage("Product deleted.");
   };
 
+  const exportProductsCsv = () => {
+    const headers = [
+      "SKU",
+      "Product Name",
+      "Category",
+      "Subcategory",
+      "Child Category",
+      "MOQ",
+      "Stock Status",
+      "Active",
+      "Price Range",
+      "Image URL",
+    ];
+    const escapeCell = (value: string | number | boolean) => `"${String(value).replace(/"/g, '""')}"`;
+    const rows = filteredProducts.map((product) => [
+      product.sku,
+      product.name,
+      product.category,
+      product.subcategory,
+      product.childCategory,
+      product.moq,
+      labelForStock(t, product.stockStatus),
+      product.active ? "Active" : "Hidden",
+      product.priceRange,
+      product.image,
+    ]);
+    const csv = [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `luis-one-products-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+    setMessage(`Exported ${filteredProducts.length} products.`);
+  };
+
   return (
     <>
       <AdminPageTitle titleKey="productManagement" />
@@ -390,10 +427,7 @@ export function AdminProductsClient({
               <option value="active">{t("activeToggle")}</option>
               <option value="hidden">{t("hidden")}</option>
             </select>
-            <button type="button" className="h-11 rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-zinc-700">
-              {t("bulkEdit")}
-            </button>
-            <button type="button" className="h-11 rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-zinc-700">
+            <button type="button" onClick={exportProductsCsv} className="h-11 rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700">
               {t("exportCsv")}
             </button>
           </div>

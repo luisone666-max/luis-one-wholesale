@@ -11,13 +11,29 @@ export async function generateStaticParams() {
 }
 
 const pageSize = 12;
+const sortOptions = [
+  { label: "Popular", value: "popular" },
+  { label: "Latest", value: "latest" },
+  { label: "Price Low to High", value: "price-low" },
+  { label: "Price High to Low", value: "price-high" },
+];
+
+function getLowestPrice(product: { tiers: { price: number }[] }) {
+  const prices = product.tiers.map((tier) => tier.price).filter((price) => price > 0);
+  return prices.length ? Math.min(...prices) : 0;
+}
+
+function getHighestPrice(product: { tiers: { price: number }[] }) {
+  const prices = product.tiers.map((tier) => tier.price).filter((price) => price > 0);
+  return prices.length ? Math.max(...prices) : 0;
+}
 
 export default async function CategoryPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ page?: string; q?: string }>;
+  searchParams?: Promise<{ page?: string; q?: string; sort?: string; stock?: string; moq?: string; minPrice?: string; maxPrice?: string }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -26,7 +42,12 @@ export default async function CategoryPage({
   const { categories, category, products: categoryProducts } = catalog.data;
   const searchQuery = (query?.q ?? "").trim();
   const searchText = searchQuery.toLowerCase();
-  const visibleProducts = searchText
+  const selectedSort = sortOptions.some((option) => option.value === query?.sort) ? query?.sort ?? "popular" : "popular";
+  const selectedStock = query?.stock ?? "";
+  const selectedMoq = Number(query?.moq ?? "");
+  const minPrice = Number(query?.minPrice ?? "");
+  const maxPrice = Number(query?.maxPrice ?? "");
+  const searchedProducts = searchText
     ? categoryProducts.filter((product) =>
         [product.name, product.sku ?? "", product.category, product.description]
           .join(" ")
@@ -34,6 +55,26 @@ export default async function CategoryPage({
           .includes(searchText),
       )
     : categoryProducts;
+  const visibleProducts = searchedProducts
+    .filter((product) => (selectedStock ? product.stockStatus === selectedStock : true))
+    .filter((product) => (Number.isFinite(selectedMoq) && selectedMoq > 0 ? product.moq >= selectedMoq : true))
+    .filter((product) => (Number.isFinite(minPrice) && minPrice > 0 ? getHighestPrice(product) >= minPrice : true))
+    .filter((product) => (Number.isFinite(maxPrice) && maxPrice > 0 ? getLowestPrice(product) <= maxPrice : true))
+    .sort((a, b) => {
+      if (selectedSort === "latest") {
+        return b.slug.localeCompare(a.slug);
+      }
+
+      if (selectedSort === "price-low") {
+        return getLowestPrice(a) - getLowestPrice(b);
+      }
+
+      if (selectedSort === "price-high") {
+        return getHighestPrice(b) - getHighestPrice(a);
+      }
+
+      return (b.sold ?? 0) - (a.sold ?? 0);
+    });
   const totalPages = Math.max(1, Math.ceil(visibleProducts.length / pageSize));
   const requestedPage = Number(query?.page ?? "1");
   const currentPage = Number.isFinite(requestedPage) ? Math.min(Math.max(1, Math.floor(requestedPage)), totalPages) : 1;
@@ -45,8 +86,58 @@ export default async function CategoryPage({
       params.set("q", searchQuery);
     }
 
+    if (selectedSort !== "popular") {
+      params.set("sort", selectedSort);
+    }
+
+    if (selectedStock) {
+      params.set("stock", selectedStock);
+    }
+
+    if (Number.isFinite(selectedMoq) && selectedMoq > 0) {
+      params.set("moq", String(selectedMoq));
+    }
+
+    if (Number.isFinite(minPrice) && minPrice > 0) {
+      params.set("minPrice", String(minPrice));
+    }
+
+    if (Number.isFinite(maxPrice) && maxPrice > 0) {
+      params.set("maxPrice", String(maxPrice));
+    }
+
     if (page > 1) {
       params.set("page", String(page));
+    }
+
+    const suffix = params.toString();
+    return suffix ? `/category/${slug}?${suffix}` : `/category/${slug}`;
+  };
+  const sortHref = (sort: string) => {
+    const params = new URLSearchParams();
+
+    if (searchQuery) {
+      params.set("q", searchQuery);
+    }
+
+    if (sort !== "popular") {
+      params.set("sort", sort);
+    }
+
+    if (selectedStock) {
+      params.set("stock", selectedStock);
+    }
+
+    if (Number.isFinite(selectedMoq) && selectedMoq > 0) {
+      params.set("moq", String(selectedMoq));
+    }
+
+    if (Number.isFinite(minPrice) && minPrice > 0) {
+      params.set("minPrice", String(minPrice));
+    }
+
+    if (Number.isFinite(maxPrice) && maxPrice > 0) {
+      params.set("maxPrice", String(maxPrice));
     }
 
     const suffix = params.toString();
@@ -110,21 +201,21 @@ export default async function CategoryPage({
             <details className="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
               <summary className="cursor-pointer text-sm font-black text-zinc-950">Open filters</summary>
               <div className="mt-4">
-                <ProductFilters categories={categories} activeSlug={slug} />
+                <ProductFilters categories={categories} activeSlug={slug} filters={{ q: searchQuery, sort: selectedSort, stock: selectedStock, moq: selectedMoq || "", minPrice: minPrice || "", maxPrice: maxPrice || "" }} />
               </div>
             </details>
           </div>
           <div className="hidden lg:block">
-            <ProductFilters categories={categories} activeSlug={slug} />
+            <ProductFilters categories={categories} activeSlug={slug} filters={{ q: searchQuery, sort: selectedSort, stock: selectedStock, moq: selectedMoq || "", minPrice: minPrice || "", maxPrice: maxPrice || "" }} />
           </div>
 
           <div>
             <div className="mb-3 flex flex-col gap-2 rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
               <div className="flex gap-1.5 overflow-x-auto text-xs font-black sm:flex-wrap sm:gap-2 sm:text-sm">
-                {["Popular", "Latest", "Price Low to High", "Price High to Low"].map((item, index) => (
-                  <button key={item} type="button" className={`shrink-0 rounded-sm px-2.5 py-1.5 sm:px-3 sm:py-2 ${index === 0 ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700"}`}>
-                    {item}
-                  </button>
+                {sortOptions.map((item) => (
+                  <Link key={item.value} href={sortHref(item.value)} className={`shrink-0 rounded-sm px-2.5 py-1.5 sm:px-3 sm:py-2 ${selectedSort === item.value ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700 hover:bg-orange-50 hover:text-orange-700"}`}>
+                    {item.label}
+                  </Link>
                 ))}
               </div>
               <Link href="/cart" className="text-xs font-black text-orange-700 sm:text-sm">View Order List</Link>
