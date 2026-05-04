@@ -63,6 +63,8 @@ const text = {
     imageInvalidType: "Only JPG, PNG, and WebP image files are allowed.",
     imageUploadSuccess: "Image uploaded. Save the product to keep this image.",
     imageUploadFailed: "Image upload failed.",
+    productUploadSuccess: "Product uploaded successfully.",
+    productUpdateSuccess: "Product saved successfully.",
     categoryBrowser: "Category Browser",
     allProducts: "All Products",
     productCountLabel: "products",
@@ -596,6 +598,7 @@ function ProductEditor({
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageStatus, setImageStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [successDialog, setSuccessDialog] = useState("");
   const subcategories = categories.filter((category) => category.parentId === draft.categoryId);
   const childCategories = categories.filter((category) => category.parentId === draft.subcategoryId);
   const disabled = mode === "view";
@@ -800,7 +803,13 @@ function ProductEditor({
       return;
     }
 
-    window.location.reload();
+    const successMessage = mode === "create" ? "Product uploaded successfully." : "Product saved successfully.";
+    setSuccessDialog(successMessage);
+    onMessage(successMessage);
+
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 1200);
     } finally {
       setSaving(false);
     }
@@ -1074,6 +1083,22 @@ function ProductEditor({
               className="h-11 rounded-md bg-[#f65f18] px-6 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60"
             >
               {saving ? "Saving..." : mode === "create" ? copy.createProduct : copy.saveProduct}
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {successDialog ? (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-zinc-950/45 px-4">
+          <div className="w-full max-w-sm rounded-md border border-orange-100 bg-white p-6 text-center shadow-2xl">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-orange-600 text-sm font-black text-white">OK</div>
+            <h3 className="mt-4 text-lg font-black text-zinc-950">{successDialog}</h3>
+            <p className="mt-2 text-sm font-bold text-zinc-500">Refreshing product list...</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-5 h-10 rounded-md bg-[#f65f18] px-5 text-sm font-black text-white"
+            >
+              OK
             </button>
           </div>
         </div>
