@@ -121,9 +121,7 @@ function productSearchScore(product: SearchableProduct, query: string) {
     }
   }
 
-  const requiredMatches = words.length >= 3 ? words.length - 1 : 1;
-
-  return matchedWords >= requiredMatches ? score : 0;
+  return matchedWords > 0 ? score : 0;
 }
 
 export default async function CategoryPage({
