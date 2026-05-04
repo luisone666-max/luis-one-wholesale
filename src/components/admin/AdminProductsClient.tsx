@@ -33,6 +33,12 @@ type ProductDraft = {
   tiers: AdminProductTier[];
   variants: AdminProductVariant[];
 };
+type ProductsListResponse = {
+  ok?: boolean;
+  message?: string;
+  products?: AdminProductRecord[];
+  categories?: AdminCategoryOption[];
+};
 
 const defaultPageSize = 24;
 const stockStatuses = ["ready_stock", "for_order", "low_stock", "unavailable"];
@@ -248,6 +254,26 @@ export function AdminProductsClient({
   const [categoryPanelOpen, setCategoryPanelOpen] = useState(true);
   const [message, setMessage] = useState(initialError ?? "");
 
+  const refreshProducts = async () => {
+    const response = await fetch("/api/admin/products", { cache: "no-store" });
+    const result = (await response.json().catch(() => ({ ok: false, message: "Product list refresh failed." }))) as ProductsListResponse;
+
+    if (!response.ok || !result.ok || !result.products) {
+      setMessage(result.message ?? "Product list refresh failed.");
+      return false;
+    }
+
+    setProducts(result.products);
+    setSelectedProduct((current) => {
+      if (!current) {
+        return result.products?.[0] ?? null;
+      }
+
+      return result.products?.find((item) => item.id === current.id) ?? result.products?.[0] ?? null;
+    });
+    return true;
+  };
+
   const mainCategories = categories.filter((category) => category.level === 1);
   const categoryProductCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -329,7 +355,8 @@ export function AdminProductsClient({
       return;
     }
 
-    window.location.reload();
+    const refreshed = await refreshProducts();
+    setMessage(refreshed ? copy.duplicateDone : "Product duplicated. Refresh the page if it is not visible yet.");
   };
 
   const deleteProduct = async (product: AdminProductRecord) => {
@@ -570,6 +597,7 @@ export function AdminProductsClient({
         categories={categories}
         mainCategories={mainCategories}
         onMessage={setMessage}
+        onSaved={refreshProducts}
       />
     </>
   );
@@ -581,12 +609,14 @@ function ProductEditor({
   categories,
   mainCategories,
   onMessage,
+  onSaved,
 }: {
   mode: EditorMode;
   product: AdminProductRecord | null;
   categories: AdminCategoryOption[];
   mainCategories: AdminCategoryOption[];
   onMessage: (message: string) => void;
+  onSaved: () => Promise<boolean>;
 }) {
   const { t, language } = useAdminI18n();
   const copy = text[language];
@@ -819,12 +849,9 @@ function ProductEditor({
     }
 
     const successMessage = mode === "create" ? "Product uploaded successfully." : "Product saved successfully.";
-    setSuccessDialog(successMessage);
+    const refreshed = await onSaved();
+    setSuccessDialog(refreshed ? successMessage : `${successMessage} Refresh the page if the product is not visible yet.`);
     onMessage(successMessage);
-
-    window.setTimeout(() => {
-      window.location.reload();
-    }, 1200);
     } finally {
       setSaving(false);
     }
@@ -1107,10 +1134,10 @@ function ProductEditor({
           <div className="w-full max-w-sm rounded-md border border-orange-100 bg-white p-6 text-center shadow-2xl">
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-orange-600 text-sm font-black text-white">OK</div>
             <h3 className="mt-4 text-lg font-black text-zinc-950">{successDialog}</h3>
-            <p className="mt-2 text-sm font-bold text-zinc-500">Refreshing product list...</p>
+            <p className="mt-2 text-sm font-bold text-zinc-500">Product list updated.</p>
             <button
               type="button"
-              onClick={() => window.location.reload()}
+              onClick={() => setSuccessDialog("")}
               className="mt-5 h-10 rounded-md bg-[#f65f18] px-5 text-sm font-black text-white"
             >
               OK

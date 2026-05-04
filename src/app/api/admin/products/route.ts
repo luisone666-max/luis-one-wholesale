@@ -2,11 +2,28 @@ import { NextResponse } from "next/server";
 import { assertUniqueVariantSkus, saveProductVariants } from "@/lib/admin-product-variants";
 import { parseProductPayload, type ProductPayload } from "@/lib/admin-product-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { getAdminProducts } from "@/lib/admin-products-data";
 import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
+}
+
+export async function GET(request: Request) {
+  const guard = await requireActiveAdminApi(request);
+
+  if (guard.response) {
+    return guard.response;
+  }
+
+  const result = await getAdminProducts();
+
+  if (result.error) {
+    return jsonError(result.error, 500);
+  }
+
+  return NextResponse.json({ ok: true, products: result.products, categories: result.categories });
 }
 
 async function assertUniqueProduct(

@@ -129,7 +129,7 @@ function getPriceRange(tiers: AdminProductTier[]) {
   }
 
   const prices = tiers.map((tier) => tier.unitPrice);
-  return `₱${Math.min(...prices).toLocaleString("en-US")} - ₱${Math.max(...prices).toLocaleString("en-US")}`;
+  return `PHP ${Math.min(...prices).toLocaleString("en-US")} - PHP ${Math.max(...prices).toLocaleString("en-US")}`;
 }
 
 export async function getAdminProducts(): Promise<AdminProductsResult> {
