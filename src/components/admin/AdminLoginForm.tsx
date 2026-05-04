@@ -13,20 +13,24 @@ const copy = {
     password: "Password",
     submit: "Login",
     loading: "Checking access...",
+    success: "Login successful. Opening admin dashboard...",
+    networkError: "Login request failed. Please check your connection and try again.",
     denied: "You do not have admin access.",
     required: "Email and password are required.",
     back: "Back to Store",
   },
   zh: {
-    title: "后台登录",
-    subtitle: "请使用已授权的管理员账号登录。",
-    email: "邮箱",
-    password: "密码",
-    submit: "登录",
-    loading: "正在检查权限...",
-    denied: "你没有后台访问权限。",
-    required: "请输入邮箱和密码。",
-    back: "返回前台",
+    title: "\u540e\u53f0\u767b\u5f55",
+    subtitle: "\u8bf7\u4f7f\u7528\u5df2\u6388\u6743\u7684\u7ba1\u7406\u5458\u8d26\u53f7\u767b\u5f55\u3002",
+    email: "\u90ae\u7bb1",
+    password: "\u5bc6\u7801",
+    submit: "\u767b\u5f55",
+    loading: "\u6b63\u5728\u68c0\u67e5\u6743\u9650...",
+    success: "\u767b\u5f55\u6210\u529f\uff0c\u6b63\u5728\u6253\u5f00\u540e\u53f0...",
+    networkError: "\u767b\u5f55\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u540e\u91cd\u8bd5\u3002",
+    denied: "\u4f60\u6ca1\u6709\u540e\u53f0\u8bbf\u95ee\u6743\u9650\u3002",
+    required: "\u8bf7\u586b\u5199\u90ae\u7bb1\u548c\u5bc6\u7801\u3002",
+    back: "\u8fd4\u56de\u5546\u57ce",
   },
 };
 
@@ -66,7 +70,7 @@ function AdminLoginFormInner() {
     }
 
     setBusy(true);
-    setMessage("");
+    setMessage(t.loading);
 
     try {
       const response = await fetch("/api/admin/auth/login", {
@@ -81,8 +85,11 @@ function AdminLoginFormInner() {
         return;
       }
 
-      router.replace("/admin");
+      setMessage(t.success);
+      window.location.assign("/admin");
       router.refresh();
+    } catch {
+      setMessage(t.networkError);
     } finally {
       setBusy(false);
     }
@@ -106,7 +113,7 @@ function AdminLoginFormInner() {
               onClick={() => switchLanguage("zh")}
               className={`rounded px-3 py-1.5 text-sm font-black ${language === "zh" ? "bg-[#f65f18] text-white" : "text-orange-700"}`}
             >
-              中文
+              {"\u4e2d\u6587"}
             </button>
           </div>
         </div>
@@ -126,6 +133,7 @@ function AdminLoginFormInner() {
             {t.email}
             <input
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="mt-2 h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:border-orange-500"
@@ -136,13 +144,14 @@ function AdminLoginFormInner() {
             {t.password}
             <input
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="mt-2 h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:border-orange-500"
             />
           </label>
 
-          <button type="submit" disabled={busy} className="mt-6 h-11 w-full rounded-md bg-[#f65f18] text-sm font-black text-white disabled:opacity-50">
+          <button type="submit" disabled={busy} className="mt-6 h-11 w-full rounded-md bg-[#f65f18] text-sm font-black text-white disabled:cursor-wait disabled:opacity-50">
             {busy ? t.loading : t.submit}
           </button>
         </form>
