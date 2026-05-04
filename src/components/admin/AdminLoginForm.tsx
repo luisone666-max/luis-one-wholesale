@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import type { AdminLanguage } from "@/lib/admin-i18n";
 
 const copy = {
@@ -12,12 +12,11 @@ const copy = {
     email: "Email",
     password: "Password",
     submit: "Login",
-    loading: "Checking access...",
-    success: "Login successful. Opening admin dashboard...",
-    openDashboard: "Open Admin Dashboard",
-    networkError: "Login request failed. Please check your connection and try again.",
     denied: "You do not have admin access.",
     required: "Email and password are required.",
+    invalid: "Invalid email or password.",
+    config: "Supabase admin auth is not configured.",
+    server: "Login failed. Please try again.",
     back: "Back to Store",
   },
   zh: {
@@ -26,82 +25,42 @@ const copy = {
     email: "\u90ae\u7bb1",
     password: "\u5bc6\u7801",
     submit: "\u767b\u5f55",
-    loading: "\u6b63\u5728\u68c0\u67e5\u6743\u9650...",
-    success: "\u767b\u5f55\u6210\u529f\uff0c\u6b63\u5728\u6253\u5f00\u540e\u53f0...",
-    openDashboard: "\u6253\u5f00\u540e\u53f0",
-    networkError: "\u767b\u5f55\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u540e\u91cd\u8bd5\u3002",
     denied: "\u4f60\u6ca1\u6709\u540e\u53f0\u8bbf\u95ee\u6743\u9650\u3002",
     required: "\u8bf7\u586b\u5199\u90ae\u7bb1\u548c\u5bc6\u7801\u3002",
+    invalid: "\u90ae\u7bb1\u6216\u5bc6\u7801\u4e0d\u6b63\u786e\u3002",
+    config: "Supabase \u540e\u53f0\u767b\u5f55\u8fd8\u6ca1\u6709\u914d\u7f6e\u597d\u3002",
+    server: "\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5\u3002",
     back: "\u8fd4\u56de\u5546\u57ce",
   },
 };
 
+const errorKeys = new Set(["denied", "required", "invalid", "config", "server"]);
+
 function AdminLoginFormInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const denied = Boolean(searchParams.get("denied"));
+  const error = searchParams.get("error");
   const [language, setLanguage] = useState<AdminLanguage>("en");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [loginSucceeded, setLoginSucceeded] = useState(false);
-  const [busy, setBusy] = useState(false);
   const t = copy[language];
 
   useEffect(() => {
     const stored = window.localStorage.getItem("admin-language");
     const nextLanguage = stored === "zh" ? "zh" : "en";
+    const nextError = denied ? "denied" : errorKeys.has(error ?? "") ? error : "";
 
     queueMicrotask(() => {
       setLanguage(nextLanguage);
-      setMessage(denied ? copy[nextLanguage].denied : "");
+      setMessage(nextError ? copy[nextLanguage][nextError as keyof typeof copy.en] : "");
     });
-  }, [denied]);
+  }, [denied, error]);
 
   const switchLanguage = (nextLanguage: AdminLanguage) => {
+    const nextError = denied ? "denied" : errorKeys.has(error ?? "") ? error : "";
+
     setLanguage(nextLanguage);
     window.localStorage.setItem("admin-language", nextLanguage);
-    setMessage(denied ? copy[nextLanguage].denied : "");
-  };
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!email.trim() || !password) {
-      setMessage(t.required);
-      return;
-    }
-
-    setBusy(true);
-    setMessage(t.loading);
-    setLoginSucceeded(false);
-
-    try {
-      const response = await fetch("/api/admin/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const result = (await response.json().catch(() => ({ ok: false, message: "Login failed." }))) as { ok?: boolean; message?: string };
-
-      if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Login failed.");
-        return;
-      }
-
-      setMessage(t.success);
-      setLoginSucceeded(true);
-      router.push("/admin");
-      router.refresh();
-
-      window.setTimeout(() => {
-        window.location.href = "/admin";
-      }, 300);
-    } catch {
-      setMessage(t.networkError);
-    } finally {
-      setBusy(false);
-    }
+    setMessage(nextError ? copy[nextLanguage][nextError as keyof typeof copy.en] : "");
   };
 
   return (
@@ -127,7 +86,7 @@ function AdminLoginFormInner() {
           </div>
         </div>
 
-        <form onSubmit={submit} className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
+        <form action="/api/admin/auth/login" method="post" className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-md bg-[#f65f18] text-lg font-black text-white">S</span>
             <div>
@@ -142,9 +101,9 @@ function AdminLoginFormInner() {
             {t.email}
             <input
               type="email"
+              name="email"
+              required
               autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
               className="mt-2 h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:border-orange-500"
             />
           </label>
@@ -153,21 +112,16 @@ function AdminLoginFormInner() {
             {t.password}
             <input
               type="password"
+              name="password"
+              required
               autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
               className="mt-2 h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:border-orange-500"
             />
           </label>
 
-          <button type="submit" disabled={busy} className="mt-6 h-11 w-full rounded-md bg-[#f65f18] text-sm font-black text-white disabled:cursor-wait disabled:opacity-50">
-            {busy ? t.loading : t.submit}
+          <button type="submit" className="mt-6 h-11 w-full rounded-md bg-[#f65f18] text-sm font-black text-white">
+            {t.submit}
           </button>
-          {loginSucceeded ? (
-            <Link href="/admin" className="mt-3 flex h-11 w-full items-center justify-center rounded-md border border-orange-200 bg-orange-50 text-sm font-black text-orange-700">
-              {t.openDashboard}
-            </Link>
-          ) : null}
         </form>
       </div>
     </main>
