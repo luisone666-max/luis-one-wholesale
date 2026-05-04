@@ -296,7 +296,7 @@ export async function getCatalogSnapshot(): Promise<CatalogResult<CatalogSnapsho
   try {
     const snapshot = await readSupabaseCatalog();
 
-    if (snapshot && snapshot.products.length && snapshot.categories.length) {
+    if (snapshot && snapshot.categories.length) {
       return { data: snapshot, source: "supabase" };
     }
 
