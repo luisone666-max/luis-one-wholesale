@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { messengerUrl, ProductImage, StockStatusBadge } from "@/components/CustomerUi";
+import { trackMetaEvent } from "@/components/MetaPixel";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import { addProductToCart } from "@/lib/customer-cart";
 import { formatMoney, getPriceRange, getTierForQuantity, getVariantPriceRange, type Product, type ProductVariant } from "@/lib/mock-data";
@@ -55,6 +56,16 @@ export function ProductDetailExperience({ product }: { product: Product }) {
     setLoading(false);
     setSuccess(result.ok);
     setMessage(result.message);
+
+    if (result.ok) {
+      trackMetaEvent("AddToCart", {
+        content_ids: [selectedVariant?.sku || product.sku],
+        content_name: displayProduct.name,
+        content_type: "product",
+        currency: "PHP",
+        value: subtotal,
+      });
+    }
   };
   const shareBaseUrl = (
     process.env.NEXT_PUBLIC_PRODUCT_SHARE_URL ||
@@ -78,6 +89,22 @@ export function ProductDetailExperience({ product }: { product: Product }) {
     }
 
     window.open(messengerUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard?.writeText(shareProductUrl);
+      setShareMessage("Product share link copied.");
+    } catch {
+      setShareMessage("Copy failed. Please copy the link from your browser.");
+    }
+  };
+
+  const trackFacebookShare = () => {
+    trackMetaEvent("Share", {
+      content_name: product.name,
+      content_type: "product",
+    });
   };
 
   return (
@@ -108,10 +135,18 @@ export function ProductDetailExperience({ product }: { product: Product }) {
                 href={facebookShareUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={trackFacebookShare}
                 className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700 hover:bg-blue-100"
               >
                 Facebook
               </a>
+              <button
+                type="button"
+                onClick={() => void copyShareLink()}
+                className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700"
+              >
+                Copy Link
+              </button>
             </div>
             <span className="hidden sm:inline">Wholesale item</span>
           </div>
