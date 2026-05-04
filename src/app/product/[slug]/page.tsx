@@ -14,12 +14,24 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function getSiteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  const siteUrl = configuredUrl && !configuredUrl.includes("supabase.co")
+    ? configuredUrl
+    : vercelUrl
+      ? `https://${vercelUrl}`
+      : "https://luis-one-wholesale.vercel.app";
+
+  return siteUrl.replace(/\/$/, "");
 }
 
 function absoluteUrl(pathOrUrl: string | undefined) {
   const fallback = "/brand/luis-one-logo.jpg";
   const value = pathOrUrl || fallback;
+
+  if (value.toLowerCase().endsWith(".svg")) {
+    return `${getSiteUrl()}${fallback}`;
+  }
 
   if (value.startsWith("http://") || value.startsWith("https://")) {
     return value;
