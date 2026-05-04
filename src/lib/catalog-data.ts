@@ -445,11 +445,65 @@ export async function getCatalogProductPage(slug: string): Promise<CatalogResult
   const result = await getCatalogSnapshot();
   const product = result.data.products.find((item) => item.slug === slug) ?? (result.source === "mock" ? getMockActiveProductBySlug(slug) ?? null : null);
   const products = result.source === "mock" ? getMockActiveProducts() : result.data.products;
-  const related = product ? products.filter((item) => item.categorySlug === product.categorySlug && item.slug !== product.slug).slice(0, 3) : [];
+  const related = product ? getRelatedProducts(product, products) : [];
 
   return {
     data: { product, related },
     source: result.source,
     message: result.message,
   };
+}
+
+function normalizeRelatedText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/([a-z])([0-9])/g, "$1 $2")
+    .replace(/([0-9])([a-z])/g, "$1 $2")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function relatedWords(product: Product) {
+  return new Set(
+    normalizeRelatedText([
+      product.name,
+      product.sku ?? "",
+      product.category,
+      product.description,
+      product.details.join(" "),
+      product.searchText ?? "",
+      product.variants?.map((variant) => [variant.name, variant.sku ?? "", variant.model ?? "", variant.fits ?? ""].join(" ")).join(" ") ?? "",
+    ].join(" "))
+      .split(" ")
+      .filter((word) => word.length > 2),
+  );
+}
+
+function getRelatedProducts(product: Product, products: Product[]) {
+  const baseWords = relatedWords(product);
+  const basePath = new Set([product.categorySlug, ...(product.categoryPathSlugs ?? [])]);
+
+  return products
+    .filter((item) => item.slug !== product.slug)
+    .map((item) => {
+      const itemPath = [item.categorySlug, ...(item.categoryPathSlugs ?? [])];
+      const sharedCategoryScore = itemPath.reduce((score, slug) => score + (basePath.has(slug) ? 24 : 0), 0);
+      const itemWords = relatedWords(item);
+      let sharedWordScore = 0;
+
+      for (const word of itemWords) {
+        if (baseWords.has(word)) {
+          sharedWordScore += 3;
+        }
+      }
+
+      const stockScore = item.stockStatus === "In stock" ? 8 : item.stockStatus === "Low stock" ? 3 : 0;
+      const popularityScore = Math.min(18, Math.floor((item.sold ?? 0) / 300));
+
+      return { item, score: sharedCategoryScore + sharedWordScore + stockScore + popularityScore };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || (b.item.sold ?? 0) - (a.item.sold ?? 0))
+    .slice(0, 4)
+    .map((entry) => entry.item);
 }

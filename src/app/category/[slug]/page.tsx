@@ -161,6 +161,9 @@ export default async function CategoryPage({
         .sort((a, b) => b.score - a.score || compareProducts(a.product, b.product))
         .map((item) => item.product)
     : [...categoryProducts].sort(compareProducts);
+  const recommendedProducts = searchText && !visibleProducts.length
+    ? [...categoryProducts].sort((a, b) => compareProducts(a, b)).slice(0, 8)
+    : [];
   const totalPages = Math.max(1, Math.ceil(visibleProducts.length / pageSize));
   const requestedPage = Number(query?.page ?? "1");
   const currentPage = Number.isFinite(requestedPage) ? Math.min(Math.max(1, Math.floor(requestedPage)), totalPages) : 1;
@@ -269,7 +272,7 @@ export default async function CategoryPage({
             </div>
 
             {!paginatedProducts.length ? (
-              <div className="rounded-sm border border-dashed border-orange-200 bg-white p-8 text-center">
+              <div className="rounded-sm border border-dashed border-orange-200 bg-white p-6 text-center sm:p-8">
                 <p className="text-lg font-black text-zinc-950">No products found</p>
                 <p className="mt-2 text-sm font-bold text-zinc-500">
                   Try a simpler keyword, SKU, model, category, or fitment. Example: brake, click, nmax, cable, oil.
@@ -278,6 +281,21 @@ export default async function CategoryPage({
                   View All Products
                 </Link>
               </div>
+            ) : null}
+
+            {recommendedProducts.length ? (
+              <section className="mt-5 rounded-sm border border-orange-100 bg-white p-3 shadow-sm sm:p-5">
+                <div className="mb-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-600">Recommended</p>
+                    <h2 className="text-base font-black text-zinc-950 sm:text-xl">Popular products you may need</h2>
+                  </div>
+                  <Link href="/category/all" className="shrink-0 text-xs font-black text-orange-700 sm:text-sm">View all</Link>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+                  {recommendedProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
+                </div>
+              </section>
             ) : null}
 
             {totalPages > 1 ? (

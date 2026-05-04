@@ -86,10 +86,10 @@ export function ProductDetailExperience({ product }: { product: Product }) {
   };
 
   return (
-    <section className="overflow-hidden bg-white shadow-sm sm:rounded-sm sm:border sm:border-zinc-200 sm:p-4">
-      <div className="grid gap-4 lg:grid-cols-[430px_1fr] lg:gap-7">
+    <section className="overflow-hidden bg-white pb-20 shadow-sm sm:rounded-sm sm:border sm:border-zinc-200 sm:p-4">
+      <div className="grid gap-3 lg:grid-cols-[430px_1fr] lg:gap-7">
         <div>
-          <div className="aspect-square bg-white p-2 sm:rounded-sm sm:border sm:border-zinc-200 sm:p-3">
+          <div className="aspect-square bg-white p-1.5 sm:rounded-sm sm:border sm:border-zinc-200 sm:p-3">
             <ProductImage src={displayProduct.image} alt={displayProduct.name} />
           </div>
           <div className="mx-3 mt-2 grid grid-cols-5 gap-1.5 sm:mx-0 sm:mt-3 sm:gap-2">
@@ -129,7 +129,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
             <StockStatusBadge status={displayProduct.stockStatus} />
           </div>
 
-          <h1 className="mt-2 text-lg font-bold leading-snug text-zinc-950 sm:mt-3 sm:text-2xl lg:text-[26px]">{product.name}</h1>
+          <h1 className="mt-2 text-base font-black leading-snug text-zinc-950 sm:mt-3 sm:text-2xl lg:text-[26px]">{product.name}</h1>
 
           <div className="mt-3 rounded-sm bg-[#fafafa] px-3 py-2.5 sm:mt-4 sm:px-5 sm:py-4">
             {displayProduct.retailPrice ? (
@@ -137,7 +137,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
                 Retail price: <span className="text-zinc-700">{formatMoney(displayProduct.retailPrice)}</span>
               </p>
             ) : null}
-            <p className="text-lg font-black text-[#f65f18] sm:text-3xl">
+            <p className="text-base font-black text-[#f65f18] sm:text-3xl">
               {selectedVariant ? getVariantPriceRange(selectedVariant) : getPriceRange(product)}
             </p>
             <p className="mt-1 text-xs font-bold text-zinc-500">Public wholesale prices. Final order will be confirmed manually.</p>
@@ -213,7 +213,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
             </DetailRow>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 sm:mt-6 sm:flex sm:gap-3 sm:pt-5">
+          <div className="mt-4 hidden grid-cols-2 gap-2 border-t border-zinc-100 pt-3 sm:mt-6 sm:flex sm:gap-3 sm:pt-5">
             <button
               type="button"
               onClick={addToOrder}
@@ -231,6 +231,17 @@ export function ProductDetailExperience({ product }: { product: Product }) {
             </p>
           ) : null}
         </div>
+      </div>
+      <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-zinc-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
+        <button
+          type="button"
+          onClick={addToOrder}
+          disabled={loading}
+          className="h-11 rounded-sm border border-[#f65f18] bg-orange-50 px-3 text-xs font-black text-[#f65f18] transition disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "Adding..." : "Add to Order"}
+        </button>
+        <ProductInquiryButton product={displayProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
       </div>
     </section>
   );
