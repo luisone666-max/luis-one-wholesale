@@ -19,8 +19,9 @@ function redirectToLogin(request: Request, error: string) {
   return NextResponse.redirect(url, 303);
 }
 
-function adminLoginSuccessPage(request: Request) {
+function adminLoginSuccessPage(request: Request, accessToken: string, maxAge: number) {
   const adminUrl = new URL("/admin", request.url).toString();
+  const cookieValue = encodeURIComponent(accessToken);
   return new NextResponse(
     `<!doctype html>
 <html lang="en">
@@ -31,6 +32,7 @@ function adminLoginSuccessPage(request: Request) {
     <title>Opening Admin Dashboard</title>
     <script>
       window.setTimeout(function () {
+        document.cookie = "wholesale_admin_access_token=${cookieValue}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure";
         window.location.replace("${adminUrl}");
       }, 250);
     </script>
@@ -48,7 +50,7 @@ function adminLoginSuccessPage(request: Request) {
       <section>
         <h1>Login successful</h1>
         <p>Opening admin dashboard. If it does not open automatically, tap the button below.</p>
-        <a href="${adminUrl}">Open Admin Dashboard</a>
+        <a href="${adminUrl}" onclick='document.cookie = "wholesale_admin_access_token=${cookieValue}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure";'>Open Admin Dashboard</a>
       </section>
     </main>
   </body>
@@ -134,7 +136,7 @@ export async function POST(request: Request) {
   }
 
   const response = formRequest
-    ? adminLoginSuccessPage(request)
+    ? adminLoginSuccessPage(request, data.session.access_token, data.session.expires_in)
     : NextResponse.json({
         ok: true,
         admin: {
