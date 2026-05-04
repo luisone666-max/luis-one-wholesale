@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
+import { formatImageBytes, prepareAdminUploadImage } from "@/lib/admin-image-compression";
 import type { TranslationKey } from "@/lib/admin-i18n";
 import type { AdminCategoryOption, AdminProductRecord, AdminProductTier, AdminProductVariant } from "@/lib/admin-products-data";
 
@@ -143,7 +144,6 @@ const imageUploadText = {
   },
 };
 
-const maxImageSize = 2 * 1024 * 1024;
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function productToDraft(product: AdminProductRecord): ProductDraft {
@@ -660,7 +660,7 @@ function ProductEditor({
     };
   }, [selectedImagePreview]);
 
-  const selectImageFile = (file: File | undefined) => {
+  const selectImageFile = async (file: File | undefined) => {
     if (!file) {
       return;
     }
@@ -671,19 +671,26 @@ function ProductEditor({
       return;
     }
 
-    if (file.size > maxImageSize) {
-      onMessage(imageCopy.imageTooLarge);
-      setImageStatus(imageCopy.imageTooLarge);
-      return;
-    }
-
     if (selectedImagePreview) {
       window.URL.revokeObjectURL(selectedImagePreview);
     }
 
-    setSelectedImage(file);
-    setSelectedImagePreview(window.URL.createObjectURL(file));
-    setImageStatus(`${file.name} selected. Click Save Product or Upload Image Now.`);
+    setImageStatus("Optimizing image...");
+
+    try {
+      const prepared = await prepareAdminUploadImage(file);
+      setSelectedImage(prepared.file);
+      setSelectedImagePreview(window.URL.createObjectURL(prepared.file));
+      setImageStatus(
+        prepared.compressed
+          ? `Image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}. Click Save Product or Upload Image Now.`
+          : `${file.name} selected. Click Save Product or Upload Image Now.`,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : imageCopy.imageTooLarge;
+      onMessage(message);
+      setImageStatus(message);
+    }
   };
 
   const uploadImage = async () => {
@@ -741,14 +748,22 @@ function ProductEditor({
       return;
     }
 
-    if (file.size > maxImageSize) {
-      onMessage(imageCopy.imageTooLarge);
+    let uploadFile = file;
+
+    try {
+      const prepared = await prepareAdminUploadImage(file);
+      uploadFile = prepared.file;
+      if (prepared.compressed) {
+        onMessage(`Variant image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}.`);
+      }
+    } catch (error) {
+      onMessage(error instanceof Error ? error.message : imageCopy.imageTooLarge);
       return;
     }
 
     const variant = draft.variants[variantIndex];
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", uploadFile);
     formData.append("sku", variant.sku || draft.sku || draft.slug || "product-variant");
 
     const response = await fetch("/api/admin/products/image-upload", {
@@ -1023,7 +1038,7 @@ function ProductEditor({
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   disabled={disabled}
-                  onChange={(event) => selectImageFile(event.target.files?.[0])}
+                  onChange={(event) => void selectImageFile(event.target.files?.[0])}
                   className="mt-2 block w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 file:mr-4 file:rounded-md file:border-0 file:bg-orange-100 file:px-3 file:py-2 file:text-sm file:font-black file:text-orange-700 disabled:opacity-50"
                 />
               </label>

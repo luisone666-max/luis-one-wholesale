@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPageTitle, AdminToggle, StatusPill, TableShell } from "@/components/admin/AdminUi";
+import { formatImageBytes, prepareAdminUploadImage } from "@/lib/admin-image-compression";
 import type { AdminCategoryRecord } from "@/lib/admin-categories-data";
 
 type CategoryDraft = {
@@ -275,13 +276,22 @@ export function AdminCategoriesClient({
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setMessage("Image file must be 2MB or smaller.");
+    let uploadFile = file;
+
+    try {
+      setMessage("Optimizing image...");
+      const prepared = await prepareAdminUploadImage(file);
+      uploadFile = prepared.file;
+      if (prepared.compressed) {
+        setMessage(`Image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}.`);
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Image file must be 2MB or smaller.");
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", uploadFile);
     formData.append("slug", draft.slug);
     formData.append("name", draft.nameEn);
 
