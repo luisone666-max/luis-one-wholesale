@@ -14,6 +14,7 @@ const copy = {
     submit: "Login",
     loading: "Checking access...",
     success: "Login successful. Opening admin dashboard...",
+    openDashboard: "Open Admin Dashboard",
     networkError: "Login request failed. Please check your connection and try again.",
     denied: "You do not have admin access.",
     required: "Email and password are required.",
@@ -27,6 +28,7 @@ const copy = {
     submit: "\u767b\u5f55",
     loading: "\u6b63\u5728\u68c0\u67e5\u6743\u9650...",
     success: "\u767b\u5f55\u6210\u529f\uff0c\u6b63\u5728\u6253\u5f00\u540e\u53f0...",
+    openDashboard: "\u6253\u5f00\u540e\u53f0",
     networkError: "\u767b\u5f55\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u540e\u91cd\u8bd5\u3002",
     denied: "\u4f60\u6ca1\u6709\u540e\u53f0\u8bbf\u95ee\u6743\u9650\u3002",
     required: "\u8bf7\u586b\u5199\u90ae\u7bb1\u548c\u5bc6\u7801\u3002",
@@ -42,6 +44,7 @@ function AdminLoginFormInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loginSucceeded, setLoginSucceeded] = useState(false);
   const [busy, setBusy] = useState(false);
   const t = copy[language];
 
@@ -71,6 +74,7 @@ function AdminLoginFormInner() {
 
     setBusy(true);
     setMessage(t.loading);
+    setLoginSucceeded(false);
 
     try {
       const response = await fetch("/api/admin/auth/login", {
@@ -86,8 +90,13 @@ function AdminLoginFormInner() {
       }
 
       setMessage(t.success);
-      window.location.assign("/admin");
+      setLoginSucceeded(true);
+      router.push("/admin");
       router.refresh();
+
+      window.setTimeout(() => {
+        window.location.href = "/admin";
+      }, 300);
     } catch {
       setMessage(t.networkError);
     } finally {
@@ -154,6 +163,11 @@ function AdminLoginFormInner() {
           <button type="submit" disabled={busy} className="mt-6 h-11 w-full rounded-md bg-[#f65f18] text-sm font-black text-white disabled:cursor-wait disabled:opacity-50">
             {busy ? t.loading : t.submit}
           </button>
+          {loginSucceeded ? (
+            <Link href="/admin" className="mt-3 flex h-11 w-full items-center justify-center rounded-md border border-orange-200 bg-orange-50 text-sm font-black text-orange-700">
+              {t.openDashboard}
+            </Link>
+          ) : null}
         </form>
       </div>
     </main>
