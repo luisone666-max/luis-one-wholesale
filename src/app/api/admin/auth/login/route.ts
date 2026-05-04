@@ -19,6 +19,39 @@ function redirectToLogin(request: Request, error: string) {
   return NextResponse.redirect(url, 303);
 }
 
+function adminLoginSuccessPage(request: Request) {
+  const adminUrl = new URL("/admin", request.url).toString();
+  return new NextResponse(
+    `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content="1;url=${adminUrl}" />
+    <title>Opening Admin Dashboard</title>
+    <style>
+      body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; color: #18181b; }
+      main { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+      section { width: 100%; max-width: 420px; border: 1px solid #e4e4e7; border-radius: 10px; background: white; padding: 28px; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08); }
+      h1 { margin: 0 0 10px; font-size: 24px; }
+      p { margin: 0 0 18px; line-height: 1.5; color: #52525b; font-weight: 700; }
+      a { display: flex; height: 46px; align-items: center; justify-content: center; border-radius: 8px; background: #f65f18; color: white; text-decoration: none; font-weight: 900; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>Login successful</h1>
+        <p>Opening admin dashboard. If it does not open automatically, tap the button below.</p>
+        <a href="${adminUrl}">Open Admin Dashboard</a>
+      </section>
+    </main>
+  </body>
+</html>`,
+    { headers: { "content-type": "text/html; charset=utf-8" } },
+  );
+}
+
 export async function POST(request: Request) {
   const config = getSupabasePublicConfig();
   const admin = createSupabaseAdminClient();
@@ -96,7 +129,7 @@ export async function POST(request: Request) {
   }
 
   const response = formRequest
-    ? NextResponse.redirect(new URL("/admin", request.url), 303)
+    ? adminLoginSuccessPage(request)
     : NextResponse.json({
         ok: true,
         admin: {
