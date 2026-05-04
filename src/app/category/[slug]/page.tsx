@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Container, MarketplaceShell, ProductFilters } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
@@ -54,14 +53,37 @@ export default async function CategoryPage({
     return suffix ? `/category/${slug}?${suffix}` : `/category/${slug}`;
   };
 
-  if (!isAll && !category) {
-    notFound();
-  }
-
   const title = searchQuery ? `Search: ${searchQuery}` : isAll ? "All Wholesale Products" : category?.name ?? "Products";
   const description = isAll
     ? "Browse public B2B prices, MOQ, stock status, and tier pricing across the full catalog."
     : category?.description;
+
+  if (!isAll && !category) {
+    return (
+      <>
+        <SiteHeader />
+        <DataSourceNotice message={catalog.message} />
+        <MarketplaceShell>
+          <Container className="py-10">
+            <div className="mx-auto max-w-2xl rounded-sm border border-zinc-200 bg-white p-8 text-center shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Category unavailable</p>
+              <h1 className="mt-3 text-3xl font-black text-zinc-950">This category is not available yet</h1>
+              <p className="mt-3 text-sm leading-7 text-zinc-600">
+                This category may be hidden, inactive, or not synced yet. Please browse all current wholesale products.
+              </p>
+              <Link
+                href="/category/all"
+                className="mt-6 inline-flex rounded-sm bg-orange-600 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-orange-700"
+              >
+                Browse All Products
+              </Link>
+            </div>
+          </Container>
+        </MarketplaceShell>
+        <SiteFooter />
+      </>
+    );
+  }
 
   return (
     <>
