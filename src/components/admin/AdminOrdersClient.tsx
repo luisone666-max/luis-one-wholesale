@@ -612,126 +612,153 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
         : formatPhp(order.shippingFeeAmount);
 
   return (
-    <section className="hidden bg-white p-8 text-zinc-950 print:block">
-      <div className="flex items-start justify-between gap-8 border-b-2 border-zinc-950 pb-5">
-        <div className="flex items-center gap-4">
-          <div className="grid h-16 w-16 place-items-center rounded-full bg-[#f65f18] text-xl font-black text-white">LO</div>
-          <div>
-            <h1 className="text-2xl font-black uppercase tracking-wide">Luis One Supply Hub</h1>
-            <p className="mt-1 text-sm font-bold text-zinc-600">Wholesale Supply for Resellers & Shops</p>
-            <p className="mt-1 text-xs text-zinc-500">Orders are manually confirmed. No online payment is required on this website.</p>
+    <section className="hidden bg-white text-zinc-950 print:block">
+      <style>{`
+        @media print {
+          @page {
+            size: 105mm 148mm;
+            margin: 4mm;
+          }
+
+          html,
+          body {
+            width: 105mm;
+            min-height: 148mm;
+            background: white !important;
+          }
+
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .a6-order-sheet {
+            width: 97mm;
+            max-width: 97mm;
+            min-height: 140mm;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            font-size: 9px;
+            line-height: 1.25;
+            color: #111827;
+          }
+
+          .a6-products {
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
+      <div className="a6-order-sheet">
+        <div className="flex items-start justify-between gap-2 border-b border-zinc-950 pb-1.5">
+          <div className="min-w-0">
+            <h1 className="text-[13px] font-black uppercase leading-4">Luis One Supply Hub</h1>
+            <p className="text-[8px] font-bold uppercase tracking-wide text-zinc-600">Wholesale Order Slip</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black">{order.orderNo}</p>
+            <p className="text-[8px] font-bold text-zinc-600">{order.createdDate}</p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">Wholesale Order Sheet</p>
-          <p className="mt-2 text-xl font-black">{order.orderNo}</p>
-          <p className="mt-1 text-sm text-zinc-600">{order.createdDate}</p>
+
+        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+          <A6Box title="Customer">
+            <A6Row label="Name" value={order.customerName} />
+            <A6Row label="Phone" value={order.customerPhone} />
+            <A6Row label="FB" value={order.facebookMessenger || "-"} />
+          </A6Box>
+          <A6Box title="Receiver">
+            <A6Row label="Name" value={order.receiverName} />
+            <A6Row label="Phone" value={order.receiverPhone} />
+            <A6Row label="Method" value={labelFor(t, receivingMethodKeyByValue, order.receivingMethod)} />
+          </A6Box>
         </div>
-      </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-5">
-        <PrintBox title="Customer Account">
-          <PrintRow label="Name" value={order.customerName} />
-          <PrintRow label="Phone" value={order.customerPhone} />
-          <PrintRow label="Facebook / Messenger" value={order.facebookMessenger || "-"} />
-          <PrintRow label="Location" value={order.location || "-"} />
-          <PrintRow label="Business Type" value={order.businessType || "-"} />
-        </PrintBox>
-        <PrintBox title="Receiver Information">
-          <PrintRow label="Receiver" value={order.receiverName} />
-          <PrintRow label="Phone" value={order.receiverPhone} />
-          <PrintRow label="Receiving Method" value={labelFor(t, receivingMethodKeyByValue, order.receivingMethod)} />
-          <PrintRow label="Address" value={order.completeAddress || "-"} />
-          <PrintRow label="Order Notes" value={order.orderNotes || "-"} />
-        </PrintBox>
-      </div>
+        <A6Box title="Address / Notes" className="mt-1.5">
+          <p className="break-words font-bold">{order.completeAddress || "-"}</p>
+          {order.orderNotes ? <p className="mt-0.5 break-words text-zinc-600">Note: {order.orderNotes}</p> : null}
+        </A6Box>
 
-      <div className="mt-6 overflow-hidden border border-zinc-300">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-zinc-100 text-[11px] uppercase tracking-wide text-zinc-700">
-            <tr>
-              <th className="border-r border-zinc-300 px-3 py-2">SKU</th>
-              <th className="border-r border-zinc-300 px-3 py-2">Product</th>
-              <th className="border-r border-zinc-300 px-3 py-2 text-center">Qty</th>
-              <th className="border-r border-zinc-300 px-3 py-2 text-right">Unit Price</th>
-              <th className="px-3 py-2 text-right">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items.map((item) => (
-              <tr key={item.id} className="border-t border-zinc-300">
-                <td className="border-r border-zinc-300 px-3 py-3 font-bold">{item.variantSku || item.sku}</td>
-                <td className="border-r border-zinc-300 px-3 py-3">
-                  <span className="font-bold">{item.name}</span>
-                  {item.variantName ? <span className="mt-1 block text-zinc-600">Variant: {item.variantName}</span> : null}
-                </td>
-                <td className="border-r border-zinc-300 px-3 py-3 text-center font-bold">{item.quantity}</td>
-                <td className="border-r border-zinc-300 px-3 py-3 text-right">{formatPhp(item.unitPrice)}</td>
-                <td className="px-3 py-3 text-right font-black">{formatPhp(item.subtotal)}</td>
+        <div className="a6-products mt-1.5 overflow-hidden border border-zinc-400">
+          <table className="w-full table-fixed text-left text-[8px]">
+            <thead className="bg-zinc-100 font-black uppercase text-zinc-700">
+              <tr>
+                <th className="w-[22mm] border-r border-zinc-400 px-1 py-1">SKU</th>
+                <th className="border-r border-zinc-400 px-1 py-1">Item</th>
+                <th className="w-[9mm] border-r border-zinc-400 px-1 py-1 text-center">Qty</th>
+                <th className="w-[18mm] px-1 py-1 text-right">Sub</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-6 grid grid-cols-[1fr_320px] gap-6">
-        <div className="rounded-sm border border-zinc-300 p-4">
-          <h3 className="text-sm font-black uppercase tracking-wide">Order Handling Notes</h3>
-          <ul className="mt-3 space-y-2 text-xs leading-5 text-zinc-700">
-            <li>Deposit may be required to secure items.</li>
-            <li>Shipping and pickup arrangements are confirmed manually.</li>
-            <li>Freight collect is paid by the receiver and is not added to product total.</li>
-            <li>Please confirm availability before releasing goods.</li>
-          </ul>
+            </thead>
+            <tbody>
+              {order.items.map((item) => (
+                <tr key={item.id} className="border-t border-zinc-300">
+                  <td className="break-words border-r border-zinc-300 px-1 py-1 font-bold">{item.variantSku || item.sku}</td>
+                  <td className="border-r border-zinc-300 px-1 py-1">
+                    <span className="line-clamp-2 font-bold">{item.name}</span>
+                    {item.variantName ? <span className="block break-words text-[7px] text-zinc-600">Var: {item.variantName}</span> : null}
+                    <span className="block text-[7px] text-zinc-500">{formatPhp(item.unitPrice)} each</span>
+                  </td>
+                  <td className="border-r border-zinc-300 px-1 py-1 text-center font-black">{item.quantity}</td>
+                  <td className="px-1 py-1 text-right font-black">{formatPhp(item.subtotal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <div className="rounded-sm border border-zinc-300 p-4">
-          <PrintTotalRow label="Product Total" value={formatPhp(order.productTotal)} />
-          <PrintTotalRow label="Shipping Fee" value={shippingFee} />
-          <PrintTotalRow label="Payment Status" value={labelFor(t, statusKeyByValue, order.paymentStatus)} />
-          <PrintTotalRow label="Order Status" value={labelFor(t, statusKeyByValue, order.orderStatus)} />
-          <div className="mt-3 border-t border-zinc-300 pt-3">
-            <PrintTotalRow label="Amount to Confirm" value={formatPhp(order.amountToConfirm)} strong />
+
+        <div className="mt-1.5 grid grid-cols-[1fr_37mm] gap-1.5">
+          <A6Box title="Handling">
+            <p>Manual confirmation required.</p>
+            <p>Deposit may be required.</p>
+            <p>Freight collect is not added to product total.</p>
+          </A6Box>
+          <A6Box title="Total">
+            <A6Total label="Product" value={formatPhp(order.productTotal)} />
+            <A6Total label="Shipping" value={shippingFee} />
+            <A6Total label="Payment" value={labelFor(t, statusKeyByValue, order.paymentStatus)} />
+            <div className="mt-1 border-t border-zinc-300 pt-1">
+              <A6Total label="Confirm" value={formatPhp(order.amountToConfirm)} strong />
+            </div>
+          </A6Box>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-4 text-[8px] font-bold">
+          <div>
+            <div className="h-6 border-b border-zinc-500" />
+            <p className="mt-1">Prepared By</p>
           </div>
-        </div>
-      </div>
-
-      <div className="mt-10 grid grid-cols-2 gap-12 text-sm">
-        <div>
-          <div className="h-12 border-b border-zinc-400" />
-          <p className="mt-2 font-bold">Prepared By</p>
-        </div>
-        <div>
-          <div className="h-12 border-b border-zinc-400" />
-          <p className="mt-2 font-bold">Customer / Receiver Signature</p>
+          <div>
+            <div className="h-6 border-b border-zinc-500" />
+            <p className="mt-1">Receiver Sign</p>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-function PrintBox({ title, children }: { title: string; children: React.ReactNode }) {
+function A6Box({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="rounded-sm border border-zinc-300 p-4">
-      <h2 className="mb-3 text-sm font-black uppercase tracking-wide">{title}</h2>
-      <div className="space-y-2">{children}</div>
+    <div className={`rounded-sm border border-zinc-300 p-1.5 ${className}`}>
+      <h2 className="mb-1 text-[8px] font-black uppercase tracking-wide text-zinc-500">{title}</h2>
+      <div className="space-y-0.5">{children}</div>
     </div>
   );
 }
 
-function PrintRow({ label, value }: { label: string; value: string }) {
+function A6Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[130px_1fr] gap-3 text-xs">
+    <div className="grid grid-cols-[12mm_1fr] gap-1 text-[8px]">
       <span className="font-bold text-zinc-500">{label}</span>
-      <span className="font-semibold text-zinc-900">{value || "-"}</span>
+      <span className="break-words font-semibold text-zinc-900">{value || "-"}</span>
     </div>
   );
 }
 
-function PrintTotalRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function A6Total({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
-    <div className={`flex justify-between gap-4 py-1 text-sm ${strong ? "font-black" : "font-bold"}`}>
+    <div className={`flex justify-between gap-1 py-0.5 text-[8px] ${strong ? "font-black" : "font-bold"}`}>
       <span>{label}</span>
-      <span>{value}</span>
+      <span className="text-right">{value}</span>
     </div>
   );
 }

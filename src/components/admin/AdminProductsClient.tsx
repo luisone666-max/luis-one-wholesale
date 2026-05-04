@@ -42,7 +42,7 @@ type ProductsListResponse = {
 
 const defaultPageSize = 24;
 const stockStatuses = ["ready_stock", "for_order", "low_stock", "unavailable"];
-const productTabs: TranslationKey[] = ["basicInfo", "wholesalePricesTab", "variantsTab", "imagesTab", "supplierNotesTab", "adminNotesTab"];
+const productTabs: TranslationKey[] = ["basicInfo", "imagesTab", "wholesalePricesTab", "variantsTab", "supplierNotesTab", "adminNotesTab"];
 
 const text = {
   en: {
