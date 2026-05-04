@@ -58,7 +58,13 @@ export function ProductDetailExperience({ product }: { product: Product }) {
   };
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const browserSiteUrl = typeof window === "undefined" ? "" : window.location.origin;
-  const siteUrl = (browserSiteUrl || (configuredSiteUrl.includes("supabase.co") ? "https://luis-one-wholesale.vercel.app" : configuredSiteUrl)).replace(/\/$/, "");
+  const fallbackSiteUrl = "https://luisonesupplyhub.com";
+  const siteUrl = (
+    browserSiteUrl ||
+    (configuredSiteUrl.includes("supabase.co") || configuredSiteUrl.includes("luis-one-wholesale.vercel.app")
+      ? fallbackSiteUrl
+      : configuredSiteUrl || fallbackSiteUrl)
+  ).replace(/\/$/, "");
   const currentProductUrl = `${siteUrl}/product/${product.slug}`;
   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentProductUrl)}`;
   const shareText = [

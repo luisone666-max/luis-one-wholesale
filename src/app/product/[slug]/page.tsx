@@ -12,14 +12,19 @@ import { getPriceRange } from "@/lib/mock-data";
 
 export const revalidate = 60;
 
+const productionSiteUrl = "https://luisonesupplyhub.com";
+
 function getSiteUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const isProduction = process.env.NODE_ENV === "production";
   const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
-  const siteUrl = configuredUrl && !configuredUrl.includes("supabase.co")
+  const siteUrl = configuredUrl && !configuredUrl.includes("supabase.co") && !configuredUrl.includes("luis-one-wholesale.vercel.app")
     ? configuredUrl
+    : isProduction
+      ? productionSiteUrl
     : vercelUrl
       ? `https://${vercelUrl}`
-      : "https://luis-one-wholesale.vercel.app";
+      : productionSiteUrl;
 
   return siteUrl.replace(/\/$/, "");
 }
