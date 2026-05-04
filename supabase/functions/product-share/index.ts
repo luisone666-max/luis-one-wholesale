@@ -124,8 +124,6 @@ function pageHtml({
   <meta name="twitter:title" content="${safeTitle}">
   <meta name="twitter:description" content="${safeDescription}">
   <meta name="twitter:image" content="${safeImage}">
-  <meta http-equiv="refresh" content="1;url=${safeProductUrl}">
-  <script>window.setTimeout(function(){ window.location.replace(${JSON.stringify(productUrl)}); }, 350);</script>
 </head>
 <body style="font-family:Arial,sans-serif;margin:0;background:#f4f4f5;color:#18181b;">
   <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
@@ -140,11 +138,20 @@ function pageHtml({
 </html>`;
 }
 
+function isSocialPreviewCrawler(userAgent: string) {
+  return /facebookexternalhit|facebot|twitterbot|linkedinbot|slackbot|discordbot|whatsapp/i.test(userAgent);
+}
+
 Deno.serve(async (request) => {
   const url = new URL(request.url);
   const slug = url.searchParams.get("slug")?.trim() || "";
   const shareUrl = slug ? `${FUNCTION_URL}?slug=${encodeURIComponent(slug)}` : FUNCTION_URL;
   const productUrl = `${SITE_URL}/product/${encodeURIComponent(slug)}`;
+  const userAgent = request.headers.get("user-agent") || "";
+
+  if (slug && !isSocialPreviewCrawler(userAgent)) {
+    return Response.redirect(productUrl, 302);
+  }
 
   if (!slug) {
     return new Response(pageHtml({
