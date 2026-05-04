@@ -265,7 +265,13 @@ function mapSupabaseSnapshot(
 }
 
 async function readSupabaseCatalogUncached(): Promise<CatalogSnapshot | null> {
-  const supabase = createServerSupabaseClient();
+  const supabase = createServerSupabaseClient({
+    cache: "force-cache",
+    next: {
+      revalidate: CATALOG_CACHE_SECONDS,
+      tags: [CATALOG_CACHE_TAG],
+    },
+  });
 
   if (!supabase) {
     return null;

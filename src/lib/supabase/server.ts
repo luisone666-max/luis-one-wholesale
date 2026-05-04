@@ -3,7 +3,15 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdminConfig, getSupabaseServerConfig } from "@/lib/supabase/config";
 
-export function createServerSupabaseClient() {
+type ServerSupabaseClientOptions = {
+  cache?: RequestCache;
+  next?: {
+    revalidate?: number;
+    tags?: string[];
+  };
+};
+
+export function createServerSupabaseClient(options: ServerSupabaseClientOptions = {}) {
   const config = getSupabaseServerConfig();
 
   if (!config) {
@@ -16,7 +24,15 @@ export function createServerSupabaseClient() {
       autoRefreshToken: false,
     },
     global: {
-      fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+      fetch: (input, init) => {
+        const requestInit = {
+          ...init,
+          cache: options.cache ?? "no-store",
+          ...(options.next ? { next: options.next } : {}),
+        } as RequestInit & { next?: ServerSupabaseClientOptions["next"] };
+
+        return fetch(input, requestInit);
+      },
     },
   });
 }
