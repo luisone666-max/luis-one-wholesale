@@ -9,6 +9,10 @@ type CheckoutPayload = {
   completeAddress?: string;
   shippingFeePayment?: ShippingFeePayment;
   orderNotes?: string;
+  deliveryLat?: number | string;
+  deliveryLng?: number | string;
+  deliveryFormattedAddress?: string;
+  deliveryLocationSource?: string;
 };
 
 type CartItemRow = {
@@ -52,6 +56,10 @@ type ValidCheckoutPayload = {
   completeAddress: string | null;
   shippingFeePayment: ShippingFeePayment;
   orderNotes: string | null;
+  deliveryLat: number | null;
+  deliveryLng: number | null;
+  deliveryFormattedAddress: string | null;
+  deliveryLocationSource: string | null;
 };
 
 const receivingMethods: ReceivingMethod[] = ["pickup", "local_delivery", "courier_shipping", "to_be_arranged"];
@@ -75,6 +83,48 @@ function clean(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function cleanCoordinate(value: unknown) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function buildOrderNotes(payload: {
+  orderNotes: string | null;
+  deliveryLat: number | null;
+  deliveryLng: number | null;
+  deliveryFormattedAddress: string | null;
+  deliveryLocationSource: string | null;
+}) {
+  const lines = [];
+
+  if (payload.orderNotes) {
+    lines.push(payload.orderNotes);
+  }
+
+  if (payload.deliveryLat !== null && payload.deliveryLng !== null) {
+    lines.push(`Delivery pin: ${payload.deliveryLat}, ${payload.deliveryLng}`);
+  }
+
+  if (payload.deliveryFormattedAddress) {
+    lines.push(`Delivery matched address: ${payload.deliveryFormattedAddress}`);
+  }
+
+  if (payload.deliveryLocationSource) {
+    lines.push(`Delivery location source: ${payload.deliveryLocationSource}`);
+  }
+
+  return lines.length ? lines.join("\n") : null;
+}
+
 function validateCheckoutPayload(payload: CheckoutPayload): { value: ValidCheckoutPayload } | { error: string } {
   const receiverName = clean(payload.receiverName);
   const receiverPhone = clean(payload.receiverPhone);
@@ -82,6 +132,10 @@ function validateCheckoutPayload(payload: CheckoutPayload): { value: ValidChecko
   const completeAddress = clean(payload.completeAddress);
   let shippingFeePayment = payload.shippingFeePayment;
   const orderNotes = clean(payload.orderNotes);
+  const deliveryLat = cleanCoordinate(payload.deliveryLat);
+  const deliveryLng = cleanCoordinate(payload.deliveryLng);
+  const deliveryFormattedAddress = clean(payload.deliveryFormattedAddress);
+  const deliveryLocationSource = clean(payload.deliveryLocationSource);
 
   if (!receiverName) {
     return { error: "Receiver Name is required." };
@@ -123,6 +177,10 @@ function validateCheckoutPayload(payload: CheckoutPayload): { value: ValidChecko
       completeAddress: completeAddress || null,
       shippingFeePayment,
       orderNotes: orderNotes || null,
+      deliveryLat,
+      deliveryLng,
+      deliveryFormattedAddress: deliveryFormattedAddress || null,
+      deliveryLocationSource: deliveryLocationSource || null,
     },
   };
 }
@@ -341,7 +399,7 @@ export async function POST(request: Request) {
         shipping_fee_payment_method: checkout.shippingFeePayment,
         shipping_fee_amount: null,
         shipping_fee_status: getShippingFeeStatus(checkout.shippingFeePayment),
-        order_notes: checkout.orderNotes,
+        order_notes: buildOrderNotes(checkout),
       })
       .select("id,order_no")
       .single();

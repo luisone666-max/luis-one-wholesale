@@ -81,3 +81,37 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
     placeId: bestResult.place_id || "",
   };
 }
+
+export async function reverseGeocodeCoordinates(lat: number, lng: number): Promise<GeocodeResult> {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    throw new Error("Valid latitude and longitude are required.");
+  }
+
+  const params = new URLSearchParams({
+    latlng: `${lat},${lng}`,
+    key: googleMapsApiKey(),
+    region: "ph",
+  });
+  const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params.toString()}`, {
+    cache: "no-store",
+  });
+  const payload = (await response.json().catch(() => ({}))) as GoogleGeocodingResponse;
+
+  if (!response.ok) {
+    throw new Error(`Google Geocoding failed with status ${response.status}.`);
+  }
+
+  if (payload.status !== "OK" || !payload.results?.length) {
+    throw new Error(payload.error_message || `Google Geocoding returned ${payload.status || "no result"}.`);
+  }
+
+  const bestResult = payload.results[0];
+
+  return {
+    formattedAddress: bestResult.formatted_address || `${lat}, ${lng}`,
+    lat,
+    lng,
+    locationType: bestResult.geometry?.location_type || "",
+    placeId: bestResult.place_id || "",
+  };
+}

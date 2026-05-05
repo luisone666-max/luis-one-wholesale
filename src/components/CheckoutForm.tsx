@@ -11,6 +11,14 @@ import { formatPhp } from "@/lib/wholesale-pricing";
 
 const receivingMethods: ReceivingMethod[] = ["pickup", "local_delivery", "courier_shipping", "to_be_arranged"];
 
+type DeliveryLocation = {
+  formattedAddress: string;
+  lat: number;
+  lng: number;
+  locationType: string;
+  source: "address_lookup" | "current_location";
+};
+
 function getShippingOptions(method: ReceivingMethod): ShippingFeePayment[] {
   if (method === "pickup") {
     return ["no_shipping_fee"];
@@ -53,6 +61,9 @@ export function CheckoutForm() {
   const [receiverPhone, setReceiverPhone] = useState("");
   const [receivingMethod, setReceivingMethod] = useState<ReceivingMethod>("courier_shipping");
   const [completeAddress, setCompleteAddress] = useState("");
+  const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(null);
+  const [checkingLocation, setCheckingLocation] = useState(false);
+  const [usingCurrentLocation, setUsingCurrentLocation] = useState(false);
   const [shippingFeePayment, setShippingFeePayment] = useState<ShippingFeePayment>("freight_collect");
   const [orderNotes, setOrderNotes] = useState("");
   const shippingOptions = useMemo(() => getShippingOptions(receivingMethod), [receivingMethod]);
@@ -94,6 +105,120 @@ export function CheckoutForm() {
     setShippingFeePayment(getDefaultShippingPayment(method));
   };
 
+  const getSessionToken = async () => {
+    const supabase = createBrowserSupabaseClient();
+    const {
+      data: { session },
+    } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+
+    return session?.access_token ?? "";
+  };
+
+  const checkDeliveryAddress = async (mode: "manual" | "silent" = "manual") => {
+    if (!completeAddress.trim()) {
+      if (mode === "manual") {
+        setMessage("Complete Address is required before checking delivery location.");
+      }
+
+      return null;
+    }
+
+    setCheckingLocation(true);
+    setMessage("");
+
+    const token = await getSessionToken();
+
+    if (!token) {
+      setCheckingLocation(false);
+      setMessage("Please login before checking delivery location.");
+      return null;
+    }
+
+    const response = await fetch("/api/customer/geocode", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ address: completeAddress }),
+    });
+    const result = (await response.json().catch(() => ({ ok: false, message: "Delivery location lookup failed." }))) as {
+      ok?: boolean;
+      message?: string;
+      result?: Omit<DeliveryLocation, "source">;
+    };
+    setCheckingLocation(false);
+
+    if (!response.ok || !result.ok || !result.result) {
+      setMessage(result.message ?? "Delivery location lookup failed.");
+      return null;
+    }
+
+    const location = { ...result.result, source: "address_lookup" as const };
+    setDeliveryLocation(location);
+    setCompleteAddress(location.formattedAddress);
+    setMessage("Delivery location found. Please review the matched address before placing order.");
+
+    return location;
+  };
+
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      setMessage("Your browser does not support current location.");
+      return;
+    }
+
+    setUsingCurrentLocation(true);
+    setMessage("");
+
+    const token = await getSessionToken();
+
+    if (!token) {
+      setUsingCurrentLocation(false);
+      setMessage("Please login before checking delivery location.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        void (async () => {
+          const response = await fetch("/api/customer/geocode", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            }),
+          });
+          const result = (await response.json().catch(() => ({ ok: false, message: "Current location lookup failed." }))) as {
+            ok?: boolean;
+            message?: string;
+            result?: Omit<DeliveryLocation, "source">;
+          };
+          setUsingCurrentLocation(false);
+
+          if (!response.ok || !result.ok || !result.result) {
+            setMessage(result.message ?? "Current location lookup failed.");
+            return;
+          }
+
+          const location = { ...result.result, source: "current_location" as const };
+          setDeliveryLocation(location);
+          setCompleteAddress(location.formattedAddress);
+          setMessage("Current location saved. Please review the matched address before placing order.");
+        })();
+      },
+      () => {
+        setUsingCurrentLocation(false);
+        setMessage("Location permission was not allowed. Please type your complete address instead.");
+      },
+      { enableHighAccuracy: true, timeout: 12000 },
+    );
+  };
+
   const submitOrder = async () => {
     setMessage("");
 
@@ -122,6 +247,17 @@ export function CheckoutForm() {
       return;
     }
 
+    let confirmedDeliveryLocation = deliveryLocation;
+
+    if (addressRequired && !confirmedDeliveryLocation) {
+      confirmedDeliveryLocation = await checkDeliveryAddress("silent");
+
+      if (!confirmedDeliveryLocation) {
+        setMessage("Please check delivery location first, or use current location.");
+        return;
+      }
+    }
+
     const supabase = createBrowserSupabaseClient();
     const {
       data: { session },
@@ -146,6 +282,10 @@ export function CheckoutForm() {
         completeAddress,
         shippingFeePayment,
         orderNotes,
+        deliveryLat: confirmedDeliveryLocation?.lat ?? null,
+        deliveryLng: confirmedDeliveryLocation?.lng ?? null,
+        deliveryFormattedAddress: confirmedDeliveryLocation?.formattedAddress ?? null,
+        deliveryLocationSource: confirmedDeliveryLocation?.source ?? null,
       }),
     });
     const result = (await response.json().catch(() => ({ ok: false, message: "Order submission failed." }))) as {
@@ -210,9 +350,46 @@ export function CheckoutForm() {
               Complete Address {addressRequired ? <span className="text-red-600">*</span> : <span className="text-zinc-400">(optional)</span>}
               <textarea
                 value={completeAddress}
-                onChange={(event) => setCompleteAddress(event.target.value)}
+                onChange={(event) => {
+                  setCompleteAddress(event.target.value);
+                  setDeliveryLocation(null);
+                }}
                 className="mt-2 min-h-24 w-full rounded-sm border border-zinc-200 px-4 py-3 outline-none focus:border-orange-500"
               />
+              {addressRequired ? (
+                <div className="mt-3 rounded-sm border border-orange-100 bg-orange-50 p-3">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void checkDeliveryAddress()}
+                      disabled={checkingLocation || !completeAddress.trim()}
+                      className="rounded-sm bg-[#f65f18] px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
+                    >
+                      {checkingLocation ? "Checking..." : "Find delivery pin"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleUseCurrentLocation()}
+                      disabled={usingCurrentLocation}
+                      className="rounded-sm border border-orange-200 bg-white px-4 py-2 text-xs font-black text-orange-700 disabled:cursor-not-allowed disabled:text-zinc-400"
+                    >
+                      {usingCurrentLocation ? "Locating..." : "Use my current location"}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs font-bold leading-5 text-orange-800">
+                    This helps us quote Lalamove/courier correctly. You can still review the matched address before placing order.
+                  </p>
+                  {deliveryLocation ? (
+                    <div className="mt-3 rounded-sm bg-white p-3 text-xs ring-1 ring-orange-100">
+                      <p className="font-black text-zinc-900">Delivery pin saved</p>
+                      <p className="mt-1 font-semibold text-zinc-700">{deliveryLocation.formattedAddress}</p>
+                      <p className="mt-1 font-bold text-zinc-500">
+                        {deliveryLocation.lat}, {deliveryLocation.lng}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </label>
             <label className="block text-sm font-bold text-zinc-800 sm:col-span-2">
               Order Notes

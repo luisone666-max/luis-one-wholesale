@@ -133,6 +133,17 @@ function labelFor(t: (key: TranslationKey) => string, map: Record<string, Transl
   return t(map[value] ?? "status");
 }
 
+function parseDeliveryLocationFromNotes(notes: string) {
+  const pinMatch = notes.match(/Delivery pin:\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/i);
+  const addressMatch = notes.match(/Delivery matched address:\s*(.+)/i);
+
+  return {
+    lat: pinMatch?.[1] ?? "",
+    lng: pinMatch?.[2] ?? "",
+    address: addressMatch?.[1]?.trim() ?? "",
+  };
+}
+
 export function AdminOrdersClient({
   initialOrders,
   initialError,
@@ -654,6 +665,7 @@ function LalamovePanel({
           distance: "距离",
           expires: "有效期",
           matchedAddress: "匹配地址",
+          savedPin: "已读取客户结账时保存的定位 pin。",
         }
       : {
           title: "Lalamove Delivery Quote",
@@ -677,11 +689,13 @@ function LalamovePanel({
           distance: "Distance",
           expires: "Expires",
           matchedAddress: "Matched address",
+          savedPin: "Using the delivery pin saved during customer checkout.",
         };
   const [serviceType, setServiceType] = useState("MOTORCYCLE");
-  const [dropoffLat, setDropoffLat] = useState("");
-  const [dropoffLng, setDropoffLng] = useState("");
-  const [dropoffAddress, setDropoffAddress] = useState(order.completeAddress);
+  const savedDeliveryLocation = parseDeliveryLocationFromNotes(order.orderNotes);
+  const [dropoffLat, setDropoffLat] = useState(savedDeliveryLocation.lat);
+  const [dropoffLng, setDropoffLng] = useState(savedDeliveryLocation.lng);
+  const [dropoffAddress, setDropoffAddress] = useState(savedDeliveryLocation.address || order.completeAddress);
   const [quote, setQuote] = useState<LalamoveQuote | null>(null);
   const [geocodeResult, setGeocodeResult] = useState<GeocodeResult | null>(null);
   const [message, setMessage] = useState("");
@@ -774,6 +788,11 @@ function LalamovePanel({
       <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
         {labels.hint}
       </div>
+      {savedDeliveryLocation.lat && savedDeliveryLocation.lng ? (
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
+          {labels.savedPin}
+        </div>
+      ) : null}
       <div className="grid gap-3 lg:grid-cols-[180px_1fr_1fr]">
         <label className="grid gap-1 text-sm font-bold text-zinc-700">
           {labels.serviceType}
