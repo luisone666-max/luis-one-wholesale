@@ -25,6 +25,14 @@ type LalamoveQuote = {
   distanceMeters: number | null;
 };
 
+type GeocodeResult = {
+  formattedAddress: string;
+  lat: number;
+  lng: number;
+  locationType: string;
+  placeId: string;
+};
+
 const pageSize = 10;
 const orderStatuses = [
   "pending_confirmation",
@@ -626,47 +634,91 @@ function LalamovePanel({
     language === "zh"
       ? {
           title: "Lalamove 运费报价",
-          hint: "这里只查询配送费用，不会自动叫车。现在先从 Google Maps 复制客户地址经纬度。",
+          hint: "这里只查询配送费用，不会自动叫车。可以先用地址查经纬度，再查询 Lalamove 报价。",
           serviceType: "车型",
           dropoffLat: "目的地纬度",
           dropoffLng: "目的地经度",
           dropoffAddress: "目的地地址",
           getQuote: "查询 Lalamove 报价",
+          findCoordinates: "从地址查经纬度",
           checking: "查询中...",
+          finding: "查找中...",
           apply: "填入预付运费",
           failed: "Lalamove 报价失败。",
+          geocodeFailed: "地址转经纬度失败。",
           received: "已取得 Lalamove 报价，请确认后再填入订单。",
+          coordinatesFound: "已找到经纬度，请确认地址是否正确。",
           applied: "报价已填入为预付运费。",
           total: "总额",
           service: "车型",
           distance: "距离",
           expires: "有效期",
+          matchedAddress: "匹配地址",
         }
       : {
           title: "Lalamove Delivery Quote",
-          hint: "This only checks a delivery fee. It does not book a driver. Paste drop-off coordinates from Google Maps for now.",
+          hint: "This only checks a delivery fee. It does not book a driver. Find coordinates from the address first, then request a Lalamove quote.",
           serviceType: "Service type",
           dropoffLat: "Drop-off latitude",
           dropoffLng: "Drop-off longitude",
           dropoffAddress: "Drop-off address",
           getQuote: "Get Lalamove Quote",
+          findCoordinates: "Find Coordinates from Address",
           checking: "Checking...",
+          finding: "Finding...",
           apply: "Apply as Prepaid Shipping",
           failed: "Lalamove quote failed.",
+          geocodeFailed: "Address geocoding failed.",
           received: "Lalamove quotation received. Review before applying to the order.",
+          coordinatesFound: "Coordinates found. Please review the matched address.",
           applied: "Quote applied as prepaid shipping fee.",
           total: "Total",
           service: "Service",
           distance: "Distance",
           expires: "Expires",
+          matchedAddress: "Matched address",
         };
   const [serviceType, setServiceType] = useState("MOTORCYCLE");
   const [dropoffLat, setDropoffLat] = useState("");
   const [dropoffLng, setDropoffLng] = useState("");
   const [dropoffAddress, setDropoffAddress] = useState(order.completeAddress);
   const [quote, setQuote] = useState<LalamoveQuote | null>(null);
+  const [geocodeResult, setGeocodeResult] = useState<GeocodeResult | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+
+  const findCoordinates = async () => {
+    setGeocoding(true);
+    setMessage("");
+    setGeocodeResult(null);
+
+    try {
+      const response = await fetch("/api/admin/geocode", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ address: dropoffAddress }),
+      });
+      const result = (await response.json().catch(() => ({ ok: false, message: labels.geocodeFailed }))) as {
+        ok?: boolean;
+        message?: string;
+        result?: GeocodeResult;
+      };
+
+      if (!response.ok || !result.ok || !result.result) {
+        setMessage(result.message ?? labels.geocodeFailed);
+        return;
+      }
+
+      setGeocodeResult(result.result);
+      setDropoffLat(result.result.lat.toString());
+      setDropoffLng(result.result.lng.toString());
+      setDropoffAddress(result.result.formattedAddress);
+      setMessage(labels.coordinatesFound);
+    } finally {
+      setGeocoding(false);
+    }
+  };
 
   const getQuote = async () => {
     setLoading(true);
@@ -767,6 +819,14 @@ function LalamovePanel({
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
           type="button"
+          onClick={findCoordinates}
+          disabled={geocoding || !dropoffAddress.trim()}
+          className="h-11 rounded-md border border-zinc-200 bg-white px-5 text-sm font-black text-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+        >
+          {geocoding ? labels.finding : labels.findCoordinates}
+        </button>
+        <button
+          type="button"
           onClick={getQuote}
           disabled={loading}
           className="h-11 rounded-md bg-[#f65f18] px-5 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-zinc-300"
@@ -784,6 +844,16 @@ function LalamovePanel({
         ) : null}
       </div>
       {message ? <p className="mt-3 text-sm font-bold text-orange-700">{message}</p> : null}
+      {geocodeResult ? (
+        <div className="mt-3 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm">
+          <p className="font-black text-zinc-900">{labels.matchedAddress}</p>
+          <p className="mt-1 font-semibold text-zinc-700">{geocodeResult.formattedAddress}</p>
+          <p className="mt-1 text-xs font-bold text-zinc-500">
+            {geocodeResult.lat}, {geocodeResult.lng}
+            {geocodeResult.locationType ? ` / ${geocodeResult.locationType}` : ""}
+          </p>
+        </div>
+      ) : null}
       {quote ? (
         <div className="mt-4 grid gap-3 md:grid-cols-4">
           <Info label={labels.total} value={`${quote.currency} ${quote.total.toFixed(2)}`} emphasis />

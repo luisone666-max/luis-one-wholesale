@@ -20,11 +20,14 @@ LALAMOVE_SERVICE_TYPE=
 LALAMOVE_PICKUP_ADDRESS=
 LALAMOVE_PICKUP_LAT=
 LALAMOVE_PICKUP_LNG=
+GOOGLE_MAPS_API_KEY=
 ```
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are safe for browser use when Row Level Security policies are enabled. `SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be exposed in client components, browser code, logs, screenshots, or GitHub.
 
 Lalamove credentials are server-only. Keep `LALAMOVE_API_KEY` and `LALAMOVE_API_SECRET` only in Vercel environment variables. Use `LALAMOVE_ENV=sandbox` while testing and `LALAMOVE_ENV=production` only after the account is approved for live orders.
+
+`GOOGLE_MAPS_API_KEY` is server-only in this project. It is used by the admin order page to convert receiver addresses into latitude and longitude before requesting a Lalamove quote.
 
 ## Required Supabase Migrations
 
@@ -114,7 +117,9 @@ Required Lalamove settings:
 - `LALAMOVE_PICKUP_ADDRESS`: store pickup address
 - `LALAMOVE_PICKUP_LAT` and `LALAMOVE_PICKUP_LNG`: store pickup coordinates
 
-For now, paste the customer's drop-off latitude and longitude from Google Maps in the admin order detail page before requesting a quote. A future improvement can add address geocoding and one-click booking.
+In the admin order detail page, use `Find Coordinates from Address` before requesting a Lalamove quote. Review the matched address because delivery fees depend on the exact pin location.
+
+To enable address-to-coordinate lookup, create a Google Maps Platform API key with Geocoding API enabled and add it as `GOOGLE_MAPS_API_KEY` in Vercel. Keep this key restricted to the Geocoding API.
 
 To connect the Facebook Page `Shop Now` button:
 
