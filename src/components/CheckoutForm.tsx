@@ -19,6 +19,29 @@ type DeliveryLocation = {
   source: "address_lookup" | "current_location";
 };
 
+type AddressDraft = {
+  unitLandmark: string;
+  street: string;
+  barangay: string;
+  city: string;
+  province: string;
+  notes: string;
+};
+
+function buildCompleteAddress(address: AddressDraft) {
+  return [
+    address.unitLandmark,
+    address.street,
+    address.barangay ? `Barangay ${address.barangay}` : "",
+    address.city,
+    address.province,
+    address.notes,
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
 function getShippingOptions(method: ReceivingMethod): ShippingFeePayment[] {
   if (method === "pickup") {
     return ["no_shipping_fee"];
@@ -61,6 +84,14 @@ export function CheckoutForm() {
   const [receiverPhone, setReceiverPhone] = useState("");
   const [receivingMethod, setReceivingMethod] = useState<ReceivingMethod>("courier_shipping");
   const [completeAddress, setCompleteAddress] = useState("");
+  const [addressDraft, setAddressDraft] = useState<AddressDraft>({
+    unitLandmark: "",
+    street: "",
+    barangay: "",
+    city: "",
+    province: "Metro Manila",
+    notes: "",
+  });
   const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(null);
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [usingCurrentLocation, setUsingCurrentLocation] = useState(false);
@@ -103,6 +134,14 @@ export function CheckoutForm() {
   const changeReceivingMethod = (method: ReceivingMethod) => {
     setReceivingMethod(method);
     setShippingFeePayment(getDefaultShippingPayment(method));
+  };
+
+  const updateAddressDraft = (field: keyof AddressDraft, value: string) => {
+    const nextAddress = { ...addressDraft, [field]: value };
+
+    setAddressDraft(nextAddress);
+    setCompleteAddress(buildCompleteAddress(nextAddress));
+    setDeliveryLocation(null);
   };
 
   const getSessionToken = async () => {
@@ -348,6 +387,50 @@ export function CheckoutForm() {
             </label>
             <label className="block text-sm font-bold text-zinc-800 sm:col-span-2">
               Complete Address {addressRequired ? <span className="text-red-600">*</span> : <span className="text-zinc-400">(optional)</span>}
+              {addressRequired ? (
+                <div className="mt-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
+                  Please fill your address carefully. Many streets and barangays in the Philippines have similar names, so landmark and delivery pin help us quote and deliver correctly.
+                </div>
+              ) : null}
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <AddressField
+                  label="House / Unit / Building / Landmark"
+                  value={addressDraft.unitLandmark}
+                  onChange={(value) => updateAddressDraft("unitLandmark", value)}
+                  placeholder="e.g. 2F blue gate near 7-Eleven"
+                />
+                <AddressField
+                  label="Street"
+                  value={addressDraft.street}
+                  onChange={(value) => updateAddressDraft("street", value)}
+                  placeholder="e.g. Narra St"
+                />
+                <AddressField
+                  label="Barangay"
+                  value={addressDraft.barangay}
+                  onChange={(value) => updateAddressDraft("barangay", value)}
+                  placeholder="e.g. 238"
+                />
+                <AddressField
+                  label="City / Municipality"
+                  value={addressDraft.city}
+                  onChange={(value) => updateAddressDraft("city", value)}
+                  placeholder="e.g. Tondo, Manila"
+                />
+                <AddressField
+                  label="Province / Area"
+                  value={addressDraft.province}
+                  onChange={(value) => updateAddressDraft("province", value)}
+                  placeholder="e.g. Metro Manila"
+                />
+                <AddressField
+                  label="Extra Address Notes"
+                  value={addressDraft.notes}
+                  onChange={(value) => updateAddressDraft("notes", value)}
+                  placeholder="Gate color, nearby shop, subdivision, floor"
+                />
+              </div>
+              <p className="mt-3 text-xs font-black uppercase tracking-[0.12em] text-zinc-500">Combined delivery address</p>
               <textarea
                 value={completeAddress}
                 onChange={(event) => {
@@ -377,7 +460,7 @@ export function CheckoutForm() {
                     </button>
                   </div>
                   <p className="mt-2 text-xs font-bold leading-5 text-orange-800">
-                    This helps us quote Lalamove/courier correctly. You can still review the matched address before placing order.
+                    This helps us quote Lalamove/courier correctly. Please make sure the pin is close to your exact delivery location.
                   </p>
                   {deliveryLocation ? (
                     <div className="mt-3 rounded-sm bg-white p-3 text-xs ring-1 ring-orange-100">
@@ -473,6 +556,30 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="mt-2 h-12 w-full rounded-sm border border-zinc-200 px-4 outline-none focus:border-orange-500"
+      />
+    </label>
+  );
+}
+
+function AddressField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <label className="block text-xs font-black uppercase tracking-[0.08em] text-zinc-600">
+      {label}
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="mt-2 h-11 w-full rounded-sm border border-zinc-200 px-3 text-sm font-bold normal-case tracking-normal text-zinc-900 outline-none placeholder:font-semibold placeholder:text-zinc-400 focus:border-orange-500"
       />
     </label>
   );
