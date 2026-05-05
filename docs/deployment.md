@@ -12,22 +12,9 @@ NEXT_PUBLIC_MESSENGER_URL=
 NEXT_PUBLIC_SITE_URL=
 NEXT_PUBLIC_PRODUCT_SHARE_URL=
 NEXT_PUBLIC_META_PIXEL_ID=
-LALAMOVE_ENV=
-LALAMOVE_API_KEY=
-LALAMOVE_API_SECRET=
-LALAMOVE_MARKET=
-LALAMOVE_SERVICE_TYPE=
-LALAMOVE_PICKUP_ADDRESS=
-LALAMOVE_PICKUP_LAT=
-LALAMOVE_PICKUP_LNG=
-GOOGLE_MAPS_API_KEY=
 ```
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are safe for browser use when Row Level Security policies are enabled. `SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be exposed in client components, browser code, logs, screenshots, or GitHub.
-
-Lalamove credentials are server-only. Keep `LALAMOVE_API_KEY` and `LALAMOVE_API_SECRET` only in Vercel environment variables. Use `LALAMOVE_ENV=sandbox` while testing and `LALAMOVE_ENV=production` only after the account is approved for live orders.
-
-`GOOGLE_MAPS_API_KEY` is server-only in this project. It is used by the admin order page to convert receiver addresses into latitude and longitude before requesting a Lalamove quote.
 
 ## Required Supabase Migrations
 
@@ -102,24 +89,6 @@ NEXT_PUBLIC_MESSENGER_URL=https://m.me/your-page-name
 ```
 
 Keep the value public-friendly. Do not put private tokens in this variable.
-
-## Lalamove Delivery Quotes
-
-The admin order detail page can request a Lalamove delivery quotation. This first phase only checks the delivery fee and can apply it as a prepaid shipping fee. It does not automatically book a driver.
-
-Required Lalamove settings:
-
-- `LALAMOVE_ENV`: `sandbox` or `production`
-- `LALAMOVE_API_KEY`: server-only Lalamove API key
-- `LALAMOVE_API_SECRET`: server-only Lalamove API secret
-- `LALAMOVE_MARKET`: `PH`
-- `LALAMOVE_SERVICE_TYPE`: default service type, for example `MOTORCYCLE`
-- `LALAMOVE_PICKUP_ADDRESS`: store pickup address
-- `LALAMOVE_PICKUP_LAT` and `LALAMOVE_PICKUP_LNG`: store pickup coordinates
-
-In the admin order detail page, use `Find Coordinates from Address` before requesting a Lalamove quote. Review the matched address because delivery fees depend on the exact pin location.
-
-To enable address-to-coordinate lookup, create a Google Maps Platform API key with Geocoding API enabled and add it as `GOOGLE_MAPS_API_KEY` in Vercel. Keep this key restricted to the Geocoding API.
 
 To connect the Facebook Page `Shop Now` button:
 

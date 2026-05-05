@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
@@ -14,23 +14,6 @@ type PaymentDraft = {
   referenceNo: string;
   status: string;
   proofImageUrl: string;
-};
-
-type LalamoveQuote = {
-  quotationId: string;
-  expiresAt: string;
-  serviceType: string;
-  total: number;
-  currency: string;
-  distanceMeters: number | null;
-};
-
-type GeocodeResult = {
-  formattedAddress: string;
-  lat: number;
-  lng: number;
-  locationType: string;
-  placeId: string;
 };
 
 const pageSize = 10;
@@ -131,17 +114,6 @@ const shippingFeePaymentKeyByValue: Record<string, TranslationKey> = {
 
 function labelFor(t: (key: TranslationKey) => string, map: Record<string, TranslationKey>, value: string) {
   return t(map[value] ?? "status");
-}
-
-function parseDeliveryLocationFromNotes(notes: string) {
-  const pinMatch = notes.match(/Delivery pin:\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/i);
-  const addressMatch = notes.match(/Delivery matched address:\s*(.+)/i);
-
-  return {
-    lat: pinMatch?.[1] ?? "",
-    lng: pinMatch?.[2] ?? "",
-    address: addressMatch?.[1]?.trim() ?? "",
-  };
 }
 
 export function AdminOrdersClient({
@@ -503,8 +475,6 @@ function OrderDetail({
         </Panel>
       </div>
 
-      <LalamovePanel order={order} patchOrder={patchOrder} />
-
       <Panel title={copy.updateShipping}>
         <div className="grid gap-3 md:grid-cols-[240px_200px_auto]">
           <select
@@ -630,258 +600,6 @@ function OrderDetail({
         </Panel>
       </div>
     </section>
-  );
-}
-
-function LalamovePanel({
-  order,
-  patchOrder,
-}: {
-  order: AdminOrderRecord;
-  patchOrder: (orderNo: string, patch: Record<string, unknown>) => Promise<boolean>;
-}) {
-  const { language } = useAdminI18n();
-  const labels =
-    language === "zh"
-      ? {
-          title: "Lalamove 运费报价",
-          hint: "这里只查询配送费用，不会自动叫车。可以先用地址查经纬度，再查询 Lalamove 报价。",
-          serviceType: "车型",
-          dropoffLat: "目的地纬度",
-          dropoffLng: "目的地经度",
-          dropoffAddress: "目的地地址",
-          getQuote: "查询 Lalamove 报价",
-          findCoordinates: "从地址查经纬度",
-          checking: "查询中...",
-          finding: "查找中...",
-          apply: "填入预付运费",
-          failed: "Lalamove 报价失败。",
-          geocodeFailed: "地址转经纬度失败。",
-          received: "已取得 Lalamove 报价，请确认后再填入订单。",
-          coordinatesFound: "已找到经纬度，请确认地址是否正确。",
-          applied: "报价已填入为预付运费。",
-          total: "总额",
-          service: "车型",
-          distance: "距离",
-          expires: "有效期",
-          matchedAddress: "匹配地址",
-          savedPin: "已读取客户结账时保存的定位 pin。",
-        }
-      : {
-          title: "Lalamove Delivery Quote",
-          hint: "This only checks a delivery fee. It does not book a driver. Find coordinates from the address first, then request a Lalamove quote.",
-          serviceType: "Service type",
-          dropoffLat: "Drop-off latitude",
-          dropoffLng: "Drop-off longitude",
-          dropoffAddress: "Drop-off address",
-          getQuote: "Get Lalamove Quote",
-          findCoordinates: "Find Coordinates from Address",
-          checking: "Checking...",
-          finding: "Finding...",
-          apply: "Apply as Prepaid Shipping",
-          failed: "Lalamove quote failed.",
-          geocodeFailed: "Address geocoding failed.",
-          received: "Lalamove quotation received. Review before applying to the order.",
-          coordinatesFound: "Coordinates found. Please review the matched address.",
-          applied: "Quote applied as prepaid shipping fee.",
-          total: "Total",
-          service: "Service",
-          distance: "Distance",
-          expires: "Expires",
-          matchedAddress: "Matched address",
-          savedPin: "Using the delivery pin saved during customer checkout.",
-        };
-  const [serviceType, setServiceType] = useState("MOTORCYCLE");
-  const savedDeliveryLocation = parseDeliveryLocationFromNotes(order.orderNotes);
-  const [dropoffLat, setDropoffLat] = useState(savedDeliveryLocation.lat);
-  const [dropoffLng, setDropoffLng] = useState(savedDeliveryLocation.lng);
-  const [dropoffAddress, setDropoffAddress] = useState(savedDeliveryLocation.address || order.completeAddress);
-  const [quote, setQuote] = useState<LalamoveQuote | null>(null);
-  const [geocodeResult, setGeocodeResult] = useState<GeocodeResult | null>(null);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [geocoding, setGeocoding] = useState(false);
-
-  const findCoordinates = async () => {
-    setGeocoding(true);
-    setMessage("");
-    setGeocodeResult(null);
-
-    try {
-      const response = await fetch("/api/admin/geocode", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address: dropoffAddress }),
-      });
-      const result = (await response.json().catch(() => ({ ok: false, message: labels.geocodeFailed }))) as {
-        ok?: boolean;
-        message?: string;
-        result?: GeocodeResult;
-      };
-
-      if (!response.ok || !result.ok || !result.result) {
-        setMessage(result.message ?? labels.geocodeFailed);
-        return;
-      }
-
-      setGeocodeResult(result.result);
-      setDropoffLat(result.result.lat.toString());
-      setDropoffLng(result.result.lng.toString());
-      setDropoffAddress(result.result.formattedAddress);
-      setMessage(labels.coordinatesFound);
-    } finally {
-      setGeocoding(false);
-    }
-  };
-
-  const getQuote = async () => {
-    setLoading(true);
-    setMessage("");
-    setQuote(null);
-
-    try {
-      const response = await fetch(`/api/admin/orders/${encodeURIComponent(order.orderNo)}/lalamove/quote`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          serviceType,
-          dropoffLat,
-          dropoffLng,
-          dropoffAddress,
-        }),
-      });
-      const result = (await response.json().catch(() => ({ ok: false, message: labels.failed }))) as {
-        ok?: boolean;
-        message?: string;
-        quote?: LalamoveQuote;
-      };
-
-      if (!response.ok || !result.ok || !result.quote) {
-        setMessage(result.message ?? labels.failed);
-        return;
-      }
-
-      setQuote(result.quote);
-      setMessage(labels.received);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const applyQuote = async () => {
-    if (!quote) {
-      return;
-    }
-
-    const ok = await patchOrder(order.orderNo, {
-      shippingFeePayment: "prepaid",
-      shippingFeeAmount: quote.total,
-    });
-
-    if (ok) {
-      setMessage(labels.applied);
-    }
-  };
-
-  return (
-    <Panel title={labels.title}>
-      <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
-        {labels.hint}
-      </div>
-      {savedDeliveryLocation.lat && savedDeliveryLocation.lng ? (
-        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
-          {labels.savedPin}
-        </div>
-      ) : null}
-      <div className="grid gap-3 lg:grid-cols-[180px_1fr_1fr]">
-        <label className="grid gap-1 text-sm font-bold text-zinc-700">
-          {labels.serviceType}
-          <select
-            value={serviceType}
-            onChange={(event) => setServiceType(event.target.value)}
-            className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold outline-none focus:border-orange-500"
-          >
-            {["MOTORCYCLE", "SEDAN", "MPV", "VAN"].map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-1 text-sm font-bold text-zinc-700">
-          {labels.dropoffLat}
-          <input
-            value={dropoffLat}
-            onChange={(event) => setDropoffLat(event.target.value)}
-            placeholder="14.5995"
-            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
-          />
-        </label>
-        <label className="grid gap-1 text-sm font-bold text-zinc-700">
-          {labels.dropoffLng}
-          <input
-            value={dropoffLng}
-            onChange={(event) => setDropoffLng(event.target.value)}
-            placeholder="120.9842"
-            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
-          />
-        </label>
-      </div>
-      <label className="mt-3 grid gap-1 text-sm font-bold text-zinc-700">
-        {labels.dropoffAddress}
-        <textarea
-          value={dropoffAddress}
-          onChange={(event) => setDropoffAddress(event.target.value)}
-          className="min-h-20 rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
-        />
-      </label>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={findCoordinates}
-          disabled={geocoding || !dropoffAddress.trim()}
-          className="h-11 rounded-md border border-zinc-200 bg-white px-5 text-sm font-black text-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
-        >
-          {geocoding ? labels.finding : labels.findCoordinates}
-        </button>
-        <button
-          type="button"
-          onClick={getQuote}
-          disabled={loading}
-          className="h-11 rounded-md bg-[#f65f18] px-5 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-zinc-300"
-        >
-          {loading ? labels.checking : labels.getQuote}
-        </button>
-        {quote ? (
-          <button
-            type="button"
-            onClick={applyQuote}
-            className="h-11 rounded-md border border-orange-200 bg-orange-50 px-5 text-sm font-black text-orange-700"
-          >
-            {labels.apply}
-          </button>
-        ) : null}
-      </div>
-      {message ? <p className="mt-3 text-sm font-bold text-orange-700">{message}</p> : null}
-      {geocodeResult ? (
-        <div className="mt-3 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm">
-          <p className="font-black text-zinc-900">{labels.matchedAddress}</p>
-          <p className="mt-1 font-semibold text-zinc-700">{geocodeResult.formattedAddress}</p>
-          <p className="mt-1 text-xs font-bold text-zinc-500">
-            {geocodeResult.lat}, {geocodeResult.lng}
-            {geocodeResult.locationType ? ` / ${geocodeResult.locationType}` : ""}
-          </p>
-        </div>
-      ) : null}
-      {quote ? (
-        <div className="mt-4 grid gap-3 md:grid-cols-4">
-          <Info label={labels.total} value={`${quote.currency} ${quote.total.toFixed(2)}`} emphasis />
-          <Info label={labels.service} value={quote.serviceType} />
-          <Info label={labels.distance} value={quote.distanceMeters === null ? "-" : `${(quote.distanceMeters / 1000).toFixed(2)} km`} />
-          <Info label={labels.expires} value={quote.expiresAt || "-"} />
-        </div>
-      ) : null}
-    </Panel>
   );
 }
 
