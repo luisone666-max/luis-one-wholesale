@@ -16,6 +16,15 @@ type PaymentDraft = {
   proofImageUrl: string;
 };
 
+type LalamoveQuote = {
+  quotationId: string;
+  expiresAt: string;
+  serviceType: string;
+  total: number;
+  currency: string;
+  distanceMeters: number | null;
+};
+
 const pageSize = 10;
 const orderStatuses = [
   "pending_confirmation",
@@ -475,6 +484,8 @@ function OrderDetail({
         </Panel>
       </div>
 
+      <LalamovePanel order={order} patchOrder={patchOrder} />
+
       <Panel title={copy.updateShipping}>
         <div className="grid gap-3 md:grid-cols-[240px_200px_auto]">
           <select
@@ -600,6 +611,188 @@ function OrderDetail({
         </Panel>
       </div>
     </section>
+  );
+}
+
+function LalamovePanel({
+  order,
+  patchOrder,
+}: {
+  order: AdminOrderRecord;
+  patchOrder: (orderNo: string, patch: Record<string, unknown>) => Promise<boolean>;
+}) {
+  const { language } = useAdminI18n();
+  const labels =
+    language === "zh"
+      ? {
+          title: "Lalamove 运费报价",
+          hint: "这里只查询配送费用，不会自动叫车。现在先从 Google Maps 复制客户地址经纬度。",
+          serviceType: "车型",
+          dropoffLat: "目的地纬度",
+          dropoffLng: "目的地经度",
+          dropoffAddress: "目的地地址",
+          getQuote: "查询 Lalamove 报价",
+          checking: "查询中...",
+          apply: "填入预付运费",
+          failed: "Lalamove 报价失败。",
+          received: "已取得 Lalamove 报价，请确认后再填入订单。",
+          applied: "报价已填入为预付运费。",
+          total: "总额",
+          service: "车型",
+          distance: "距离",
+          expires: "有效期",
+        }
+      : {
+          title: "Lalamove Delivery Quote",
+          hint: "This only checks a delivery fee. It does not book a driver. Paste drop-off coordinates from Google Maps for now.",
+          serviceType: "Service type",
+          dropoffLat: "Drop-off latitude",
+          dropoffLng: "Drop-off longitude",
+          dropoffAddress: "Drop-off address",
+          getQuote: "Get Lalamove Quote",
+          checking: "Checking...",
+          apply: "Apply as Prepaid Shipping",
+          failed: "Lalamove quote failed.",
+          received: "Lalamove quotation received. Review before applying to the order.",
+          applied: "Quote applied as prepaid shipping fee.",
+          total: "Total",
+          service: "Service",
+          distance: "Distance",
+          expires: "Expires",
+        };
+  const [serviceType, setServiceType] = useState("MOTORCYCLE");
+  const [dropoffLat, setDropoffLat] = useState("");
+  const [dropoffLng, setDropoffLng] = useState("");
+  const [dropoffAddress, setDropoffAddress] = useState(order.completeAddress);
+  const [quote, setQuote] = useState<LalamoveQuote | null>(null);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const getQuote = async () => {
+    setLoading(true);
+    setMessage("");
+    setQuote(null);
+
+    try {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(order.orderNo)}/lalamove/quote`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          serviceType,
+          dropoffLat,
+          dropoffLng,
+          dropoffAddress,
+        }),
+      });
+      const result = (await response.json().catch(() => ({ ok: false, message: labels.failed }))) as {
+        ok?: boolean;
+        message?: string;
+        quote?: LalamoveQuote;
+      };
+
+      if (!response.ok || !result.ok || !result.quote) {
+        setMessage(result.message ?? labels.failed);
+        return;
+      }
+
+      setQuote(result.quote);
+      setMessage(labels.received);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const applyQuote = async () => {
+    if (!quote) {
+      return;
+    }
+
+    const ok = await patchOrder(order.orderNo, {
+      shippingFeePayment: "prepaid",
+      shippingFeeAmount: quote.total,
+    });
+
+    if (ok) {
+      setMessage(labels.applied);
+    }
+  };
+
+  return (
+    <Panel title={labels.title}>
+      <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+        {labels.hint}
+      </div>
+      <div className="grid gap-3 lg:grid-cols-[180px_1fr_1fr]">
+        <label className="grid gap-1 text-sm font-bold text-zinc-700">
+          {labels.serviceType}
+          <select
+            value={serviceType}
+            onChange={(event) => setServiceType(event.target.value)}
+            className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold outline-none focus:border-orange-500"
+          >
+            {["MOTORCYCLE", "SEDAN", "MPV", "VAN"].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm font-bold text-zinc-700">
+          {labels.dropoffLat}
+          <input
+            value={dropoffLat}
+            onChange={(event) => setDropoffLat(event.target.value)}
+            placeholder="14.5995"
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+        </label>
+        <label className="grid gap-1 text-sm font-bold text-zinc-700">
+          {labels.dropoffLng}
+          <input
+            value={dropoffLng}
+            onChange={(event) => setDropoffLng(event.target.value)}
+            placeholder="120.9842"
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+        </label>
+      </div>
+      <label className="mt-3 grid gap-1 text-sm font-bold text-zinc-700">
+        {labels.dropoffAddress}
+        <textarea
+          value={dropoffAddress}
+          onChange={(event) => setDropoffAddress(event.target.value)}
+          className="min-h-20 rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
+        />
+      </label>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={getQuote}
+          disabled={loading}
+          className="h-11 rounded-md bg-[#f65f18] px-5 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-zinc-300"
+        >
+          {loading ? labels.checking : labels.getQuote}
+        </button>
+        {quote ? (
+          <button
+            type="button"
+            onClick={applyQuote}
+            className="h-11 rounded-md border border-orange-200 bg-orange-50 px-5 text-sm font-black text-orange-700"
+          >
+            {labels.apply}
+          </button>
+        ) : null}
+      </div>
+      {message ? <p className="mt-3 text-sm font-bold text-orange-700">{message}</p> : null}
+      {quote ? (
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <Info label={labels.total} value={`${quote.currency} ${quote.total.toFixed(2)}`} emphasis />
+          <Info label={labels.service} value={quote.serviceType} />
+          <Info label={labels.distance} value={quote.distanceMeters === null ? "-" : `${(quote.distanceMeters / 1000).toFixed(2)} km`} />
+          <Info label={labels.expires} value={quote.expiresAt || "-"} />
+        </div>
+      ) : null}
+    </Panel>
   );
 }
 

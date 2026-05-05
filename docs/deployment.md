@@ -10,9 +10,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_MESSENGER_URL=
 NEXT_PUBLIC_SITE_URL=
+NEXT_PUBLIC_PRODUCT_SHARE_URL=
+NEXT_PUBLIC_META_PIXEL_ID=
+LALAMOVE_ENV=
+LALAMOVE_API_KEY=
+LALAMOVE_API_SECRET=
+LALAMOVE_MARKET=
+LALAMOVE_SERVICE_TYPE=
+LALAMOVE_PICKUP_ADDRESS=
+LALAMOVE_PICKUP_LAT=
+LALAMOVE_PICKUP_LNG=
 ```
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are safe for browser use when Row Level Security policies are enabled. `SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be exposed in client components, browser code, logs, screenshots, or GitHub.
+
+Lalamove credentials are server-only. Keep `LALAMOVE_API_KEY` and `LALAMOVE_API_SECRET` only in Vercel environment variables. Use `LALAMOVE_ENV=sandbox` while testing and `LALAMOVE_ENV=production` only after the account is approved for live orders.
 
 ## Required Supabase Migrations
 
@@ -87,6 +99,22 @@ NEXT_PUBLIC_MESSENGER_URL=https://m.me/your-page-name
 ```
 
 Keep the value public-friendly. Do not put private tokens in this variable.
+
+## Lalamove Delivery Quotes
+
+The admin order detail page can request a Lalamove delivery quotation. This first phase only checks the delivery fee and can apply it as a prepaid shipping fee. It does not automatically book a driver.
+
+Required Lalamove settings:
+
+- `LALAMOVE_ENV`: `sandbox` or `production`
+- `LALAMOVE_API_KEY`: server-only Lalamove API key
+- `LALAMOVE_API_SECRET`: server-only Lalamove API secret
+- `LALAMOVE_MARKET`: `PH`
+- `LALAMOVE_SERVICE_TYPE`: default service type, for example `MOTORCYCLE`
+- `LALAMOVE_PICKUP_ADDRESS`: store pickup address
+- `LALAMOVE_PICKUP_LAT` and `LALAMOVE_PICKUP_LNG`: store pickup coordinates
+
+For now, paste the customer's drop-off latitude and longitude from Google Maps in the admin order detail page before requesting a quote. A future improvement can add address geocoding and one-click booking.
 
 To connect the Facebook Page `Shop Now` button:
 
