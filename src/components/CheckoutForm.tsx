@@ -32,7 +32,7 @@ function buildCompleteAddress(address: AddressDraft) {
   return [
     address.unitLandmark,
     address.street,
-    address.barangay ? `Barangay ${address.barangay}` : "",
+    address.barangay,
     address.city,
     address.province,
     address.notes,
@@ -386,51 +386,60 @@ export function CheckoutForm() {
               </select>
             </label>
             <label className="block text-sm font-bold text-zinc-800 sm:col-span-2">
-              Complete Address {addressRequired ? <span className="text-red-600">*</span> : <span className="text-zinc-400">(optional)</span>}
+              Delivery Address Template {addressRequired ? <span className="text-red-600">*</span> : <span className="text-zinc-400">(optional)</span>}
               {addressRequired ? (
                 <div className="mt-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
-                  Please fill your address carefully. Many streets and barangays in the Philippines have similar names, so landmark and delivery pin help us quote and deliver correctly.
+                  Fill this like a delivery template. Many Philippine streets and barangays have similar names, so please include landmark, barangay/zone, and a delivery pin.
                 </div>
               ) : null}
+              <div className="mt-3 rounded-sm border border-zinc-200 bg-zinc-50 p-3 text-xs font-bold leading-5 text-zinc-600">
+                Standard example: 2F Blue Gate beside 7-Eleven, Narra St, Brgy 238 Zone 22, Tondo, Manila, Metro Manila, near Puregold, call before delivery.
+              </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <AddressField
                   label="House / Unit / Building / Landmark"
                   value={addressDraft.unitLandmark}
                   onChange={(value) => updateAddressDraft("unitLandmark", value)}
-                  placeholder="e.g. 2F blue gate near 7-Eleven"
+                  placeholder="Example: 2F Blue Gate, beside 7-Eleven"
                 />
                 <AddressField
                   label="Street"
                   value={addressDraft.street}
                   onChange={(value) => updateAddressDraft("street", value)}
-                  placeholder="e.g. Narra St"
+                  placeholder="Example: Narra St"
                 />
                 <AddressField
-                  label="Barangay"
+                  label="Barangay / Zone"
                   value={addressDraft.barangay}
                   onChange={(value) => updateAddressDraft("barangay", value)}
-                  placeholder="e.g. 238"
+                  placeholder="Example: Brgy 238, Zone 22"
                 />
                 <AddressField
                   label="City / Municipality"
                   value={addressDraft.city}
                   onChange={(value) => updateAddressDraft("city", value)}
-                  placeholder="e.g. Tondo, Manila"
+                  placeholder="Example: Tondo, Manila"
                 />
                 <AddressField
                   label="Province / Area"
                   value={addressDraft.province}
                   onChange={(value) => updateAddressDraft("province", value)}
-                  placeholder="e.g. Metro Manila"
+                  placeholder="Example: Metro Manila"
                 />
                 <AddressField
                   label="Extra Address Notes"
                   value={addressDraft.notes}
                   onChange={(value) => updateAddressDraft("notes", value)}
-                  placeholder="Gate color, nearby shop, subdivision, floor"
+                  placeholder="Example: Near Puregold / red gate / call before delivery"
                 />
               </div>
-              <p className="mt-3 text-xs font-black uppercase tracking-[0.12em] text-zinc-500">Combined delivery address</p>
+              <div className="mt-4 rounded-sm border border-orange-100 bg-orange-50 p-3">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-orange-700">Complete Address Preview</p>
+                <p className="mt-2 text-sm font-bold leading-6 text-zinc-800">
+                  {completeAddress || "Your combined delivery address will appear here."}
+                </p>
+              </div>
+              <p className="mt-3 text-xs font-black uppercase tracking-[0.12em] text-zinc-500">Edit combined address if needed</p>
               <textarea
                 value={completeAddress}
                 onChange={(event) => {
