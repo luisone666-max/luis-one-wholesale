@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Luis One Moto Supply PH Thank You Card</title>
+    <style>
+      :root {
+        --orange: #f65f18;
+        --dark: #18181b;
+        --muted: #666;
+        --line: #f3d1bf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #eee;
+        color: var(--dark);
+        font-family: Arial, Helvetica, sans-serif;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .sheet {
+        width: 105mm;
+        height: 148mm;
+        background:
+          radial-gradient(circle at 18% 12%, rgba(246, 95, 24, 0.12), transparent 26%),
+          linear-gradient(180deg, #fff 0%, #fff8f4 100%);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 24px 70px rgba(24, 24, 27, 0.18);
+        position: relative;
+      }
+
+      .bar {
+        height: 12px;
+        background: var(--orange);
+      }
+
+      .content {
+        padding: 18px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand img {
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid #fff;
+        box-shadow: 0 8px 18px rgba(246, 95, 24, 0.22);
+      }
+
+      .brand-title {
+        line-height: 1.05;
+      }
+
+      .brand-title strong {
+        display: block;
+        font-size: 19px;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-title span {
+        display: block;
+        margin-top: 3px;
+        color: var(--orange);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.22em;
+      }
+
+      h1 {
+        margin: 18px 0 4px;
+        font-size: 30px;
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+        font-weight: 700;
+      }
+
+      .benefits {
+        margin: 16px 0;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .benefits p {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .benefits ul {
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 4px;
+        list-style: none;
+        font-size: 12px;
+        font-weight: 800;
+        color: #303036;
+      }
+
+      .main-qr {
+        display: grid;
+        grid-template-columns: 126px 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 12px;
+        border-radius: 14px;
+        background: var(--dark);
+        color: #fff;
+      }
+
+      .main-qr img {
+        width: 126px;
+        height: 126px;
+        border-radius: 10px;
+        background: #fff;
+        padding: 6px;
+      }
+
+      .main-qr h2 {
+        margin: 0;
+        font-size: 21px;
+        line-height: 1.05;
+      }
+
+      .main-qr p {
+        margin: 8px 0 0;
+        font-size: 11px;
+        line-height: 1.45;
+        color: #ffe2d3;
+        font-weight: 700;
+      }
+
+      .mini-links {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        padding: 9px;
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .mini img {
+        width: 48px;
+        height: 48px;
+      }
+
+      .mini strong {
+        display: block;
+        font-size: 11px;
+      }
+
+      .mini span {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 8px;
+        font-weight: 700;
+        word-break: break-word;
+      }
+
+      .footer {
+        position: absolute;
+        inset-inline: 18px;
+        bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        color: #7a4b38;
+        font-size: 9px;
+        font-weight: 800;
+      }
+
+      @page {
+        size: A6;
+        margin: 0;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+          padding: 0;
+        }
+
+        .sheet {
+          box-shadow: none;
+          border-radius: 0;
+          border: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="sheet">
+      <div class="bar"></div>
+      <section class="content">
+        <div class="brand">
+          <img src="/brand/luis-one-logo.jpg" alt="Luis One logo" />
+          <div class="brand-title">
+            <strong>Luis One</strong>
+            <span>MOTO SUPPLY PH</span>
+          </div>
+        </div>
+
+        <h1>THANK YOU<br />FOR YOUR ORDER <span aria-label="love">❤️</span></h1>
+        <p class="subtitle">
+          We appreciate your purchase. Follow our page and visit our website for more wholesale products.
+        </p>
+
+        <div class="benefits">
+          <p>Follow our page for:</p>
+          <ul>
+            <li>✔ New Products</li>
+            <li>✔ Updates</li>
+            <li>✔ Promos</li>
+            <li>✔ Small surprises for our followers</li>
+          </ul>
+        </div>
+
+        <div class="main-qr">
+          <img src="/print/qr-facebook.png" alt="Facebook QR code" />
+          <div>
+            <h2>Scan to follow us</h2>
+            <p>Luis One Moto Supply PH<br />Facebook updates, promos, and new arrivals.</p>
+          </div>
+        </div>
+
+        <div class="mini-links">
+          <div class="mini">
+            <img src="/print/qr-website.png" alt="Website QR code" />
+            <div>
+              <strong>Wholesale Website</strong>
+              <span>luisonesupplyhub.com</span>
+            </div>
+          </div>
+          <div class="mini">
+            <img src="/print/qr-shopee.png" alt="Shopee QR code" />
+            <div>
+              <strong>Shopee Store</strong>
+              <span>shopee.ph/luisone</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>Public prices • MOQ • Bulk deals</span>
+        <span>Pickup / Lalamove / Courier</span>
+      </footer>
+    </main>
+  </body>
+</html>
