@@ -1,44 +1,18 @@
-"use client";
+import { AdminSettingsClient } from "@/components/admin/AdminSettingsClient";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { requireActiveAdminPage } from "@/lib/admin-auth";
+import { redirect } from "next/navigation";
 
-import { AdminShell, useAdminI18n } from "@/components/admin/AdminShell";
-import { AdminPageTitle } from "@/components/admin/AdminUi";
-import { businessInfo } from "@/lib/business-info";
+export default async function AdminSettingsPage() {
+  const admin = await requireActiveAdminPage();
 
-function SettingsContent() {
-  const { t } = useAdminI18n();
-  const fields = [
-    { key: "storeName" as const, value: businessInfo.name },
-    { key: "facebookPageUrl" as const, value: businessInfo.facebookUrl },
-    { key: "messengerUrl" as const, value: businessInfo.messengerUrl },
-    { key: "phoneNumber" as const, value: businessInfo.phoneDisplay },
-    { key: "storeAddress" as const, value: businessInfo.address },
-  ];
+  if (admin.role !== "owner" && admin.role !== "admin") {
+    redirect("/admin");
+  }
 
-  return (
-    <>
-      <AdminPageTitle titleKey="settings" />
-      <form className="max-w-3xl rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="grid gap-4">
-          {fields.map((field) => (
-            <label key={field.key} className="block text-sm font-bold text-zinc-800">
-              {t(field.key)}
-              <input
-                value={field.value}
-                readOnly
-                className="mt-2 h-12 w-full rounded-md border border-zinc-200 bg-zinc-50 px-4 text-sm text-zinc-700 outline-none"
-              />
-            </label>
-          ))}
-        </div>
-      </form>
-    </>
-  );
-}
-
-export default function AdminSettingsPage() {
   return (
     <AdminShell>
-      <SettingsContent />
+      <AdminSettingsClient />
     </AdminShell>
   );
 }
