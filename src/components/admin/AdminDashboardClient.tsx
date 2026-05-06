@@ -59,6 +59,32 @@ const copy = {
   },
 };
 
+const readableDashboardZh = {
+  caption: "\u8fd9\u91cc\u663e\u793a Supabase \u771f\u5b9e\u7ecf\u8425\u6570\u636e\u3002\u6d4b\u8bd5\u8ba2\u5355\u5220\u9664\u540e\uff0c\u4eea\u8868\u76d8\u4e5f\u4f1a\u540c\u6b65\u66f4\u65b0\u3002",
+  quickActions: "\u5feb\u6377\u5165\u53e3",
+  addCategory: "\u6dfb\u52a0\u5206\u7c7b",
+  addProduct: "\u6dfb\u52a0\u5546\u54c1",
+  onlineOrders: "\u7ebf\u4e0a\u8ba2\u5355",
+  offlineCashier: "\u6536\u94f6\u4e2d\u5fc3",
+  todayOnlineOrders: "\u4eca\u65e5\u7ebf\u4e0a\u8ba2\u5355\u91d1\u989d",
+  todayOfflineSales: "\u4eca\u65e5\u7ebf\u4e0b\u5df2\u6536\u6b3e",
+  cashReceived: "\u73b0\u91d1\u6536\u5165",
+  transferReceived: "GCash / \u94f6\u884c\u8f6c\u8d26",
+  pendingOnlineOrders: "\u5f85\u786e\u8ba4\u7ebf\u4e0a\u8ba2\u5355",
+  waitingCashier: "\u7b49\u5f85\u6536\u94f6",
+  customers: "\u5ba2\u6237",
+  activeCustomers: "\u6d3b\u8dc3\u5ba2\u6237",
+  activeProducts: "\u4e0a\u67b6\u5546\u54c1",
+  hiddenProducts: "\u9690\u85cf\u5546\u54c1",
+  lowStockProducts: "\u4f4e\u5e93\u5b58 / \u7f3a\u8d27",
+  recentOrders: "\u6700\u8fd1\u7ebf\u4e0a\u8ba2\u5355",
+  noOrders: "\u6682\u65e0\u7ebf\u4e0a\u8ba2\u5355\u3002",
+  customer: "\u5ba2\u6237",
+  status: "\u72b6\u6001",
+  total: "\u91d1\u989d",
+  dataNote: "\u8fd9\u91cc\u7684\u7ebf\u4e0b\u9500\u552e\u989d\u53ea\u7edf\u8ba1\u6536\u94f6\u5458\u5df2\u786e\u8ba4\u6536\u6b3e\uff1b\u7ebf\u4e0a\u8ba2\u5355\u91d1\u989d\u662f\u5ba2\u6237\u63d0\u4ea4\u7684\u8ba2\u5355\u91d1\u989d\uff0c\u4ed8\u6b3e\u4ecd\u9700\u4eba\u5de5\u786e\u8ba4\u3002",
+};
+
 function StatCard({ label, value, tone = "neutral" }: { label: string; value: string | number; tone?: "orange" | "green" | "neutral" }) {
   const toneClass = {
     green: "text-emerald-700",
@@ -78,6 +104,20 @@ function StatCard({ label, value, tone = "neutral" }: { label: string; value: st
 }
 
 function orderStatusLabel(status: string, language: "en" | "zh") {
+  const readableZh: Record<string, string> = {
+    pending_confirmation: "\u5f85\u786e\u8ba4",
+    waiting_deposit: "\u7b49\u5f85\u5b9a\u91d1",
+    deposit_paid: "\u5df2\u4ed8\u5b9a\u91d1",
+    sourcing_items: "\u5907\u8d27\u4e2d",
+    ready_for_pickup: "\u53ef\u53d6\u8d27",
+    completed: "\u5df2\u5b8c\u6210",
+    cancelled: "\u5df2\u53d6\u6d88",
+  };
+
+  if (language === "zh") {
+    return readableZh[status] ?? status;
+  }
+
   const labels: Record<string, { en: string; zh: string }> = {
     pending_confirmation: { en: "Pending Confirmation", zh: "待确认" },
     waiting_deposit: { en: "Waiting Deposit", zh: "等待定金" },
@@ -93,7 +133,7 @@ function orderStatusLabel(status: string, language: "en" | "zh") {
 
 export function AdminDashboardClient({ data }: { data: AdminDashboardData }) {
   const { language } = useAdminI18n();
-  const text = copy[language];
+  const text = language === "zh" ? { ...copy.zh, ...readableDashboardZh } : copy.en;
 
   return (
     <>

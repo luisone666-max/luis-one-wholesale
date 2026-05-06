@@ -12,6 +12,7 @@ const copy = {
     todayOverview: "Today Overview",
     monthOverview: "This Month Overview",
     paymentBreakdown: "Payment Breakdown",
+    paymentMethod: "Payment Method",
     employeeReport: "Employee Monthly Sales",
     salesTotal: "Sales Total",
     paidTotal: "Collected / Paid",
@@ -37,12 +38,26 @@ const copy = {
     selectedOrders: "Selected Orders",
     selectedStaff: "Salespeople",
     note: "Sales Total counts valid non-cancelled online orders and offline POS slips. Collected / Paid counts confirmed online payments and cashier-confirmed offline POS payments.",
+    bossFocus: "Boss Focus",
+    todayCollected: "Today Collected",
+    todayCashInBox: "Today Cash in Drawer",
+    todayTransfers: "Today GCash / Bank",
+    monthCollected: "Month Collected",
+    actionQueue: "Action Queue",
+    needCashier: "Offline slips waiting cashier",
+    needOnlineFollowUp: "Online orders need follow-up",
+    onlineSales: "Online",
+    offlineSales: "Offline POS",
+    waitingAmount: "Waiting",
+    paidRate: "Paid Rate",
+    collectedCashflow: "Collected Cashflow",
   },
   zh: {
     caption: "老板报表：线上订单、线下 POS、收银确认、收款方式、员工销售额统一查看。",
     todayOverview: "今日总览",
     monthOverview: "本月总览",
     paymentBreakdown: "收款方式",
+    paymentMethod: "收款方式",
     employeeReport: "员工月销售",
     salesTotal: "销售总额",
     paidTotal: "已收款金额",
@@ -68,6 +83,19 @@ const copy = {
     selectedOrders: "所选单数",
     selectedStaff: "销售人数",
     note: "销售总额统计未取消的线上订单和线下销售单；已收款金额统计线上已确认付款和线下收银员已确认收款。",
+    bossFocus: "老板重点",
+    todayCollected: "今日已收款",
+    todayCashInBox: "今日钱箱现金",
+    todayTransfers: "今日 GCash / 银行",
+    monthCollected: "本月已收款",
+    actionQueue: "待处理事项",
+    needCashier: "线下待收银单",
+    needOnlineFollowUp: "线上待跟进订单",
+    onlineSales: "线上",
+    offlineSales: "线下 POS",
+    waitingAmount: "待收款",
+    paidRate: "收款率",
+    collectedCashflow: "已收款流向",
   },
 };
 
@@ -91,6 +119,24 @@ function SectionTitle({ title }: { title: string }) {
   return <h2 className="text-lg font-black text-zinc-950">{title}</h2>;
 }
 
+function percent(part: number, total: number) {
+  if (total <= 0) {
+    return "0%";
+  }
+
+  return `${Math.round((part / total) * 100)}%`;
+}
+
+function FlowRow({ label, today, month }: { label: string; today: number; month: number }) {
+  return (
+    <tr>
+      <td className="px-4 py-3 font-black text-zinc-900">{label}</td>
+      <td className="px-4 py-3 font-black text-zinc-900">{formatPhp(today)}</td>
+      <td className="px-4 py-3 font-black text-zinc-900">{formatPhp(month)}</td>
+    </tr>
+  );
+}
+
 export function AdminReportsClient({
   rows,
   monthOptions,
@@ -110,6 +156,9 @@ export function AdminReportsClient({
     () => ({
       orderCount: visibleRows.reduce((total, row) => total + row.orderCount, 0),
       productTotal: visibleRows.reduce((total, row) => total + row.productTotal, 0),
+      onlineTotal: visibleRows.reduce((total, row) => total + row.onlineTotal, 0),
+      offlineTotal: visibleRows.reduce((total, row) => total + row.offlineTotal, 0),
+      waitingTotal: visibleRows.reduce((total, row) => total + row.waitingTotal, 0),
       paidTotal: visibleRows.reduce((total, row) => total + row.paidTotal, 0),
       staffCount: new Set(visibleRows.map((row) => row.salesAdminUserId || "unassigned")).size,
     }),
@@ -123,6 +172,49 @@ export function AdminReportsClient({
       {initialError ? <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-700">{initialError}</div> : null}
 
       <div className="rounded-lg border border-orange-100 bg-orange-50 p-4 text-sm font-bold leading-6 text-orange-800">{t.note}</div>
+
+      <section className="space-y-3">
+        <SectionTitle title={t.bossFocus} />
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <SummaryCard label={t.todayCollected} value={formatPhp(overview.todayPaidTotal)} tone="green" />
+          <SummaryCard label={t.todayCashInBox} value={formatPhp(overview.todayCashTotal)} tone="green" />
+          <SummaryCard label={t.todayTransfers} value={formatPhp(overview.todayGcashTotal + overview.todayBankTransferTotal)} />
+          <SummaryCard label={t.waitingAmount} value={formatPhp(overview.todayWaitingCashierTotal + overview.todayPendingOnlineTotal)} tone="orange" detail={`${overview.todayWaitingCashierCount + overview.todayPendingOnlineCount}`} />
+          <SummaryCard label={t.monthCollected} value={formatPhp(overview.monthPaidTotal)} tone="green" />
+        </div>
+      </section>
+
+      <section className="grid gap-3 xl:grid-cols-2">
+        <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+          <SectionTitle title={t.actionQueue} />
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <SummaryCard label={t.needCashier} value={formatPhp(overview.todayWaitingCashierTotal)} detail={`${overview.todayWaitingCashierCount}`} />
+            <SummaryCard label={t.needOnlineFollowUp} value={formatPhp(overview.todayPendingOnlineTotal)} detail={`${overview.todayPendingOnlineCount}`} />
+          </div>
+        </div>
+        <TableShell>
+          <div className="border-b border-zinc-100 p-4">
+            <SectionTitle title={t.collectedCashflow} />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[420px] text-left text-sm">
+              <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
+                <tr>
+                  <th className="px-4 py-3">{t.paymentMethod}</th>
+                  <th className="px-4 py-3">{t.todayOverview}</th>
+                  <th className="px-4 py-3">{t.monthOverview}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 bg-white">
+                <FlowRow label={t.cash} today={overview.todayCashTotal} month={overview.monthCashTotal} />
+                <FlowRow label={t.gcash} today={overview.todayGcashTotal} month={overview.monthGcashTotal} />
+                <FlowRow label={t.bankTransfer} today={overview.todayBankTransferTotal} month={overview.monthBankTransferTotal} />
+                <FlowRow label={t.otherPayment} today={overview.todayOtherPaymentTotal} month={overview.monthOtherPaymentTotal} />
+              </tbody>
+            </table>
+          </div>
+        </TableShell>
+      </section>
 
       <section className="space-y-3">
         <SectionTitle title={t.todayOverview} />
@@ -153,20 +245,6 @@ export function AdminReportsClient({
       </section>
 
       <section className="space-y-3">
-        <SectionTitle title={t.paymentBreakdown} />
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard label={`${t.cash} / ${t.todayOverview}`} value={formatPhp(overview.todayCashTotal)} tone="green" />
-          <SummaryCard label={`${t.gcash} / ${t.todayOverview}`} value={formatPhp(overview.todayGcashTotal)} />
-          <SummaryCard label={`${t.bankTransfer} / ${t.todayOverview}`} value={formatPhp(overview.todayBankTransferTotal)} />
-          <SummaryCard label={`${t.otherPayment} / ${t.todayOverview}`} value={formatPhp(overview.todayOtherPaymentTotal)} />
-          <SummaryCard label={`${t.cash} / ${t.monthOverview}`} value={formatPhp(overview.monthCashTotal)} tone="green" />
-          <SummaryCard label={`${t.gcash} / ${t.monthOverview}`} value={formatPhp(overview.monthGcashTotal)} />
-          <SummaryCard label={`${t.bankTransfer} / ${t.monthOverview}`} value={formatPhp(overview.monthBankTransferTotal)} />
-          <SummaryCard label={`${t.otherPayment} / ${t.monthOverview}`} value={formatPhp(overview.monthOtherPaymentTotal)} />
-        </div>
-      </section>
-
-      <section className="space-y-3">
         <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:flex-row md:items-end md:justify-between">
           <div>
             <SectionTitle title={t.employeeReport} />
@@ -188,8 +266,8 @@ export function AdminReportsClient({
         <section className="grid gap-3 md:grid-cols-4">
           <SummaryCard label={t.selectedTotal} value={formatPhp(summary.productTotal)} />
           <SummaryCard label={t.selectedPaidTotal} value={formatPhp(summary.paidTotal)} />
-          <SummaryCard label={t.selectedOrders} value={String(summary.orderCount)} />
-          <SummaryCard label={t.selectedStaff} value={String(summary.staffCount)} />
+          <SummaryCard label={t.waitingAmount} value={formatPhp(summary.waitingTotal)} />
+          <SummaryCard label={t.paidRate} value={percent(summary.paidTotal, summary.productTotal)} />
         </section>
 
         <TableShell>
@@ -201,8 +279,12 @@ export function AdminReportsClient({
                   <th className="px-4 py-3">{t.salesperson}</th>
                   <th className="px-4 py-3">{t.orderCount}</th>
                   <th className="px-4 py-3">{t.productTotal}</th>
+                  <th className="px-4 py-3">{t.onlineSales}</th>
+                  <th className="px-4 py-3">{t.offlineSales}</th>
+                  <th className="px-4 py-3">{t.waitingAmount}</th>
                   <th className="px-4 py-3">{t.paidOrders}</th>
                   <th className="px-4 py-3">{t.paidTotal}</th>
+                  <th className="px-4 py-3">{t.paidRate}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 bg-white">
@@ -215,13 +297,17 @@ export function AdminReportsClient({
                       </td>
                       <td className="px-4 py-4 font-bold text-zinc-700">{row.orderCount}</td>
                       <td className="px-4 py-4 font-black text-orange-700">{formatPhp(row.productTotal)}</td>
+                      <td className="px-4 py-4 font-bold text-zinc-700">{formatPhp(row.onlineTotal)}</td>
+                      <td className="px-4 py-4 font-bold text-zinc-700">{formatPhp(row.offlineTotal)}</td>
+                      <td className="px-4 py-4 font-bold text-orange-700">{formatPhp(row.waitingTotal)}</td>
                       <td className="px-4 py-4 font-bold text-zinc-700">{row.paidOrderCount}</td>
                       <td className="px-4 py-4 font-black text-emerald-700">{formatPhp(row.paidTotal)}</td>
+                      <td className="px-4 py-4 font-black text-zinc-900">{percent(row.paidTotal, row.productTotal)}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-6 text-center text-sm font-bold text-zinc-500" colSpan={6}>
+                    <td className="px-4 py-6 text-center text-sm font-bold text-zinc-500" colSpan={10}>
                       {t.noRows}
                     </td>
                   </tr>

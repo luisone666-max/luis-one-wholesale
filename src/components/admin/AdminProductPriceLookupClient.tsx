@@ -58,6 +58,18 @@ const priceLookupZh = {
   variantPrices: "变体价格",
 };
 
+const readablePriceLookupZh = {
+  caption: "\u9500\u552e\u67e5\u4ef7\u4e13\u7528\u3002\u8fd9\u4e2a\u9875\u9762\u4e0d\u80fd\u65b0\u589e\u3001\u7f16\u8f91\u3001\u9690\u85cf\u3001\u5220\u9664\u6216\u4e0a\u4f20\u5546\u54c1\u3002",
+  searchPlaceholder: "\u641c\u7d22 SKU\u3001\u5546\u54c1\u540d\u3001\u578b\u53f7\u3001\u9002\u914d\u8f66\u578b\u6216\u5206\u7c7b",
+  allProducts: "\u5168\u90e8\u5546\u54c1",
+  retailPrice: "\u96f6\u552e\u4ef7",
+  wholesalePrice: "\u6279\u53d1\u4ef7",
+  moq: "\u8d77\u8ba2\u91cf",
+  variants: "\u53d8\u4f53",
+  noProducts: "\u6ca1\u6709\u627e\u5230\u5339\u914d\u5546\u54c1\u3002",
+  variantPrices: "\u53d8\u4f53\u4ef7\u683c",
+};
+
 function getTierRange(tiers: AdminProductTier[]) {
   if (!tiers.length) {
     return "-";
@@ -69,7 +81,7 @@ function getTierRange(tiers: AdminProductTier[]) {
 
 export function AdminProductPriceLookupClient({ products, initialError }: { products: AdminProductLookupRecord[]; initialError?: string }) {
   const { language } = useAdminI18n();
-  const t = language === "zh" ? priceLookupZh : copy.en;
+  const t = language === "zh" ? { ...priceLookupZh, ...readablePriceLookupZh } : copy.en;
   const [search, setSearch] = useState("");
 
   const filteredProducts = useMemo(() => {

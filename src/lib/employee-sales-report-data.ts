@@ -42,6 +42,9 @@ export type EmployeeSalesReportRow = {
   salesName: string;
   orderCount: number;
   productTotal: number;
+  onlineTotal: number;
+  offlineTotal: number;
+  waitingTotal: number;
   paidOrderCount: number;
   paidTotal: number;
 };
@@ -220,6 +223,9 @@ function getReportRow(grouped: Map<string, EmployeeSalesReportRow>, key: string,
     salesName,
     orderCount: 0,
     productTotal: 0,
+    onlineTotal: 0,
+    offlineTotal: 0,
+    waitingTotal: 0,
     paidOrderCount: 0,
     paidTotal: 0,
   } satisfies EmployeeSalesReportRow;
@@ -293,6 +299,7 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
 
     current.orderCount += 1;
     current.productTotal += amount;
+    current.onlineTotal += amount;
 
     if (isPaidOnline(order.payment_status)) {
       current.paidOrderCount += 1;
@@ -307,6 +314,7 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
     overview.monthOnlineSubmittedTotal += amount;
 
     if (isPendingOnline(order.order_status)) {
+      current.waitingTotal += amount;
       overview.monthPendingOnlineCount += 1;
       overview.monthPendingOnlineTotal += amount;
     }
@@ -339,9 +347,11 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
 
     current.orderCount += 1;
     current.productTotal += amount;
+    current.offlineTotal += amount;
     overview.monthOfflineSubmittedTotal += amount;
 
     if (sale.status === "waiting_cashier") {
+      current.waitingTotal += amount;
       overview.monthWaitingCashierCount += 1;
       overview.monthWaitingCashierTotal += amount;
     }

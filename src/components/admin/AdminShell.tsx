@@ -57,6 +57,38 @@ const navSections: Array<{
   },
 ];
 
+const adminSectionTitleZh: Record<string, string> = {
+  Overview: "\u603b\u89c8",
+  Catalog: "\u5546\u54c1",
+  "Online Store": "\u7ebf\u4e0a\u8ba2\u5355",
+  "Offline POS": "\u7ebf\u4e0b\u6536\u94f6",
+  Business: "\u7ecf\u8425",
+};
+
+const adminNavHintZh: Record<string, string> = {
+  "/admin": "\u6bcf\u65e5\u5e97\u94fa\u6982\u89c8",
+  "/admin/products": "\u7ba1\u7406\u5546\u54c1 / \u9500\u552e\u67e5\u4ef7",
+  "/admin/categories": "\u5206\u7c7b\u6811",
+  "/admin/orders": "\u7f51\u7ad9\u8ba2\u5355\u5904\u7406",
+  "/admin/customers": "\u5ba2\u6237\u8d44\u6599 / \u4f1a\u5458\u79ef\u5206",
+  "/admin/payments": "\u7ebf\u4e0a\u4eba\u5de5\u6536\u6b3e",
+  "/admin/sales-desk": "\u95e8\u5e97\u9500\u552e\u5f00\u5355",
+  "/admin/cashier": "\u6536\u94f6\u786e\u8ba4\u6536\u6b3e",
+  "/admin/cash-drawer": "\u6bcf\u65e5\u6536\u94f6\u94b1\u7bb1",
+  "/admin/staff": "\u5458\u5de5\u8d26\u53f7\u4e0e\u6743\u9650",
+  "/admin/reports": "\u62a5\u8868",
+  "/admin/owner": "\u8001\u677f\u4e2d\u5fc3",
+  "/admin/settings": "\u5e97\u94fa\u8bbe\u7f6e",
+};
+
+function adminSectionTitle(section: (typeof navSections)[number], language: AdminLanguage) {
+  return language === "zh" ? adminSectionTitleZh[section.title.en] ?? section.title.zh : section.title.en;
+}
+
+function adminNavHint(item: (typeof navSections)[number]["items"][number], language: AdminLanguage) {
+  return language === "zh" ? adminNavHintZh[item.href] ?? item.hint.zh : item.hint.en;
+}
+
 export function useAdminI18n() {
   const value = useContext(AdminI18nContext);
 
@@ -161,7 +193,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             {visibleNavSections.map((section) => (
               <div key={section.title.en}>
                 <p className={`mb-2 px-2 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400 ${sidebarCollapsed ? "sr-only" : ""}`}>
-                  {language === "zh" ? section.title.zh : section.title.en}
+                  {adminSectionTitle(section, language)}
                 </p>
                 <div className="space-y-1">
                   {section.items.map((item) => {
@@ -182,7 +214,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         </span>
                         <span className={sidebarCollapsed ? "hidden" : "min-w-0"}>
                           <span className="block truncate">{value.t(item.label)}</span>
-                          <span className="block truncate text-[11px] font-bold text-zinc-400">{language === "zh" ? item.hint.zh : item.hint.en}</span>
+                          <span className="block truncate text-[11px] font-bold text-zinc-400">{adminNavHint(item, language)}</span>
                         </span>
                       </Link>
                     );

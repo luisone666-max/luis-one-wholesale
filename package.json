@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "check:pos": "node scripts/check-pos-flow.mjs",
     "start": "next start",
     "lint": "eslint"
   },

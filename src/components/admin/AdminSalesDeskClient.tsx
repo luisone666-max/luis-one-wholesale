@@ -66,6 +66,18 @@ const copy = {
     cancelledStatus: "Cancelled",
     date: "Date",
     printA6: "Print A6",
+    stepCustomer: "1. Customer and payment",
+    stepItems: "2. Products and price",
+    stepSubmit: "3. Send to cashier",
+    memberCustomer: "Member customer selected. Points are awarded after cashier confirms payment.",
+    walkInNoPoints: "Walk-in customer. No member points will be awarded unless you select a customer account.",
+    amountPreview: "Cashier will collect",
+    cashPaymentHint: "Cash goes into the cash drawer after cashier confirmation.",
+    transferPaymentHint: "GCash / bank transfer is recorded separately from physical cash.",
+    customerNamePlaceholder: "Walk-in customer name",
+    memberBadge: "Member",
+    walkInBadge: "Walk-in",
+    employeeLocked: "Your employee number is locked for audit records.",
   },
   zh: {
     caption: "这里只做门店线下销售。销售员先开销售单，保存后交给收银员确认收款。",
@@ -112,6 +124,18 @@ const copy = {
     cancelledStatus: "已取消",
     date: "日期",
     printA6: "打印 A6",
+    stepCustomer: "1. 客户与收款方式",
+    stepItems: "2. 商品与价格",
+    stepSubmit: "3. 发送给收银",
+    memberCustomer: "已选择会员客户。收银确认后会自动计算积分。",
+    walkInNoPoints: "散客单。除非选择客户账号，否则不会累计会员积分。",
+    amountPreview: "收银员应收",
+    cashPaymentHint: "现金单会在收银确认后进入钱箱现金统计。",
+    transferPaymentHint: "GCash / 银行转账会单独统计，不进入实体钱箱现金。",
+    customerNamePlaceholder: "散客姓名",
+    memberBadge: "会员",
+    walkInBadge: "散客",
+    employeeLocked: "工号已锁定，用于销售归属和审计记录。",
   },
 };
 
@@ -163,10 +187,30 @@ function productMatchesSearch(product: Product, search: string) {
   return compactHaystack.includes(compactSearch) || words.every((word) => haystack.includes(word));
 }
 
+function paymentMethodLabel(method: string, language: "en" | "zh") {
+  const labels = {
+    en: {
+      cash: "Cash",
+      gcash: "GCash",
+      bank_transfer: "Bank Transfer",
+      other: "Other",
+    },
+    zh: {
+      cash: "现金",
+      gcash: "GCash",
+      bank_transfer: "银行转账",
+      other: "其他",
+    },
+  };
+
+  return labels[language][method as keyof typeof labels.en] ?? method;
+}
+
 export function AdminSalesDeskClient({
   customers,
   products,
   defaultEmployeeNo,
+  canChangeEmployeeNo,
   summary,
   summaryScope,
   recentSales,
@@ -175,6 +219,7 @@ export function AdminSalesDeskClient({
   customers: Customer[];
   products: Product[];
   defaultEmployeeNo: string;
+  canChangeEmployeeNo: boolean;
   summary: PosSalesSummary;
   summaryScope: "mine" | "all";
   recentSales: PosSaleRecord[];
@@ -196,6 +241,7 @@ export function AdminSalesDeskClient({
   const [printSale, setPrintSale] = useState<PosSaleRecord | null>(null);
   const [message, setMessage] = useState(initialError ?? "");
   const [loading, setLoading] = useState(false);
+  const selectedCustomer = useMemo(() => customers.find((item) => item.id === customerId), [customerId, customers]);
 
   const productTotal = useMemo(
     () =>
@@ -312,6 +358,9 @@ export function AdminSalesDeskClient({
 
       setMessage(`${t.saved} ${result.saleNo ?? ""}`);
       setItems([emptyItem()]);
+      setCustomerId("");
+      setCustomerName("");
+      setCustomerPhone("");
       setDiscountAmount("0");
       setPriceChangeNotes("");
       setSaleNotes("");
@@ -372,10 +421,23 @@ export function AdminSalesDeskClient({
       </section>
 
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-lg font-black text-zinc-950">{t.stepCustomer}</p>
+            <p className="mt-1 text-xs font-bold text-zinc-500">{selectedCustomer ? t.memberCustomer : t.walkInNoPoints}</p>
+          </div>
+          <StatusPill tone={selectedCustomer ? "green" : "neutral"}>{selectedCustomer ? t.memberBadge : t.walkInBadge}</StatusPill>
+        </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label>
             <span className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{t.employeeNo}</span>
-            <input className={`${inputClass()} mt-2`} value={employeeNo} onChange={(event) => setEmployeeNo(event.target.value)} />
+            <input
+              className={`${inputClass()} mt-2 ${canChangeEmployeeNo ? "" : "bg-zinc-100 text-zinc-500"}`}
+              value={employeeNo}
+              readOnly={!canChangeEmployeeNo}
+              onChange={(event) => setEmployeeNo(event.target.value)}
+            />
+            {!canChangeEmployeeNo ? <span className="mt-1 block text-[11px] font-bold text-zinc-500">{t.employeeLocked}</span> : null}
           </label>
           <label>
             <span className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{t.customer}</span>
@@ -390,7 +452,7 @@ export function AdminSalesDeskClient({
           </label>
           <label>
             <span className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{t.customerName}</span>
-            <input className={`${inputClass()} mt-2`} value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
+            <input className={`${inputClass()} mt-2`} placeholder={t.customerNamePlaceholder} value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
           </label>
           <label>
             <span className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{t.customerPhone}</span>
@@ -404,6 +466,7 @@ export function AdminSalesDeskClient({
               <option value="bank_transfer">Bank Transfer</option>
               <option value="other">Other</option>
             </select>
+            <span className="mt-1 block text-[11px] font-bold text-zinc-500">{paymentMethod === "cash" ? t.cashPaymentHint : t.transferPaymentHint}</span>
           </label>
           <label>
             <span className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{t.discount}</span>
@@ -422,6 +485,7 @@ export function AdminSalesDeskClient({
 
       <TableShell>
         <div className="border-b border-zinc-100 bg-white p-4">
+          <p className="mb-3 text-lg font-black text-zinc-950">{t.stepItems}</p>
           <input className={inputClass()} value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder={t.productSearch} />
         </div>
         <div className="overflow-x-auto pb-2">
@@ -461,7 +525,11 @@ export function AdminSalesDeskClient({
                   </td>
                   <td className="px-4 py-3 font-black text-orange-700">{formatPhp((Number(item.quantity) || 0) * (Number(item.unitPrice) || 0))}</td>
                   <td className="px-4 py-3">
-                    <button type="button" className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-red-700" onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>
+                    <button
+                      type="button"
+                      className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-red-700"
+                      onClick={() => setItems((current) => (current.length <= 1 ? [emptyItem()] : current.filter((_, rowIndex) => rowIndex !== index)))}
+                    >
                       {t.remove}
                     </button>
                   </td>
@@ -474,8 +542,11 @@ export function AdminSalesDeskClient({
 
       <section className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{t.total}</p>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{t.stepSubmit}</p>
           <p className="mt-1 text-3xl font-black text-[#f65f18]">{formatPhp(total)}</p>
+          <p className="mt-1 text-sm font-bold text-zinc-500">
+            {t.amountPreview}: {formatPhp(total)} · {paymentMethodLabel(paymentMethod, language)}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => setItems((current) => [...current, emptyItem()])} className="rounded-md border border-zinc-200 px-4 py-2.5 text-sm font-black text-zinc-700">

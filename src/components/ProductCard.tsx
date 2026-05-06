@@ -7,10 +7,16 @@ function formatCompactMoney(value: number) {
   return `₱${value.toLocaleString("en-US", { minimumFractionDigits: value % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
 
+function formatMobileMoney(value: number) {
+  return `PHP ${value.toLocaleString("en-US", { minimumFractionDigits: value % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
+}
+
+void formatCompactMoney;
+
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const bulkTier = product.tiers.find((tier) => tier.min >= 6) ?? product.tiers[product.tiers.length - 1];
   const prices = product.tiers.map((tier) => tier.price);
-  const compactPrice = `${formatCompactMoney(Math.min(...prices))}+`;
+  const compactPrice = `${formatMobileMoney(Math.min(...prices))}+`;
   const unavailable = isUnavailableStockStatus(product.stockStatus);
   const stockLabel = product.stockStatus === "In stock" ? "Ready" : product.stockStatus === "Preorder" ? "Order" : product.stockStatus;
 
@@ -35,7 +41,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         <div className="min-h-[34px] sm:min-h-[48px]">
           {product.retailPrice ? (
             <p className="truncate text-[8px] font-bold leading-[11px] text-zinc-400 sm:text-[11px]">
-              <span className="sm:hidden">Retail {formatCompactMoney(product.retailPrice)}</span>
+              <span className="sm:hidden">Retail {formatMobileMoney(product.retailPrice)}</span>
               <span className="hidden sm:inline">Retail {formatMoney(product.retailPrice)}</span>
             </p>
           ) : null}
@@ -48,7 +54,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               "Ask on Messenger for availability"
             ) : (
               <>
-                <span className="sm:hidden">{bulkTier.label} from {formatCompactMoney(bulkTier.price)}</span>
+                <span className="sm:hidden">{bulkTier.label} from {formatMobileMoney(bulkTier.price)}</span>
                 <span className="hidden sm:inline">{bulkTier.label} from {formatMoney(bulkTier.price)}</span>
               </>
             )}

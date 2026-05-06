@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPosSalePrintTemplate } from "@/components/admin/AdminPosSalePrintTemplate";
@@ -39,6 +39,12 @@ const copy = {
     cashDrawerUpdated: "Cash drawer totals are updated automatically.",
     transferReferenceHint: "GCash and bank transfer payments require a reference number.",
     printA6: "Print A6",
+    waitingTotal: "Waiting Total",
+    cashWaiting: "Cash Waiting",
+    transferWaiting: "GCash / Bank Waiting",
+    cashierAction: "Cashier Action",
+    cashConfirmHint: "Count the cash, then confirm payment.",
+    transferConfirmHint: "Check the transfer receipt and enter the reference number before confirming.",
   },
   zh: {
     caption: "这里只做线下收银确认。收银员核对销售单、收款方式和金额后，再确认收款。",
@@ -63,6 +69,12 @@ const copy = {
     cashDrawerUpdated: "钱箱统计会自动更新。",
     transferReferenceHint: "GCash 和银行转账必须填写参考号。",
     printA6: "打印 A6",
+    waitingTotal: "待收款总额",
+    cashWaiting: "待收现金",
+    transferWaiting: "待收 GCash / 银行",
+    cashierAction: "收银操作",
+    cashConfirmHint: "现金单：点清现金后再确认收款。",
+    transferConfirmHint: "转账单：核对到账记录，并填写参考号后再确认。",
   },
 };
 
@@ -89,6 +101,25 @@ function inputClass() {
   return "h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-orange-500";
 }
 
+function isTransferPayment(method: string) {
+  return method === "gcash" || method === "bank_transfer";
+}
+
+function SummaryCard({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "orange" | "green" | "neutral" }) {
+  const toneClass = {
+    green: "text-emerald-700",
+    neutral: "text-zinc-950",
+    orange: "text-[#f65f18]",
+  }[tone];
+
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-400">{label}</p>
+      <p className={`mt-2 text-2xl font-black ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
+
 export function AdminCashierClient({ initialSales, initialError }: { initialSales: PosSaleRecord[]; initialError?: string }) {
   const { language } = useAdminI18n();
   const t = language === "zh" ? copy.zh : copy.en;
@@ -98,6 +129,26 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
   const [notesBySale, setNotesBySale] = useState<Record<string, string>>({});
   const [printSale, setPrintSale] = useState<PosSaleRecord | null>(null);
   const [loading, setLoading] = useState(false);
+  const waitingSummary = useMemo(
+    () =>
+      sales.reduce(
+        (summary, sale) => {
+          summary.total += sale.totalAmount;
+
+          if (sale.paymentMethod === "cash") {
+            summary.cash += sale.totalAmount;
+          } else if (isTransferPayment(sale.paymentMethod)) {
+            summary.transfer += sale.totalAmount;
+          } else {
+            summary.other += sale.totalAmount;
+          }
+
+          return summary;
+        },
+        { total: 0, cash: 0, transfer: 0, other: 0 },
+      ),
+    [sales],
+  );
 
   async function refresh() {
     setLoading(true);
@@ -175,6 +226,13 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
       </section>
       {message ? <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-800">{message}</div> : null}
 
+      <section className="grid gap-3 md:grid-cols-4">
+        <SummaryCard label={t.waitingTotal} value={formatPhp(waitingSummary.total)} tone="orange" />
+        <SummaryCard label={t.cashWaiting} value={formatPhp(waitingSummary.cash)} tone="green" />
+        <SummaryCard label={t.transferWaiting} value={formatPhp(waitingSummary.transfer)} />
+        <SummaryCard label={t.items} value={String(sales.length)} />
+      </section>
+
       <div className="flex justify-end">
         <button type="button" disabled={loading} onClick={() => void refresh()} className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-black text-zinc-700 disabled:opacity-60">
           {t.refresh}
@@ -233,8 +291,21 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
                 </TableShell>
               </div>
 
+              <div className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-400">{t.cashierAction}</p>
+                <p className="mt-1 text-sm font-bold text-zinc-600">
+                  {isTransferPayment(sale.paymentMethod) ? t.transferConfirmHint : t.cashConfirmHint}
+                </p>
+              </div>
+
               <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto_auto]">
-                <input className={inputClass()} placeholder={t.referenceNo} value={referenceNoBySale[sale.id] ?? ""} onChange={(event) => setReferenceNoBySale((current) => ({ ...current, [sale.id]: event.target.value }))} />
+                <input
+                  className={inputClass()}
+                  placeholder={isTransferPayment(sale.paymentMethod) ? t.referenceNo : `${t.referenceNo} (${paymentMethodLabel(sale.paymentMethod, language)})`}
+                  value={referenceNoBySale[sale.id] ?? ""}
+                  disabled={!isTransferPayment(sale.paymentMethod)}
+                  onChange={(event) => setReferenceNoBySale((current) => ({ ...current, [sale.id]: event.target.value }))}
+                />
                 <input className={inputClass()} placeholder={t.notes} value={notesBySale[sale.id] ?? ""} onChange={(event) => setNotesBySale((current) => ({ ...current, [sale.id]: event.target.value }))} />
                 <button type="button" disabled={loading} onClick={() => printPosSale(sale)} className="rounded-md border border-zinc-200 px-5 py-2 text-sm font-black text-zinc-700 disabled:opacity-60">
                   {t.printA6}

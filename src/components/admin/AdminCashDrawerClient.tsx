@@ -44,6 +44,7 @@ const copy = {
     cashOutOption: "Cash out / expense",
     cashInOption: "Cash in adjustment",
     closeHint: "Expected cash = opening cash + confirmed cash payments + cash-in adjustments - cash-out entries. GCash and bank transfers are shown separately and are not added to the physical cash box.",
+    scopeNote: "Cash drawer is for offline POS cashier-confirmed payments only. Online website orders stay in Online Orders / Payments.",
   },
   zh: {
     caption: "记录每日开店备用现金、线下现金收款、GCash / 银行转账、现金支出和关账差额。",
@@ -81,6 +82,7 @@ const copy = {
     cashOutOption: "现金支出 / 费用",
     cashInOption: "补入现金",
     closeHint: "系统应有现金 = 开店备用现金 + 已确认现金收款 + 补入现金 - 现金支出。GCash 和银行转账会单独显示，不加入实体钱箱现金。",
+    scopeNote: "钱箱只统计线下 POS 收银员已确认的收款。网站线上订单仍在“线上订单 / 付款”里处理。",
   },
 };
 
@@ -211,6 +213,10 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
       <AdminPageTitle titleKey="cashDrawer" caption={t.caption} />
 
       {message ? <div className="rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-800">{message}</div> : null}
+
+      <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-black leading-6 text-emerald-900">
+        {t.scopeNote}
+      </section>
 
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-[220px_1fr_auto] md:items-end">

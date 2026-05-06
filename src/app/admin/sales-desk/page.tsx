@@ -31,6 +31,7 @@ export default async function AdminSalesDeskPage() {
         customers={data.customers}
         products={data.products}
         defaultEmployeeNo={defaultEmployeeNo}
+        canChangeEmployeeNo={!ownSummaryOnly}
         summary={summaryResult.summary}
         summaryScope={ownSummaryOnly ? "mine" : "all"}
         recentSales={recentSalesResult.sales}
