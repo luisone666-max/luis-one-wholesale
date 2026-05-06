@@ -290,6 +290,92 @@ const imageUploadText = {
 };
 
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+type ProductAttentionFilter = "all" | "unavailable" | "low_stock" | "missing_image" | "hidden";
+type ProductEditorStep = {
+  tab: TranslationKey;
+  label: string;
+  status: string;
+  ready: boolean;
+  optional?: boolean;
+};
+
+const inventoryWatchText = {
+  en: {
+    title: "Inventory Watch",
+    all: "All",
+    unavailable: "Unavailable",
+    lowStock: "Low Stock",
+    missingImage: "Needs Image",
+    hidden: "Hidden",
+    inquiryOnly: "Inquiry only",
+    noImage: "Needs image",
+  },
+  zh: {
+    title: "\u5e93\u5b58\u5de1\u68c0",
+    all: "\u5168\u90e8",
+    unavailable: "\u65e0\u8d27",
+    lowStock: "\u4f4e\u5e93\u5b58",
+    missingImage: "\u5f85\u8865\u56fe",
+    hidden: "\u9690\u85cf",
+    inquiryOnly: "\u53ea\u80fd\u8be2\u95ee",
+    noImage: "\u5f85\u8865\u56fe",
+  },
+};
+
+const editorFlowText = {
+  en: {
+    workflowTitle: "Product upload flow",
+    workflowHint: "Fill the required steps first. Add photos, variants, and notes only when the product needs them.",
+    basicLabel: "Basic info",
+    priceLabel: "Wholesale prices",
+    imageLabel: "Product image",
+    variantsLabel: "Variants",
+    requiredStep: "Required",
+    optionalStep: "Optional",
+    readyStep: "Done",
+    clickToEdit: "Click to edit",
+    fixRequiredStep: "Fix required step",
+    saveReady: "Ready to save. Review details, prices, images, and variants before saving.",
+    saveNeedsWork: "Required before saving: SKU, name, category, MOQ, and at least one wholesale price tier.",
+    saveUploadButton: "Save / Upload Product",
+    saveChangesButton: "Save Changes",
+    saving: "Saving...",
+    priceEmptyHint: "No wholesale tiers yet. Click Add Tier and add only the price levels this product needs.",
+    variantPriceEmptyHint: "No variant tiers yet. Add variant tiers only if this variant uses different prices.",
+  },
+  zh: {
+    workflowTitle: "\u4e0a\u54c1\u6d41\u7a0b",
+    workflowHint: "\u5148\u628a\u5fc5\u586b\u6b65\u9aa4\u586b\u5b8c\uff0c\u56fe\u7247\u3001\u53d8\u4f53\u548c\u5907\u6ce8\u9700\u8981\u65f6\u518d\u52a0\u3002",
+    basicLabel: "\u57fa\u7840\u8d44\u6599",
+    priceLabel: "\u6279\u53d1\u4ef7",
+    imageLabel: "\u5546\u54c1\u56fe\u7247",
+    variantsLabel: "\u53d8\u4f53",
+    requiredStep: "\u5fc5\u586b",
+    optionalStep: "\u53ef\u9009",
+    readyStep: "\u5df2\u5b8c\u6210",
+    clickToEdit: "\u70b9\u51fb\u7f16\u8f91",
+    fixRequiredStep: "\u8865\u9f50\u5fc5\u586b\u6b65\u9aa4",
+    saveReady: "\u53ef\u4ee5\u4fdd\u5b58\u3002\u4fdd\u5b58\u524d\u518d\u68c0\u67e5\u8d44\u6599\u3001\u4ef7\u683c\u3001\u56fe\u7247\u548c\u53d8\u4f53\u3002",
+    saveNeedsWork: "\u4fdd\u5b58\u524d\u5fc5\u586b\uff1aSKU\u3001\u5546\u54c1\u540d\u3001\u5206\u7c7b\u3001MOQ\uff0c\u4ee5\u53ca\u81f3\u5c11\u4e00\u6761\u6279\u53d1\u4ef7\u3002",
+    saveUploadButton: "\u4fdd\u5b58 / \u4e0a\u4f20\u5546\u54c1",
+    saveChangesButton: "\u4fdd\u5b58\u4fee\u6539",
+    saving: "\u4fdd\u5b58\u4e2d...",
+    priceEmptyHint: "\u8fd8\u6ca1\u6709\u6279\u53d1\u4ef7\u3002\u70b9\u51fb\u65b0\u589e\u9636\u68af\uff0c\u53ea\u6dfb\u52a0\u8fd9\u4e2a\u5546\u54c1\u9700\u8981\u7684\u4ef7\u683c\u3002",
+    variantPriceEmptyHint: "\u8fd9\u4e2a\u53d8\u4f53\u8fd8\u6ca1\u6709\u72ec\u7acb\u4ef7\u683c\u3002\u53ea\u6709\u53d8\u4f53\u4ef7\u683c\u4e0d\u540c\u65f6\u624d\u9700\u8981\u6dfb\u52a0\u3002",
+  },
+};
+
+function isPlaceholderProductImage(image: string) {
+  return !image || image.includes("/products/phone-accessories.svg") || image.includes("/brand/luis-one-logo.jpg");
+}
+
+function productNeedsImage(product: AdminProductRecord) {
+  return isPlaceholderProductImage(product.image) || product.variants.some((variant) => !variant.imageUrl);
+}
+
+function productHasStockStatus(product: AdminProductRecord, status: string) {
+  return product.stockStatus === status || product.variants.some((variant) => variant.stockStatus === status);
+}
 
 function productToDraft(product: AdminProductRecord): ProductDraft {
   return {
@@ -391,6 +477,7 @@ export function AdminProductsClient({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [attentionFilter, setAttentionFilter] = useState<ProductAttentionFilter>("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
   const [imageSize, setImageSize] = useState<"compact" | "normal" | "large">("compact");
@@ -447,6 +534,13 @@ export function AdminProductsClient({
 
     return counts;
   }, [products]);
+  const inventoryWatchCounts = useMemo(() => ({
+    all: products.length,
+    unavailable: products.filter((product) => productHasStockStatus(product, "unavailable")).length,
+    lowStock: products.filter((product) => productHasStockStatus(product, "low_stock")).length,
+    missingImage: products.filter(productNeedsImage).length,
+    hidden: products.filter((product) => !product.active).length,
+  }), [products]);
   const filteredProducts = useMemo(() => {
     const needle = search.trim().toLowerCase();
 
@@ -459,10 +553,16 @@ export function AdminProductsClient({
         product.childCategoryId === categoryFilter;
       const stockMatch = stockFilter === "all" || product.stockStatus === stockFilter;
       const activeMatch = activeFilter === "all" || (activeFilter === "active" ? product.active : !product.active);
+      const attentionMatch =
+        attentionFilter === "all" ||
+        (attentionFilter === "unavailable" && productHasStockStatus(product, "unavailable")) ||
+        (attentionFilter === "low_stock" && productHasStockStatus(product, "low_stock")) ||
+        (attentionFilter === "missing_image" && productNeedsImage(product)) ||
+        (attentionFilter === "hidden" && !product.active);
 
-      return searchMatch && categoryMatch && stockMatch && activeMatch;
+      return searchMatch && categoryMatch && stockMatch && activeMatch && attentionMatch;
     });
-  }, [activeFilter, categoryFilter, products, search, stockFilter]);
+  }, [activeFilter, attentionFilter, categoryFilter, products, search, stockFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
   const visibleProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
@@ -472,6 +572,14 @@ export function AdminProductsClient({
     large: "grid gap-5 bg-zinc-50 p-4 sm:grid-cols-2 2xl:grid-cols-2 min-[1800px]:grid-cols-3",
   };
   const cardImagePadding = imageSize === "compact" ? "p-2" : imageSize === "large" ? "p-6" : "p-3";
+  const watchCopy = inventoryWatchText[language];
+  const inventoryWatchItems: Array<{ key: ProductAttentionFilter; label: string; count: number; tone: string }> = [
+    { key: "all", label: watchCopy.all, count: inventoryWatchCounts.all, tone: "border-zinc-200 bg-white text-zinc-700" },
+    { key: "unavailable", label: watchCopy.unavailable, count: inventoryWatchCounts.unavailable, tone: "border-zinc-200 bg-zinc-50 text-zinc-700" },
+    { key: "low_stock", label: watchCopy.lowStock, count: inventoryWatchCounts.lowStock, tone: "border-amber-200 bg-amber-50 text-amber-800" },
+    { key: "missing_image", label: watchCopy.missingImage, count: inventoryWatchCounts.missingImage, tone: "border-orange-200 bg-orange-50 text-orange-700" },
+    { key: "hidden", label: watchCopy.hidden, count: inventoryWatchCounts.hidden, tone: "border-zinc-300 bg-zinc-100 text-zinc-700" },
+  ];
 
   const startCreate = () => {
     setSelectedProduct(null);
@@ -628,6 +736,42 @@ export function AdminProductsClient({
           </div>
         </div>
 
+        <div className="mt-4 rounded-md border border-orange-100 bg-orange-50/60 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-700">{watchCopy.title}</p>
+            {attentionFilter !== "all" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAttentionFilter("all");
+                  setPage(1);
+                }}
+                className="text-xs font-black text-zinc-600 hover:text-orange-700"
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {inventoryWatchItems.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => {
+                  setAttentionFilter(item.key);
+                  setPage(1);
+                }}
+                className={`shrink-0 rounded-md border px-3 py-2 text-left text-xs font-black shadow-sm ${
+                  attentionFilter === item.key ? "border-[#f65f18] bg-[#f65f18] text-white" : item.tone
+                }`}
+              >
+                <span className="block">{item.label}</span>
+                <span className="mt-0.5 block text-[11px] opacity-80">{item.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className={`mt-4 overflow-hidden rounded-md border border-zinc-100 bg-zinc-50 transition-all ${filtersOpen ? "max-h-80 p-3" : "max-h-0 border-transparent p-0"}`}>
           <div className="flex flex-wrap gap-3">
             <select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPage(1); }} className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-700 outline-none">
@@ -744,6 +888,8 @@ export function AdminProductsClient({
                       {product.active ? t("activeToggle") : t("hidden")}
                     </span>
                     {product.supplierNotes ? <span className="rounded-full bg-orange-600 px-2 py-1 text-[10px] font-black text-white shadow-sm">{t("supplierNotes")}</span> : null}
+                    {productHasStockStatus(product, "unavailable") ? <span className="rounded-full bg-zinc-800 px-2 py-1 text-[10px] font-black text-white shadow-sm">{watchCopy.inquiryOnly}</span> : null}
+                    {productNeedsImage(product) ? <span className="rounded-full bg-amber-500 px-2 py-1 text-[10px] font-black text-white shadow-sm">{watchCopy.noImage}</span> : null}
                   </div>
                   <div className="absolute inset-x-2 bottom-2 grid grid-cols-3 gap-1 opacity-0 transition group-hover:opacity-100">
                     <button type="button" onClick={() => startView(product)} className="rounded-md bg-white/95 px-2 py-1.5 text-[10px] font-black text-zinc-700 shadow-sm">{t("view")}</button>
@@ -820,6 +966,7 @@ function ProductEditor({
   const { t, language } = useAdminI18n();
   const copy = language === "zh" ? productTextZh : text.en;
   const imageCopy = imageUploadText[language];
+  const flowCopy = editorFlowText[language];
   const [activeTab, setActiveTab] = useState<TranslationKey>("basicInfo");
   const [draft, setDraft] = useState<ProductDraft>(product ? productToDraft(product) : blankDraft(categories));
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -836,6 +983,39 @@ function ProductEditor({
   const basicReady = Boolean(draft.sku.trim() && draft.name.trim() && draft.categoryId && draft.moq > 0);
   const priceReady = draft.tiers.length > 0;
   const imageReady = Boolean(selectedImagePreview || draft.imageUrl);
+  const variantsReady = draft.variants.length > 0;
+  const readyToSave = basicReady && priceReady;
+  const firstMissingRequiredTab: TranslationKey | null = !basicReady ? "basicInfo" : !priceReady ? "wholesalePricesTab" : null;
+  const idleSaveActionLabel = mode === "create" ? flowCopy.saveUploadButton : flowCopy.saveChangesButton;
+  const saveActionLabel = saving ? flowCopy.saving : idleSaveActionLabel;
+  const editorSteps: ProductEditorStep[] = [
+    {
+      tab: "basicInfo",
+      label: flowCopy.basicLabel,
+      status: basicReady ? flowCopy.readyStep : flowCopy.requiredStep,
+      ready: basicReady,
+    },
+    {
+      tab: "wholesalePricesTab",
+      label: flowCopy.priceLabel,
+      status: priceReady ? `${draft.tiers.length} ${flowCopy.readyStep}` : flowCopy.requiredStep,
+      ready: priceReady,
+    },
+    {
+      tab: "imagesTab",
+      label: flowCopy.imageLabel,
+      status: imageReady ? flowCopy.readyStep : flowCopy.optionalStep,
+      ready: imageReady,
+      optional: true,
+    },
+    {
+      tab: "variantsTab",
+      label: flowCopy.variantsLabel,
+      status: variantsReady ? `${draft.variants.length} ${flowCopy.readyStep}` : flowCopy.optionalStep,
+      ready: variantsReady,
+      optional: true,
+    },
+  ];
 
   const updateDraft = (patch: Partial<ProductDraft>) => setDraft((current) => ({ ...current, ...patch }));
   const updateTier = (index: number, patch: Partial<AdminProductTier>) => {
@@ -916,8 +1096,8 @@ function ProductEditor({
       setSelectedImagePreview(window.URL.createObjectURL(prepared.file));
       setImageStatus(
         prepared.compressed
-          ? `Image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}. Click ${mode === "create" ? copy.createProduct : copy.saveProduct} or ${imageCopy.uploadImage}.`
-          : `${file.name} selected. Click ${mode === "create" ? copy.createProduct : copy.saveProduct} or ${imageCopy.uploadImage}.`,
+          ? `Image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}. Click ${idleSaveActionLabel} or ${imageCopy.uploadImage}.`
+          : `${file.name} selected. Click ${idleSaveActionLabel} or ${imageCopy.uploadImage}.`,
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : imageCopy.imageTooLarge;
@@ -1097,7 +1277,7 @@ function ProductEditor({
           </button>
           {mode !== "view" ? (
             <button type="button" onClick={() => void submit()} disabled={saving || uploadingImage} className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60">
-              {saving ? copy.saving : mode === "create" ? copy.createProduct : copy.saveProduct}
+              {saveActionLabel}
             </button>
           ) : null}
         </div>
@@ -1105,16 +1285,38 @@ function ProductEditor({
 
       <div className="mt-5 grid gap-3 border-b border-zinc-100 pb-4 sm:grid-cols-2 xl:grid-cols-6">
         <div className="rounded-md border border-orange-100 bg-orange-50 p-4 sm:col-span-2 xl:col-span-6">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm font-black text-zinc-950">{copy.workflowTitle}</p>
-              <p className="mt-1 text-xs font-bold text-orange-700">{copy.workflowHint}</p>
+              <p className="text-sm font-black text-zinc-950">{flowCopy.workflowTitle}</p>
+              <p className="mt-1 text-xs font-bold text-orange-700">{flowCopy.workflowHint}</p>
+              <p className={`mt-2 rounded-md border px-3 py-2 text-xs font-black ${readyToSave ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+                {readyToSave ? flowCopy.saveReady : flowCopy.saveNeedsWork}
+              </p>
             </div>
-            <div className="grid gap-2 sm:grid-cols-4 lg:min-w-[560px]">
-              <WorkflowStep label={copy.workflowBasic} status={basicReady ? copy.workflowReady : copy.workflowMissing} ready={basicReady} />
-              <WorkflowStep label={copy.workflowPrice} status={priceReady ? `${draft.tiers.length} ${copy.workflowReady}` : copy.workflowMissing} ready={priceReady} />
-              <WorkflowStep label={copy.workflowImage} status={imageReady ? copy.workflowReady : copy.workflowOptional} ready={imageReady} optional />
-              <WorkflowStep label={t("variantsTab")} status={draft.variants.length ? `${draft.variants.length} ${copy.workflowReady}` : copy.workflowOptional} ready={draft.variants.length > 0} optional />
+            <div className="w-full lg:max-w-[640px]">
+              <div className="grid gap-2 sm:grid-cols-4">
+                {editorSteps.map((step) => (
+                  <WorkflowStep
+                    key={step.tab}
+                    label={step.label}
+                    status={step.status}
+                    ready={step.ready}
+                    optional={step.optional}
+                    active={activeTab === step.tab}
+                    clickHint={flowCopy.clickToEdit}
+                    onClick={() => setActiveTab(step.tab)}
+                  />
+                ))}
+              </div>
+              {firstMissingRequiredTab && mode !== "view" ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab(firstMissingRequiredTab)}
+                  className="mt-3 w-full rounded-md bg-zinc-950 px-4 py-2 text-xs font-black text-white hover:bg-zinc-800"
+                >
+                  {flowCopy.fixRequiredStep}
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -1196,6 +1398,7 @@ function ProductEditor({
             t={t}
             maxQtyBlank={copy.maxQtyBlank}
             addTierLabel={copy.addTier}
+            emptyHint={flowCopy.priceEmptyHint}
             onUpdateTier={updateTier}
             onDeleteTier={(index) => updateDraft({ tiers: draft.tiers.filter((_, tierIndex) => tierIndex !== index) })}
             onAddTier={() => updateDraft({ tiers: [...draft.tiers, { minQty: 1, maxQty: null, unitPrice: 1 }] })}
@@ -1308,6 +1511,7 @@ function ProductEditor({
                     t={t}
                     maxQtyBlank={copy.maxQtyBlank}
                     addTierLabel={copy.addTier}
+                    emptyHint={flowCopy.variantPriceEmptyHint}
                     onUpdateTier={(tierIndex, patch) => updateVariantTier(variantIndex, tierIndex, patch)}
                     onDeleteTier={(tierIndex) => updateVariant(variantIndex, { tiers: variant.tiers.filter((_, index) => index !== tierIndex) })}
                     onAddTier={() => updateVariant(variantIndex, { tiers: [...variant.tiers, { minQty: 1, maxQty: null, unitPrice: 1 }] })}
@@ -1390,7 +1594,7 @@ function ProductEditor({
         <div className="sticky bottom-0 z-20 mt-6 -mx-5 -mb-5 border-t border-zinc-200 bg-white/95 px-5 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-bold text-zinc-500">
-              {selectedImage ? copy.selectedImageSaveHint : copy.reviewBeforeSaving}
+              {!readyToSave ? flowCopy.saveNeedsWork : selectedImage ? copy.selectedImageSaveHint : flowCopy.saveReady}
             </p>
             <button
               type="button"
@@ -1398,7 +1602,7 @@ function ProductEditor({
               disabled={saving || uploadingImage}
               className="h-11 rounded-md bg-[#f65f18] px-6 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60"
             >
-              {saving ? copy.saving : mode === "create" ? copy.createProduct : copy.saveProduct}
+              {saveActionLabel}
             </button>
           </div>
         </div>
@@ -1453,19 +1657,32 @@ function WorkflowStep({
   status,
   ready,
   optional,
+  active,
+  clickHint,
+  onClick,
 }: {
   label: string;
   status: string;
   ready: boolean;
   optional?: boolean;
+  active: boolean;
+  clickHint: string;
+  onClick: () => void;
 }) {
   return (
-    <div className={`rounded-md border bg-white px-3 py-2 ${ready ? "border-emerald-200" : optional ? "border-zinc-200" : "border-orange-200"}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-md border bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${
+        active ? "border-[#f65f18] ring-2 ring-orange-100" : ready ? "border-emerald-200" : optional ? "border-zinc-200" : "border-orange-200"
+      }`}
+      title={clickHint}
+    >
       <p className="truncate text-xs font-black text-zinc-900">{label}</p>
       <p className={`mt-1 truncate text-[11px] font-black ${ready ? "text-emerald-700" : optional ? "text-zinc-500" : "text-orange-700"}`}>
         {status}
       </p>
-    </div>
+    </button>
   );
 }
 
@@ -1604,6 +1821,7 @@ function WholesalePriceEditor({
   t,
   maxQtyBlank,
   addTierLabel,
+  emptyHint,
   onUpdateTier,
   onDeleteTier,
   onAddTier,
@@ -1613,6 +1831,7 @@ function WholesalePriceEditor({
   t: (key: TranslationKey) => string;
   maxQtyBlank: string;
   addTierLabel: string;
+  emptyHint: string;
   onUpdateTier: (index: number, patch: Partial<AdminProductTier>) => void;
   onDeleteTier: (index: number) => void;
   onAddTier: () => void;
@@ -1657,7 +1876,7 @@ function WholesalePriceEditor({
         </div>
       ) : (
         <div className="rounded-md border border-dashed border-orange-200 bg-white p-6 text-sm font-bold text-zinc-500">
-          No wholesale price tiers yet. Click Add Tier to create only the price levels you need.
+          {emptyHint}
         </div>
       )}
     </section>
