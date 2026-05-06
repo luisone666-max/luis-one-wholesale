@@ -650,6 +650,10 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
       : order.shippingFeeAmount === null
         ? labelFor(t, shippingFeePaymentKeyByValue, order.shippingFeePayment)
         : formatPhp(order.shippingFeeAmount);
+  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const recordedPayments = order.payments.filter((payment) => payment.status !== "rejected");
+  const recordedPaymentTotal = recordedPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  const balanceToConfirm = Math.max(0, order.amountToConfirm - recordedPaymentTotal);
 
   return (
     <section className="hidden bg-white text-zinc-950 print:block">
@@ -704,7 +708,7 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
         <div className="flex items-start justify-between gap-2 border-b border-zinc-950 pb-1.5">
           <div className="min-w-0">
             <h1 className="text-[13px] font-black uppercase leading-4">{businessInfo.name}</h1>
-            <p className="text-[8px] font-bold uppercase tracking-wide text-zinc-600">Wholesale Order Slip</p>
+            <p className="text-[8px] font-bold uppercase tracking-wide text-zinc-600">Online Wholesale Order Slip</p>
             <p className="mt-0.5 text-[7px] font-bold text-zinc-500">{businessInfo.address}</p>
             <p className="text-[7px] font-bold text-zinc-500">{businessInfo.phoneDisplay} | {businessInfo.hours}</p>
           </div>
@@ -720,11 +724,13 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
             <A6Row label="Name" value={order.customerName} />
             <A6Row label="Phone" value={order.customerPhone} />
             <A6Row label="FB" value={order.facebookMessenger || "-"} />
+            <A6Row label="Type" value={order.businessType || "-"} />
           </A6Box>
           <A6Box title="Receiver">
             <A6Row label="Name" value={order.receiverName} />
             <A6Row label="Phone" value={order.receiverPhone} />
             <A6Row label="Method" value={labelFor(t, receivingMethodKeyByValue, order.receivingMethod)} />
+            <A6Row label="Sales" value={order.salesName || "Online"} />
           </A6Box>
         </div>
 
@@ -760,8 +766,22 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
           </table>
         </div>
 
+        {recordedPayments.length ? (
+          <A6Box title="Payment Records" className="mt-1.5">
+            {recordedPayments.slice(0, 3).map((payment) => (
+              <div key={payment.id} className="flex justify-between gap-2 text-[8px] font-bold">
+                <span className="break-words">{payment.method}{payment.referenceNo ? ` / ${payment.referenceNo}` : ""}</span>
+                <span className="shrink-0">{formatPhp(payment.amount)}</span>
+              </div>
+            ))}
+            {recordedPayments.length > 3 ? <p className="text-[7px] font-bold text-zinc-500">+ {recordedPayments.length - 3} more payment record(s)</p> : null}
+          </A6Box>
+        ) : null}
+
         <div className="mt-1.5 grid grid-cols-[1fr_37mm] gap-1.5">
           <A6Box title="Handling">
+            <A6Check label={`${itemCount} pc(s) counted`} />
+            <A6Check label="SKU / variant checked" />
             <A6Check label="Customer confirmed" />
             <A6Check label="Items picked / packed" />
             <A6Check label="Deposit / payment checked" />
@@ -771,6 +791,8 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
           <A6Box title="Total">
             <A6Total label="Product" value={formatPhp(order.productTotal)} />
             <A6Total label="Shipping" value={shippingFee} />
+            <A6Total label="Recorded" value={formatPhp(recordedPaymentTotal)} />
+            <A6Total label="Balance" value={formatPhp(balanceToConfirm)} />
             <A6Total label="Payment" value={labelFor(t, statusKeyByValue, order.paymentStatus)} />
             <div className="mt-1 border-t border-zinc-300 pt-1">
               <A6Total label="Confirm" value={formatPhp(order.amountToConfirm)} strong />
@@ -778,14 +800,18 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
           </A6Box>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-4 text-[8px] font-bold">
+        <div className="mt-3 grid grid-cols-3 gap-3 text-[8px] font-bold">
           <div>
             <div className="h-6 border-b border-zinc-500" />
-            <p className="mt-1">Prepared By</p>
+            <p className="mt-1">Prepared</p>
           </div>
           <div>
             <div className="h-6 border-b border-zinc-500" />
-            <p className="mt-1">Receiver Sign</p>
+            <p className="mt-1">Cashier</p>
+          </div>
+          <div>
+            <div className="h-6 border-b border-zinc-500" />
+            <p className="mt-1">Receiver</p>
           </div>
         </div>
       </div>
