@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { messengerUrl } from "@/components/CustomerUi";
 import { getCustomerOrderDetail, type CustomerOrderDetail } from "@/lib/customer-orders";
+import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty-points";
 import { getReceivingMethodLabel, getShippingFeePaymentLabel } from "@/lib/order-labels";
 import { formatPhp } from "@/lib/wholesale-pricing";
 
@@ -60,6 +61,10 @@ export function OrderSuccessDetails() {
       <div className="p-6 sm:p-8">
       <div className="grid gap-4 text-left sm:grid-cols-2">
         <Info label="Product Total" value={formatPhp(order.productTotal)} />
+        <Info
+          label="Member Points"
+          value={`${formatLoyaltyPoints(calculateLoyaltyPoints(order.productTotal))} after payment confirmation`}
+        />
         <Info label="Shipping Fee Payment" value={getShippingFeePaymentLabel(order.shippingFeePayment)} />
         <Info label="Receiver Name" value={order.receiverName ?? ""} />
         <Info label="Receiver Phone" value={order.receiverPhone ?? ""} />

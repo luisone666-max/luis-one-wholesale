@@ -6,14 +6,24 @@ import { trackMetaEvent } from "@/components/MetaPixel";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import { addProductToCart } from "@/lib/customer-cart";
 import { metaCatalogItemId } from "@/lib/meta-catalog";
-import { formatMoney, getPriceRange, getTierForQuantity, getVariantPriceRange, type Product, type ProductVariant } from "@/lib/mock-data";
+import {
+  formatMoney,
+  getPriceRange,
+  getTierForQuantity,
+  getVariantPriceRange,
+  isUnavailableStockStatus,
+  type Product,
+  type ProductVariant,
+} from "@/lib/mock-data";
 
 function variantToProduct(product: Product, variant: ProductVariant): Product {
+  const gallery = variant.image ? [variant.image, ...product.gallery] : product.gallery.length ? product.gallery : [product.image];
+
   return {
     ...product,
     sku: variant.sku || product.sku,
     image: variant.image || product.image,
-    gallery: [variant.image || product.image, ...product.gallery].filter(Boolean),
+    gallery: Array.from(new Set(gallery.filter(Boolean))),
     moq: variant.moq,
     stockStatus: variant.stockStatus,
     details: [
@@ -28,7 +38,7 @@ function variantToProduct(product: Product, variant: ProductVariant): Product {
 
 export function ProductDetailExperience({ product }: { product: Product }) {
   const activeVariants = product.variants?.filter((variant) => variant.active) ?? [];
-  const [selectedVariantId, setSelectedVariantId] = useState(activeVariants[0]?.id ?? "");
+  const [selectedVariantId, setSelectedVariantId] = useState("");
   const selectedVariant = activeVariants.find((variant) => variant.id === selectedVariantId) ?? null;
   const displayProduct = selectedVariant ? variantToProduct(product, selectedVariant) : product;
   const [quantity, setQuantity] = useState(displayProduct.moq);
@@ -38,6 +48,8 @@ export function ProductDetailExperience({ product }: { product: Product }) {
   const [loading, setLoading] = useState(false);
   const appliedTier = getTierForQuantity(displayProduct, quantity);
   const subtotal = appliedTier.price * quantity;
+  const directOrderUnavailable = isUnavailableStockStatus(displayProduct.stockStatus);
+  const selectedVariantImagePending = Boolean(selectedVariant && !selectedVariant.image);
 
   const selectVariant = (variant: ProductVariant) => {
     setSelectedVariantId(variant.id);
@@ -49,6 +61,12 @@ export function ProductDetailExperience({ product }: { product: Product }) {
     if (activeVariants.length && !selectedVariant) {
       setSuccess(false);
       setMessage("Please select a variant before adding this product.");
+      return;
+    }
+
+    if (directOrderUnavailable) {
+      setSuccess(false);
+      setMessage("This item is currently unavailable for direct order. Please ask on Messenger so we can check stock or arrange a special order.");
       return;
     }
 
@@ -115,6 +133,11 @@ export function ProductDetailExperience({ product }: { product: Product }) {
           <div className="aspect-square bg-white p-1.5 sm:rounded-sm sm:border sm:border-zinc-200 sm:p-3">
             <ProductImage src={displayProduct.image} alt={displayProduct.name} />
           </div>
+          {selectedVariantImagePending ? (
+            <p className="mx-3 mt-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 sm:mx-0">
+              Variant image is pending. We can update this model image later.
+            </p>
+          ) : null}
           <div className="mx-3 mt-2 grid grid-cols-5 gap-1.5 sm:mx-0 sm:mt-3 sm:gap-2">
             {displayProduct.gallery.slice(0, 5).map((image) => (
               <button key={image} type="button" className="aspect-square rounded-sm border border-zinc-200 bg-white p-1 hover:border-orange-400 sm:p-1.5">
@@ -159,6 +182,11 @@ export function ProductDetailExperience({ product }: { product: Product }) {
             <span className="rounded-sm bg-[#f65f18] px-2 py-1 text-xs font-black text-white">Wholesale</span>
             <StockStatusBadge status={displayProduct.stockStatus} />
           </div>
+          {directOrderUnavailable ? (
+            <div className="mt-3 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
+              This item is shown for inquiry only. Please use Messenger to check availability, color, lead time, or special order options.
+            </div>
+          ) : null}
 
           <h1 className="mt-2 text-base font-black leading-snug text-zinc-950 sm:mt-3 sm:text-2xl lg:text-[26px]">{product.name}</h1>
 
@@ -205,14 +233,22 @@ export function ProductDetailExperience({ product }: { product: Product }) {
                       key={variant.id}
                       type="button"
                       onClick={() => selectVariant(variant)}
-                      className={`min-h-10 rounded-sm border px-2 py-1.5 text-left text-[11px] font-bold transition sm:min-h-12 sm:px-3 sm:py-2 sm:text-xs ${
+                      className={`grid min-h-12 grid-cols-[34px_1fr] items-center gap-2 rounded-sm border px-2 py-1.5 text-left text-[11px] font-bold transition sm:min-h-14 sm:grid-cols-[42px_1fr] sm:px-3 sm:py-2 sm:text-xs ${
                         selectedVariantId === variant.id
                           ? "border-[#f65f18] bg-orange-50 text-orange-700"
                           : "border-zinc-200 bg-white text-zinc-700 hover:border-orange-300"
                       }`}
                     >
-                      <span className="line-clamp-1 block font-black">{variant.name}</span>
-                      <span className="mt-0.5 line-clamp-1 block text-[10px] text-zinc-500 sm:text-[11px]">{variant.sku || variant.fits || "Variant"}</span>
+                      <span className="grid aspect-square place-items-center overflow-hidden rounded-sm border border-zinc-200 bg-zinc-50 text-[9px] font-black text-zinc-400">
+                        {variant.image ? <ProductImage src={variant.image} alt={variant.name} /> : "No img"}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="line-clamp-1 block font-black">{variant.name}</span>
+                        <span className="mt-0.5 line-clamp-1 block text-[10px] text-zinc-500 sm:text-[11px]">{variant.sku || variant.fits || "Variant"}</span>
+                        {isUnavailableStockStatus(variant.stockStatus) ? (
+                          <span className="mt-0.5 block text-[10px] font-black text-zinc-500">Messenger inquiry only</span>
+                        ) : null}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -245,15 +281,21 @@ export function ProductDetailExperience({ product }: { product: Product }) {
           </div>
 
           <div className="mt-4 hidden grid-cols-2 gap-2 border-t border-zinc-100 pt-3 sm:mt-6 sm:flex sm:gap-3 sm:pt-5">
-            <button
-              type="button"
-              onClick={addToOrder}
-              disabled={loading}
-              className="h-11 rounded-sm border border-[#f65f18] bg-orange-50 px-3 text-xs font-black text-[#f65f18] transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 sm:min-w-44 sm:px-8 sm:text-sm"
-            >
-              {loading ? "Adding..." : "Add to Order"}
-            </button>
-            <ProductInquiryButton product={displayProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-44 sm:px-8 sm:text-sm" />
+            {directOrderUnavailable ? (
+              <ProductInquiryButton product={displayProduct} label="Ask Availability on Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-4 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-72 sm:px-8 sm:text-sm" />
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={addToOrder}
+                  disabled={loading}
+                  className="h-11 rounded-sm border border-[#f65f18] bg-orange-50 px-3 text-xs font-black text-[#f65f18] transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 sm:min-w-44 sm:px-8 sm:text-sm"
+                >
+                  {loading ? "Adding..." : "Add to Order"}
+                </button>
+                <ProductInquiryButton product={displayProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-44 sm:px-8 sm:text-sm" />
+              </>
+            )}
           </div>
 
           {message ? (
@@ -264,15 +306,21 @@ export function ProductDetailExperience({ product }: { product: Product }) {
         </div>
       </div>
       <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-zinc-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
-        <button
-          type="button"
-          onClick={addToOrder}
-          disabled={loading}
-          className="h-11 rounded-sm border border-[#f65f18] bg-orange-50 px-3 text-xs font-black text-[#f65f18] transition disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? "Adding..." : "Add to Order"}
-        </button>
-        <ProductInquiryButton product={displayProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+        {directOrderUnavailable ? (
+          <ProductInquiryButton product={displayProduct} label="Ask Availability on Messenger" className="col-span-2 h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={addToOrder}
+              disabled={loading}
+              className="h-11 rounded-sm border border-[#f65f18] bg-orange-50 px-3 text-xs font-black text-[#f65f18] transition disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Adding..." : "Add to Order"}
+            </button>
+            <ProductInquiryButton product={displayProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+          </>
+        )}
       </div>
     </section>
   );

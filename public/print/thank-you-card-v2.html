@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Luis One Moto Supply PH Thank You Card V2</title>
+    <style>
+      :root {
+        --orange: #f45116;
+        --orange-dark: #c6340b;
+        --ink: #141414;
+        --soft: #686868;
+        --paper: #fffaf6;
+        --line: #f0d8ca;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #e7e7e7;
+        color: var(--ink);
+        font-family:
+          Arial,
+          Helvetica,
+          sans-serif;
+        padding: 24px;
+      }
+
+      .card {
+        position: relative;
+        width: 105mm;
+        height: 148mm;
+        overflow: hidden;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background:
+          radial-gradient(circle at 78% 0%, rgba(244, 81, 22, 0.2), transparent 34%),
+          linear-gradient(180deg, #fff 0%, var(--paper) 100%);
+        box-shadow: 0 24px 80px rgba(20, 20, 20, 0.18);
+      }
+
+      .top-ribbon {
+        height: 10px;
+        background: linear-gradient(90deg, var(--orange-dark), var(--orange));
+      }
+
+      .inner {
+        padding: 17px 17px 14px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand-main {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .logo {
+        width: 50px;
+        height: 50px;
+        flex: 0 0 auto;
+        border-radius: 999px;
+        object-fit: cover;
+        background: #fff;
+        border: 3px solid #fff;
+        box-shadow: 0 10px 22px rgba(244, 81, 22, 0.28);
+      }
+
+      .brand-name strong {
+        display: block;
+        font-size: 20px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+
+      .brand-name span {
+        display: block;
+        margin-top: 4px;
+        color: var(--orange);
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.22em;
+      }
+
+      .tag {
+        flex: 0 0 auto;
+        border: 1px solid #ffd9c4;
+        border-radius: 999px;
+        padding: 7px 9px;
+        background: #fff;
+        color: var(--orange-dark);
+        font-size: 9px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      h1 {
+        margin: 18px 0 7px;
+        font-size: 31px;
+        line-height: 0.96;
+        letter-spacing: -0.055em;
+      }
+
+      .lead {
+        margin: 0;
+        color: #555;
+        font-size: 12px;
+        line-height: 1.45;
+        font-weight: 700;
+      }
+
+      .benefits {
+        margin-top: 15px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .benefit {
+        display: flex;
+        align-items: center;
+        min-height: 34px;
+        gap: 7px;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.82);
+        color: #242424;
+        font-size: 10px;
+        line-height: 1.2;
+        font-weight: 900;
+      }
+
+      .check {
+        display: grid;
+        place-items: center;
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+        border-radius: 999px;
+        background: #fff1e8;
+        color: var(--orange);
+        font-size: 12px;
+      }
+
+      .scan-panel {
+        margin-top: 15px;
+        display: grid;
+        grid-template-columns: 134px 1fr;
+        gap: 13px;
+        align-items: center;
+        padding: 12px;
+        border-radius: 16px;
+        background: #151515;
+        color: #fff;
+        box-shadow: 0 16px 34px rgba(20, 20, 20, 0.2);
+      }
+
+      .scan-panel img {
+        width: 134px;
+        height: 134px;
+        border-radius: 12px;
+        background: #fff;
+        padding: 7px;
+      }
+
+      .scan-panel h2 {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.02;
+        letter-spacing: -0.04em;
+      }
+
+      .scan-panel p {
+        margin: 8px 0 0;
+        color: #ffd9c7;
+        font-size: 11px;
+        line-height: 1.45;
+        font-weight: 800;
+      }
+
+      .links {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+        margin-top: 11px;
+      }
+
+      .link-card {
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        gap: 8px;
+        align-items: center;
+        min-height: 68px;
+        padding: 9px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: #fff;
+      }
+
+      .link-card img {
+        width: 48px;
+        height: 48px;
+      }
+
+      .link-card strong {
+        display: block;
+        font-size: 11px;
+        line-height: 1.1;
+      }
+
+      .link-card span {
+        display: block;
+        margin-top: 3px;
+        color: var(--soft);
+        font-size: 8px;
+        line-height: 1.25;
+        font-weight: 800;
+        word-break: break-word;
+      }
+
+      .bottom-note {
+        position: absolute;
+        inset-inline: 17px;
+        bottom: 13px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        color: #7b3c20;
+        font-size: 8.5px;
+        line-height: 1.25;
+        font-weight: 900;
+      }
+
+      .bottom-note span {
+        border-top: 1px solid var(--line);
+        padding-top: 8px;
+      }
+
+      .print-hint {
+        position: fixed;
+        left: 24px;
+        bottom: 24px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--orange);
+        color: #fff;
+        padding: 11px 16px;
+        font-size: 13px;
+        font-weight: 900;
+        box-shadow: 0 12px 30px rgba(244, 81, 22, 0.35);
+        cursor: pointer;
+      }
+
+      @page {
+        size: A6;
+        margin: 0;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+          padding: 0;
+        }
+
+        .card {
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+
+        .print-hint {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" aria-label="Luis One Moto Supply PH thank you card">
+      <div class="top-ribbon"></div>
+      <section class="inner">
+        <header class="brand">
+          <div class="brand-main">
+            <img class="logo" src="/brand/luis-one-logo.jpg" alt="Luis One logo" />
+            <div class="brand-name">
+              <strong>Luis One</strong>
+              <span>MOTO SUPPLY PH</span>
+            </div>
+          </div>
+          <div class="tag">Wholesale</div>
+        </header>
+
+        <h1>THANK YOU<br />FOR YOUR ORDER &#10084;</h1>
+        <p class="lead">
+          Follow our page to get new arrivals, restock updates, wholesale promos, and small surprises for followers.
+        </p>
+
+        <div class="benefits" aria-label="Follow benefits">
+          <div class="benefit"><span class="check">&#10003;</span>New products</div>
+          <div class="benefit"><span class="check">&#10003;</span>Restock updates</div>
+          <div class="benefit"><span class="check">&#10003;</span>Wholesale promos</div>
+          <div class="benefit"><span class="check">&#10003;</span>Follower surprises</div>
+        </div>
+
+        <section class="scan-panel">
+          <img src="/print/qr-facebook.png" alt="Facebook page QR code" />
+          <div>
+            <h2>Scan to follow us</h2>
+            <p>
+              Luis One Moto Supply PH<br />
+              Message us for wholesale inquiries, new products, and repeat orders.
+            </p>
+          </div>
+        </section>
+
+        <div class="links" aria-label="More ways to find Luis One">
+          <div class="link-card">
+            <img src="/print/qr-website.png" alt="Luis One Supply Hub website QR code" />
+            <div>
+              <strong>Wholesale Website</strong>
+              <span>luisonesupplyhub.com</span>
+            </div>
+          </div>
+
+          <div class="link-card">
+            <img src="/print/qr-shopee.png" alt="Luis One Shopee store QR code" />
+            <div>
+              <strong>Shopee Store</strong>
+              <span>shopee.ph/luisone</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="bottom-note">
+        <span>Public prices. MOQ and bulk deals available.</span>
+        <span>Pickup, Lalamove, courier, and freight collect available.</span>
+      </footer>
+    </main>
+
+    <button class="print-hint" type="button" onclick="window.print()">Print A6 Card</button>
+  </body>
+</html>

@@ -128,6 +128,22 @@ const text = {
     variantImageHint: "Variant image URL overrides the main product image after customer selection.",
     downloadTemplate: "Download Upload Template",
     templateDownloaded: "Bulk upload CSV template downloaded.",
+    workflowTitle: "Product upload flow",
+    workflowBasic: "Basic info",
+    workflowPrice: "Price",
+    workflowImage: "Image",
+    workflowOptional: "Optional",
+    workflowReady: "Ready",
+    workflowMissing: "Needs attention",
+    workflowHint: "Start with SKU, name, category, MOQ, retail price, and at least one wholesale tier. Add images and variants only when needed.",
+    saveAndAddAnother: "Save and Add Another",
+    closeToList: "Back to Product List",
+    addAnotherReady: "Ready for the next product.",
+    closeEditor: "Close",
+    saving: "Saving...",
+    productListUpdated: "Product list updated.",
+    selectedImageSaveHint: "Selected image will upload automatically when you save.",
+    reviewBeforeSaving: "Review product details, prices, images, and variants before saving.",
   },
   zh: {
     addTier: "\u65b0\u589e\u4ef7\u683c\u9636\u68af",
@@ -145,7 +161,80 @@ const text = {
     deleteBlocked: "\u5982\u679c\u5546\u54c1\u6709\u8ba2\u5355\u5386\u53f2\uff0c\u8bf7\u9690\u85cf\u5546\u54c1\uff0c\u4e0d\u8981\u5220\u9664\u3002",
     downloadTemplate: "\u4e0b\u8f7d\u6279\u91cf\u4e0a\u4f20\u6a21\u677f",
     templateDownloaded: "\u6279\u91cf\u4e0a\u4f20 CSV \u6a21\u677f\u5df2\u4e0b\u8f7d\u3002",
+    workflowTitle: "上品流程",
+    workflowBasic: "基础资料",
+    workflowPrice: "价格",
+    workflowImage: "图片",
+    workflowOptional: "可选",
+    workflowReady: "已完成",
+    workflowMissing: "需要补充",
+    workflowHint: "先填 SKU、名称、分类、MOQ、零售价和至少一条批发价。图片和变体需要时再加。",
+    saveAndAddAnother: "保存后继续新增",
+    closeToList: "返回商品列表",
+    addAnotherReady: "可以继续上传下一款商品。",
+    closeEditor: "关闭",
+    saving: "保存中...",
+    productListUpdated: "商品列表已更新。",
+    selectedImageSaveHint: "已选择的图片会在保存商品时自动上传。",
+    reviewBeforeSaving: "保存前请检查商品资料、价格、图片和变体。",
   },
+};
+
+const productTextZh = {
+  addTier: "新增价格阶梯",
+  maxQtyBlank: "留空表示 50+ 阶梯",
+  saveProduct: "保存商品",
+  createProduct: "保存并上传商品",
+  formHint: "供应商备注和成本备注仅后台可见。",
+  allCategories: "全部分类",
+  allStock: "全部库存状态",
+  allVisibility: "全部上架 / 隐藏",
+  noProducts: "没有找到商品。",
+  confirmDelete: "确定删除这个商品？",
+  duplicateDone: "商品已复制。",
+  hiddenFromFrontend: "隐藏商品不会显示在客户前台。",
+  deleteBlocked: "如果商品有订单历史，请隐藏商品，不要删除。",
+  imageUploadHint: "上传 JPG、PNG 或 WebP 图片，最大 2MB。上传后的 URL 会在保存商品时写入。",
+  chooseImage: "选择图片",
+  uploadImage: "上传图片",
+  replaceImage: "替换图片",
+  removeImage: "移除图片",
+  selectedImage: "已选图片",
+  imagePreview: "图片预览",
+  imageTooLarge: "图片不能超过 2MB。",
+  imageInvalidType: "只允许 JPG、PNG、WebP 图片。",
+  imageUploadSuccess: "图片已上传。请保存商品以保留这张图片。",
+  imageUploadFailed: "图片上传失败。",
+  productUploadSuccess: "商品上传成功。",
+  productUpdateSuccess: "商品保存成功。",
+  categoryBrowser: "分类浏览",
+  allProducts: "全部商品",
+  productCountLabel: "个商品",
+  imageSize: "图片大小",
+  compactImages: "紧凑",
+  normalImages: "标准",
+  largeImages: "大图",
+  variantsHint: "一个商品有多个型号、适配车型、图片、MOQ、库存或价格时，再使用变体。",
+  noVariants: "还没有变体。没有变体的商品会使用主商品批发价。",
+  variantImageHint: "客户选择变体后，变体图片会替代主商品图片。",
+  downloadTemplate: "下载批量上传模板",
+  templateDownloaded: "批量上传 CSV 模板已下载。",
+  workflowTitle: "上品流程",
+  workflowBasic: "基础资料",
+  workflowPrice: "价格",
+  workflowImage: "图片",
+  workflowOptional: "可选",
+  workflowReady: "已完成",
+  workflowMissing: "需要补充",
+  workflowHint: "先填 SKU、名称、分类、MOQ、零售价和至少一条批发价。图片和变体需要时再加。",
+  saveAndAddAnother: "保存后继续新增",
+  closeToList: "返回商品列表",
+  addAnotherReady: "可以继续上传下一款商品。",
+  closeEditor: "关闭",
+  saving: "保存中...",
+  productListUpdated: "商品列表已更新。",
+  selectedImageSaveHint: "已选择的图片会在保存商品时自动上传。",
+  reviewBeforeSaving: "保存前请检查商品资料、价格、图片和变体。",
 };
 
 const stockStatusKeyByValue: Record<string, TranslationKey> = {
@@ -175,6 +264,7 @@ const imageUploadText = {
     compactImages: "Compact",
     normalImages: "Normal",
     largeImages: "Large",
+    variantImageFallback: "No dedicated variant image yet. This variant uses the main product image until you upload one.",
   },
   zh: {
     imageUploadHint: "\u4e0a\u4f20 JPG\u3001PNG \u6216 WebP \u56fe\u7247\uff0c\u6700\u5927 2MB\u3002\u4e0a\u4f20\u540e\u7684 URL \u4f1a\u5728\u4fdd\u5b58\u5546\u54c1\u65f6\u5199\u5165\u3002",
@@ -195,6 +285,7 @@ const imageUploadText = {
     compactImages: "\u7d27\u51d1",
     normalImages: "\u6807\u51c6",
     largeImages: "\u5927\u56fe",
+    variantImageFallback: "\u8fd9\u4e2a\u53d8\u4f53\u8fd8\u6ca1\u6709\u72ec\u7acb\u56fe\u7247\uff0c\u4f1a\u5148\u4f7f\u7528\u4e3b\u5546\u54c1\u56fe\u7247\u3002",
   },
 };
 
@@ -221,21 +312,12 @@ function productToDraft(product: AdminProductRecord): ProductDraft {
     supplierNotes: product.supplierNotes,
     internalCostNotes: product.internalCostNotes,
     adminNotes: product.adminNotes,
-    tiers: product.tiers.length ? product.tiers : defaultTiers(),
+    tiers: product.tiers,
     variants: product.variants.map((variant) => ({
       ...variant,
-      tiers: variant.tiers.length ? variant.tiers : defaultTiers(),
+      tiers: variant.tiers,
     })),
   };
-}
-
-function defaultTiers(): AdminProductTier[] {
-  return [
-    { minQty: 1, maxQty: 5, unitPrice: 100 },
-    { minQty: 6, maxQty: 11, unitPrice: 95 },
-    { minQty: 12, maxQty: 49, unitPrice: 90 },
-    { minQty: 50, maxQty: null, unitPrice: 85 },
-  ];
 }
 
 function blankDraft(categories: AdminCategoryOption[]): ProductDraft {
@@ -301,7 +383,7 @@ export function AdminProductsClient({
   initialError?: string;
 }) {
   const { t, language } = useAdminI18n();
-  const copy = text[language];
+  const copy = language === "zh" ? productTextZh : text.en;
   const [products, setProducts] = useState(initialProducts);
   const [selectedProduct, setSelectedProduct] = useState<AdminProductRecord | null>(initialProducts[0] ?? null);
   const [editorMode, setEditorMode] = useState<EditorMode>("view");
@@ -736,7 +818,7 @@ function ProductEditor({
   onClose: () => void;
 }) {
   const { t, language } = useAdminI18n();
-  const copy = text[language];
+  const copy = language === "zh" ? productTextZh : text.en;
   const imageCopy = imageUploadText[language];
   const [activeTab, setActiveTab] = useState<TranslationKey>("basicInfo");
   const [draft, setDraft] = useState<ProductDraft>(product ? productToDraft(product) : blankDraft(categories));
@@ -744,12 +826,16 @@ function ProductEditor({
   const [selectedImagePreview, setSelectedImagePreview] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageStatus, setImageStatus] = useState("");
+  const [variantImageStatus, setVariantImageStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [successDialog, setSuccessDialog] = useState("");
   const subcategories = categories.filter((category) => category.parentId === draft.categoryId);
   const childCategories = categories.filter((category) => category.parentId === draft.subcategoryId);
   const disabled = mode === "view";
   const title = mode === "create" ? copy.createProduct : draft.name || t("productEditor");
+  const basicReady = Boolean(draft.sku.trim() && draft.name.trim() && draft.categoryId && draft.moq > 0);
+  const priceReady = draft.tiers.length > 0;
+  const imageReady = Boolean(selectedImagePreview || draft.imageUrl);
 
   const updateDraft = (patch: Partial<ProductDraft>) => setDraft((current) => ({ ...current, ...patch }));
   const updateTier = (index: number, patch: Partial<AdminProductTier>) => {
@@ -830,8 +916,8 @@ function ProductEditor({
       setSelectedImagePreview(window.URL.createObjectURL(prepared.file));
       setImageStatus(
         prepared.compressed
-          ? `Image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}. Click Save Product or Upload Image Now.`
-          : `${file.name} selected. Click Save Product or Upload Image Now.`,
+          ? `Image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}. Click ${mode === "create" ? copy.createProduct : copy.saveProduct} or ${imageCopy.uploadImage}.`
+          : `${file.name} selected. Click ${mode === "create" ? copy.createProduct : copy.saveProduct} or ${imageCopy.uploadImage}.`,
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : imageCopy.imageTooLarge;
@@ -892,6 +978,7 @@ function ProductEditor({
 
     if (!allowedImageTypes.has(file.type)) {
       onMessage(imageCopy.imageInvalidType);
+      setVariantImageStatus(imageCopy.imageInvalidType);
       return;
     }
 
@@ -901,10 +988,16 @@ function ProductEditor({
       const prepared = await prepareAdminUploadImage(file);
       uploadFile = prepared.file;
       if (prepared.compressed) {
-        onMessage(`Variant image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}.`);
+        const status = `Variant image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}.`;
+
+        onMessage(status);
+        setVariantImageStatus(status);
       }
     } catch (error) {
-      onMessage(error instanceof Error ? error.message : imageCopy.imageTooLarge);
+      const message = error instanceof Error ? error.message : imageCopy.imageTooLarge;
+
+      onMessage(message);
+      setVariantImageStatus(message);
       return;
     }
 
@@ -913,23 +1006,34 @@ function ProductEditor({
     formData.append("file", uploadFile);
     formData.append("sku", variant.sku || draft.sku || draft.slug || "product-variant");
 
-    const response = await fetch("/api/admin/products/image-upload", {
-      method: "POST",
-      body: formData,
-    });
-    const result = (await response.json().catch(() => ({ ok: false, message: imageCopy.imageUploadFailed }))) as {
-      ok?: boolean;
-      message?: string;
-      imageUrl?: string;
-    };
+    setUploadingImage(true);
+    setVariantImageStatus(`Uploading image for variant #${variantIndex + 1}...`);
 
-    if (!response.ok || !result.ok || !result.imageUrl) {
-      onMessage(result.message ?? imageCopy.imageUploadFailed);
-      return;
+    try {
+      const response = await fetch("/api/admin/products/image-upload", {
+        method: "POST",
+        body: formData,
+      });
+      const result = (await response.json().catch(() => ({ ok: false, message: imageCopy.imageUploadFailed }))) as {
+        ok?: boolean;
+        message?: string;
+        imageUrl?: string;
+      };
+
+      if (!response.ok || !result.ok || !result.imageUrl) {
+        const message = result.message ?? imageCopy.imageUploadFailed;
+
+        onMessage(message);
+        setVariantImageStatus(message);
+        return;
+      }
+
+      updateVariant(variantIndex, { imageUrl: result.imageUrl });
+      onMessage(imageCopy.imageUploadSuccess);
+      setVariantImageStatus(`Variant #${variantIndex + 1} image uploaded. Save the product to keep this image.`);
+    } finally {
+      setUploadingImage(false);
     }
-
-    updateVariant(variantIndex, { imageUrl: result.imageUrl });
-    onMessage(imageCopy.imageUploadSuccess);
   };
 
   const submit = async () => {
@@ -969,8 +1073,8 @@ function ProductEditor({
       return;
     }
 
-    const successMessage = mode === "create" ? "Product uploaded successfully." : "Product saved successfully.";
-    const refreshed = await onSaved(mode === "create" ? undefined : result.productId ?? draft.id);
+    const successMessage = mode === "create" ? copy.productUploadSuccess : copy.productUpdateSuccess;
+    const refreshed = await onSaved(result.productId ?? draft.id);
     setSuccessDialog(refreshed ? successMessage : `${successMessage} Refresh the page if the product is not visible yet.`);
     onMessage(successMessage);
     } finally {
@@ -989,17 +1093,31 @@ function ProductEditor({
         <div className="flex flex-wrap gap-2">
           <StatusPill tone="orange">{t("noAutomaticPricing")}</StatusPill>
           <button type="button" onClick={onClose} className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700">
-            Close
+            {copy.closeEditor}
           </button>
           {mode !== "view" ? (
             <button type="button" onClick={() => void submit()} disabled={saving || uploadingImage} className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60">
-              {saving ? "Saving..." : mode === "create" ? copy.createProduct : copy.saveProduct}
+              {saving ? copy.saving : mode === "create" ? copy.createProduct : copy.saveProduct}
             </button>
           ) : null}
         </div>
       </div>
 
       <div className="mt-5 grid gap-3 border-b border-zinc-100 pb-4 sm:grid-cols-2 xl:grid-cols-6">
+        <div className="rounded-md border border-orange-100 bg-orange-50 p-4 sm:col-span-2 xl:col-span-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-black text-zinc-950">{copy.workflowTitle}</p>
+              <p className="mt-1 text-xs font-bold text-orange-700">{copy.workflowHint}</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-4 lg:min-w-[560px]">
+              <WorkflowStep label={copy.workflowBasic} status={basicReady ? copy.workflowReady : copy.workflowMissing} ready={basicReady} />
+              <WorkflowStep label={copy.workflowPrice} status={priceReady ? `${draft.tiers.length} ${copy.workflowReady}` : copy.workflowMissing} ready={priceReady} />
+              <WorkflowStep label={copy.workflowImage} status={imageReady ? copy.workflowReady : copy.workflowOptional} ready={imageReady} optional />
+              <WorkflowStep label={t("variantsTab")} status={draft.variants.length ? `${draft.variants.length} ${copy.workflowReady}` : copy.workflowOptional} ready={draft.variants.length > 0} optional />
+            </div>
+          </div>
+        </div>
         {productTabs.map((tab) => {
           const badge = tab === "wholesalePricesTab" ? draft.tiers.length : tab === "variantsTab" ? draft.variants.length : null;
 
@@ -1092,6 +1210,11 @@ function ProductEditor({
                 <p className="mt-1 text-sm font-bold text-orange-700">
                   Use variants when one product has multiple models, fitments, images, MOQ, stock, or prices.
                 </p>
+                {variantImageStatus ? (
+                  <p className="mt-2 rounded-md border border-orange-200 bg-white px-3 py-2 text-xs font-bold text-orange-700">
+                    {variantImageStatus}
+                  </p>
+                ) : null}
               </div>
               <button type="button" disabled={disabled} onClick={addVariant} className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white disabled:opacity-40">
                 {t("addVariant")}
@@ -1138,17 +1261,44 @@ function ProductEditor({
                     <input type="checkbox" checked={variant.active} disabled={disabled} onChange={(event) => updateVariant(variantIndex, { active: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
                     {variant.active ? t("activeToggle") : t("hidden")}
                   </label>
-                  <Input label={`${t("imageUrl")} (${t("variantsTab")})`} value={variant.imageUrl} onChange={(value) => updateVariant(variantIndex, { imageUrl: value })} disabled={disabled} />
-                  <label className="text-sm font-bold text-zinc-700">
-                    {imageCopy.uploadImage}
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      disabled={disabled}
-                      onChange={(event) => void uploadVariantImage(variantIndex, event.target.files?.[0])}
-                      className="mt-2 block w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 file:mr-3 file:rounded-md file:border-0 file:bg-orange-100 file:px-3 file:py-2 file:text-sm file:font-black file:text-orange-700 disabled:opacity-50"
-                    />
-                  </label>
+                  <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3 md:col-span-2 xl:col-span-2">
+                    <div className="flex gap-3">
+                      <div
+                        role="img"
+                        aria-label={variant.name || "Variant image"}
+                        className="h-20 w-20 shrink-0 rounded-md border border-orange-100 bg-white bg-contain bg-center bg-no-repeat"
+                        style={{ backgroundImage: `url("${variant.imageUrl || draft.imageUrl || "/products/phone-accessories.svg"}")` }}
+                      />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Input label={`${t("imageUrl")} (${t("variantsTab")})`} value={variant.imageUrl} onChange={(value) => updateVariant(variantIndex, { imageUrl: value })} disabled={disabled} />
+                        {!variant.imageUrl ? (
+                          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                            {imageCopy.variantImageFallback}
+                          </p>
+                        ) : null}
+                        <div className="flex flex-wrap gap-2">
+                          <label className="inline-flex cursor-pointer rounded-md bg-orange-50 px-3 py-2 text-xs font-black text-orange-700 ring-1 ring-orange-100">
+                            {uploadingImage ? "Uploading..." : imageCopy.uploadImage}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              disabled={disabled || uploadingImage}
+                              onChange={(event) => void uploadVariantImage(variantIndex, event.target.files?.[0])}
+                              className="sr-only"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            disabled={disabled || !variant.imageUrl}
+                            onClick={() => updateVariant(variantIndex, { imageUrl: "" })}
+                            className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs font-black text-zinc-700 disabled:opacity-40"
+                          >
+                            {imageCopy.removeImage}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <p className="mt-3 text-xs font-bold text-zinc-500">Variant image URL overrides the main product image after customer selection.</p>
                 <div className="mt-4">
@@ -1240,7 +1390,7 @@ function ProductEditor({
         <div className="sticky bottom-0 z-20 mt-6 -mx-5 -mb-5 border-t border-zinc-200 bg-white/95 px-5 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-bold text-zinc-500">
-              {selectedImage ? "Selected image will upload automatically when you save." : "Review product details, prices, images, and variants before saving."}
+              {selectedImage ? copy.selectedImageSaveHint : copy.reviewBeforeSaving}
             </p>
             <button
               type="button"
@@ -1248,7 +1398,7 @@ function ProductEditor({
               disabled={saving || uploadingImage}
               className="h-11 rounded-md bg-[#f65f18] px-6 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60"
             >
-              {saving ? "Saving..." : mode === "create" ? copy.createProduct : copy.saveProduct}
+              {saving ? copy.saving : mode === "create" ? copy.createProduct : copy.saveProduct}
             </button>
           </div>
         </div>
@@ -1258,7 +1408,7 @@ function ProductEditor({
           <div className="w-full max-w-sm rounded-md border border-orange-100 bg-white p-6 text-center shadow-2xl">
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-orange-600 text-sm font-black text-white">OK</div>
             <h3 className="mt-4 text-lg font-black text-zinc-950">{successDialog}</h3>
-            <p className="mt-2 text-sm font-bold text-zinc-500">Product list updated.</p>
+            <p className="mt-2 text-sm font-bold text-zinc-500">{copy.productListUpdated}</p>
             <button
               type="button"
               onClick={() => {
@@ -1269,12 +1419,53 @@ function ProductEditor({
               }}
               className="mt-5 h-10 rounded-md bg-[#f65f18] px-5 text-sm font-black text-white"
             >
-              OK
+              {copy.closeToList}
             </button>
+            {mode === "create" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSuccessDialog("");
+                  setDraft(blankDraft(categories));
+                  setSelectedImage(null);
+                  if (selectedImagePreview) {
+                    window.URL.revokeObjectURL(selectedImagePreview);
+                  }
+                  setSelectedImagePreview("");
+                  setImageStatus("");
+                  setActiveTab("basicInfo");
+                  onMessage(copy.addAnotherReady);
+                }}
+                className="mt-3 h-10 rounded-md border border-orange-200 bg-orange-50 px-5 text-sm font-black text-orange-700"
+              >
+                {copy.saveAndAddAnother}
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
     </section>
+  );
+}
+
+function WorkflowStep({
+  label,
+  status,
+  ready,
+  optional,
+}: {
+  label: string;
+  status: string;
+  ready: boolean;
+  optional?: boolean;
+}) {
+  return (
+    <div className={`rounded-md border bg-white px-3 py-2 ${ready ? "border-emerald-200" : optional ? "border-zinc-200" : "border-orange-200"}`}>
+      <p className="truncate text-xs font-black text-zinc-900">{label}</p>
+      <p className={`mt-1 truncate text-[11px] font-black ${ready ? "text-emerald-700" : optional ? "text-zinc-500" : "text-orange-700"}`}>
+        {status}
+      </p>
+    </div>
   );
 }
 

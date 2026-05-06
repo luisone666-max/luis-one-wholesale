@@ -1,0 +1,391 @@
+"use client";
+
+import { Fragment, useMemo, useState } from "react";
+import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
+import { useAdminI18n } from "@/components/admin/AdminShell";
+import type { AdminCustomerRecord } from "@/lib/admin-customers-data";
+import { formatPhp } from "@/lib/wholesale-pricing";
+
+const copy = {
+  en: {
+    caption: "Real customer records from online registration and offline member sales.",
+    search: "Search customer name, phone, Messenger, or location",
+    points: "Points",
+    lifetimePoints: "Lifetime Points",
+    action: "Action",
+    viewPoints: "View points",
+    hidePoints: "Hide points",
+    pointsHistory: "Points history",
+    paidAmount: "Paid amount",
+    source: "Source",
+    date: "Date",
+    note: "Note",
+    loadingPoints: "Loading points history...",
+    pointsNotReady: "Run the loyalty points migration to show member balances.",
+    noPointsHistory: "No points history yet.",
+    noCustomers: "No customers found.",
+    adjustPoints: "Manual points adjustment",
+    adjustmentPoints: "Points (+ add / - deduct)",
+    adjustmentNote: "Adjustment note",
+    applyAdjustment: "Apply adjustment",
+    adjustmentSaved: "Customer points adjusted.",
+    saving: "Saving...",
+  },
+  zh: {
+    caption: "真实客户资料，包含线上注册客户和线下会员销售记录。",
+    search: "搜索客户姓名、电话、Messenger 或地区",
+    points: "积分",
+    lifetimePoints: "累计积分",
+    action: "操作",
+    viewPoints: "查看积分",
+    hidePoints: "收起积分",
+    pointsHistory: "积分流水",
+    paidAmount: "付款金额",
+    source: "来源",
+    date: "日期",
+    note: "备注",
+    loadingPoints: "正在读取积分流水...",
+    pointsNotReady: "请先执行会员积分 migration，之后这里会显示积分余额。",
+    noPointsHistory: "暂无积分流水。",
+    noCustomers: "暂无客户。",
+    adjustPoints: "手动调整积分",
+    adjustmentPoints: "积分（+ 增加 / - 扣减）",
+    adjustmentNote: "调整备注",
+    applyAdjustment: "确认调整",
+    adjustmentSaved: "客户积分已调整。",
+    saving: "保存中...",
+  },
+};
+
+type AdminCustomerLoyaltyTransaction = {
+  id: string;
+  sourceType: string;
+  sourceId: string;
+  points: number;
+  amount: number;
+  note: string;
+  createdAt: string;
+};
+
+type LoyaltyHistoryState = {
+  loading: boolean;
+  pointsReady: boolean;
+  message: string;
+  transactions: AdminCustomerLoyaltyTransaction[];
+};
+
+export function AdminCustomersClient({
+  initialCustomers,
+  initialError,
+  pointsReady,
+}: {
+  initialCustomers: AdminCustomerRecord[];
+  initialError?: string;
+  pointsReady: boolean;
+}) {
+  const { t, language } = useAdminI18n();
+  const text = copy[language];
+  const [customers, setCustomers] = useState(initialCustomers);
+  const [search, setSearch] = useState("");
+  const [expandedCustomerId, setExpandedCustomerId] = useState("");
+  const [loyaltyHistoryByCustomer, setLoyaltyHistoryByCustomer] = useState<Record<string, LoyaltyHistoryState>>({});
+  const [adjustPoints, setAdjustPoints] = useState("");
+  const [adjustNote, setAdjustNote] = useState("");
+  const [adjusting, setAdjusting] = useState(false);
+  const [adjustMessage, setAdjustMessage] = useState("");
+
+  const visibleCustomers = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+
+    if (!needle) {
+      return customers;
+    }
+
+    return customers.filter((customer) =>
+      [
+        customer.name,
+        customer.phone,
+        customer.facebookMessenger,
+        customer.location,
+        customer.businessType,
+        customer.status,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle),
+    );
+  }, [customers, search]);
+
+  async function togglePointsHistory(customerId: string) {
+    setAdjustMessage("");
+
+    if (expandedCustomerId === customerId) {
+      setExpandedCustomerId("");
+      return;
+    }
+
+    setExpandedCustomerId(customerId);
+
+    if (loyaltyHistoryByCustomer[customerId]) {
+      return;
+    }
+
+    setLoyaltyHistoryByCustomer((current) => ({
+      ...current,
+      [customerId]: { loading: true, pointsReady, message: "", transactions: [] },
+    }));
+
+    const response = await fetch(`/api/admin/customers/${customerId}/loyalty`);
+    const payload = (await response.json().catch(() => ({}))) as {
+      ok?: boolean;
+      pointsReady?: boolean;
+      message?: string;
+      transactions?: AdminCustomerLoyaltyTransaction[];
+    };
+
+    setLoyaltyHistoryByCustomer((current) => ({
+      ...current,
+      [customerId]: {
+        loading: false,
+        pointsReady: Boolean(payload.pointsReady),
+        message: payload.message ?? (!response.ok ? "Unable to load points history." : ""),
+        transactions: Array.isArray(payload.transactions) ? payload.transactions : [],
+      },
+    }));
+  }
+
+  async function submitPointsAdjustment(customerId: string) {
+    setAdjustMessage("");
+    setAdjusting(true);
+
+    const response = await fetch(`/api/admin/customers/${customerId}/loyalty`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        points: Number(adjustPoints),
+        note: adjustNote,
+      }),
+    });
+    const payload = (await response.json().catch(() => ({}))) as {
+      ok?: boolean;
+      message?: string;
+      pointsBalance?: number;
+      lifetimePoints?: number;
+      transaction?: AdminCustomerLoyaltyTransaction;
+    };
+
+    setAdjusting(false);
+
+    if (!response.ok || !payload.ok) {
+      setAdjustMessage(payload.message ?? "Unable to adjust customer points.");
+      return;
+    }
+
+    setCustomers((current) =>
+      current.map((customer) =>
+        customer.id === customerId
+          ? {
+              ...customer,
+              pointsBalance: typeof payload.pointsBalance === "number" ? payload.pointsBalance : customer.pointsBalance,
+              lifetimePoints: typeof payload.lifetimePoints === "number" ? payload.lifetimePoints : customer.lifetimePoints,
+            }
+          : customer,
+      ),
+    );
+
+    if (payload.transaction) {
+      setLoyaltyHistoryByCustomer((current) => {
+        const existing = current[customerId] ?? { loading: false, pointsReady: true, message: "", transactions: [] };
+
+        return {
+          ...current,
+          [customerId]: {
+            ...existing,
+            loading: false,
+            pointsReady: true,
+            message: "",
+            transactions: [payload.transaction!, ...existing.transactions],
+          },
+        };
+      });
+    }
+
+    setAdjustPoints("");
+    setAdjustNote("");
+    setAdjustMessage(payload.message ?? text.adjustmentSaved);
+  }
+
+  return (
+    <>
+      <AdminPageTitle titleKey="customers" caption={text.caption} />
+      {initialError ? <div className="mb-4 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-700">{initialError}</div> : null}
+      {!pointsReady ? <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">{text.pointsNotReady}</div> : null}
+
+      <div className="mb-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={text.search}
+          className="h-11 w-full rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+        />
+      </div>
+
+      <TableShell>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1220px] text-left text-sm">
+            <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
+              <tr>
+                <th className="px-4 py-3">{t("name")}</th>
+                <th className="px-4 py-3">{t("phone")}</th>
+                <th className="px-4 py-3">{t("facebookMessenger")}</th>
+                <th className="px-4 py-3">{t("location")}</th>
+                <th className="px-4 py-3">{t("businessType")}</th>
+                <th className="px-4 py-3">{t("orderCount")}</th>
+                <th className="px-4 py-3">{t("totalSpend")}</th>
+                <th className="px-4 py-3">{text.points}</th>
+                <th className="px-4 py-3">{text.lifetimePoints}</th>
+                <th className="px-4 py-3">{t("status")}</th>
+                <th className="px-4 py-3">{text.action}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {visibleCustomers.map((customer) => {
+                const isExpanded = expandedCustomerId === customer.id;
+                const loyaltyState = loyaltyHistoryByCustomer[customer.id];
+
+                return (
+                  <Fragment key={customer.id}>
+                    <tr>
+                      <td className="px-4 py-4 font-black text-zinc-950">{customer.name}</td>
+                      <td className="px-4 py-4 text-zinc-600">{customer.phone || "-"}</td>
+                      <td className="px-4 py-4 text-zinc-600">{customer.facebookMessenger || "-"}</td>
+                      <td className="px-4 py-4 text-zinc-600">{customer.location || "-"}</td>
+                      <td className="px-4 py-4 text-zinc-600">{customer.businessType || "-"}</td>
+                      <td className="px-4 py-4 font-bold text-zinc-700">{customer.orderCount}</td>
+                      <td className="px-4 py-4 font-black text-orange-700">{formatPhp(customer.totalSpend)}</td>
+                      <td className="px-4 py-4 font-black text-emerald-700">{customer.pointsBalance === null ? "-" : customer.pointsBalance.toLocaleString("en-US")}</td>
+                      <td className="px-4 py-4 font-bold text-zinc-700">{customer.lifetimePoints === null ? "-" : customer.lifetimePoints.toLocaleString("en-US")}</td>
+                      <td className="px-4 py-4"><StatusPill tone="green">{customer.status}</StatusPill></td>
+                      <td className="px-4 py-4">
+                        <button
+                          type="button"
+                          onClick={() => void togglePointsHistory(customer.id)}
+                          className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700 hover:bg-orange-50"
+                        >
+                          {isExpanded ? text.hidePoints : text.viewPoints}
+                        </button>
+                      </td>
+                    </tr>
+                    {isExpanded ? (
+                      <tr>
+                        <td className="bg-zinc-50 px-4 py-4" colSpan={11}>
+                          <div className="rounded-lg border border-zinc-200 bg-white p-4">
+                            <h3 className="text-sm font-black text-zinc-950">{text.pointsHistory}</h3>
+                            {loyaltyState?.loading ? <p className="mt-3 text-sm font-bold text-zinc-500">{text.loadingPoints}</p> : null}
+                            {loyaltyState?.message ? <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">{loyaltyState.message}</p> : null}
+                            {!loyaltyState?.loading && loyaltyState?.pointsReady && !loyaltyState.transactions.length ? (
+                              <p className="mt-3 text-sm font-bold text-zinc-500">{text.noPointsHistory}</p>
+                            ) : null}
+                            {loyaltyState?.transactions.length ? (
+                              <div className="mt-3 overflow-x-auto">
+                                <table className="w-full min-w-[720px] text-left text-xs">
+                                  <thead className="bg-zinc-50 uppercase tracking-[0.12em] text-zinc-500">
+                                    <tr>
+                                      <th className="px-3 py-2">{text.date}</th>
+                                      <th className="px-3 py-2">{text.source}</th>
+                                      <th className="px-3 py-2">{text.paidAmount}</th>
+                                      <th className="px-3 py-2">{text.points}</th>
+                                      <th className="px-3 py-2">{text.note}</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-zinc-100">
+                                    {loyaltyState.transactions.map((transaction) => (
+                                      <tr key={transaction.id}>
+                                        <td className="px-3 py-3 text-zinc-600">{formatDate(transaction.createdAt)}</td>
+                                        <td className="px-3 py-3 font-bold text-zinc-700">{formatSourceType(transaction.sourceType, language)}</td>
+                                        <td className="px-3 py-3 font-black text-orange-700">{formatPhp(transaction.amount)}</td>
+                                        <td className={`px-3 py-3 font-black ${transaction.points >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                                          {transaction.points > 0 ? "+" : ""}{transaction.points.toLocaleString("en-US")}
+                                        </td>
+                                        <td className="px-3 py-3 text-zinc-600">{transaction.note || "-"}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : null}
+
+                            {pointsReady ? (
+                              <div className="mt-4 rounded-lg border border-orange-100 bg-orange-50 p-4">
+                                <h4 className="text-sm font-black text-zinc-950">{text.adjustPoints}</h4>
+                                <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr_auto]">
+                                  <input
+                                    type="number"
+                                    value={adjustPoints}
+                                    onChange={(event) => setAdjustPoints(event.target.value)}
+                                    placeholder={text.adjustmentPoints}
+                                    className="h-10 rounded-md border border-orange-200 bg-white px-3 text-sm font-bold outline-none focus:border-orange-500"
+                                  />
+                                  <input
+                                    value={adjustNote}
+                                    onChange={(event) => setAdjustNote(event.target.value)}
+                                    placeholder={text.adjustmentNote}
+                                    className="h-10 rounded-md border border-orange-200 bg-white px-3 text-sm font-bold outline-none focus:border-orange-500"
+                                  />
+                                  <button
+                                    type="button"
+                                    disabled={adjusting}
+                                    onClick={() => void submitPointsAdjustment(customer.id)}
+                                    className="h-10 rounded-md bg-[#f65f18] px-4 text-xs font-black text-white disabled:opacity-50"
+                                  >
+                                    {adjusting ? text.saving : text.applyAdjustment}
+                                  </button>
+                                </div>
+                                {adjustMessage ? <p className="mt-3 text-xs font-bold text-orange-700">{adjustMessage}</p> : null}
+                              </div>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+              {!visibleCustomers.length ? (
+                <tr>
+                  <td className="px-4 py-6 text-zinc-500" colSpan={11}>{text.noCustomers}</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </TableShell>
+    </>
+  );
+}
+
+function formatDate(value: string) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatSourceType(value: string, language: "en" | "zh") {
+  if (value === "online_order") {
+    return language === "zh" ? "线上订单" : "Online order";
+  }
+
+  if (value === "offline_sale" || value === "pos_sale") {
+    return language === "zh" ? "线下销售" : "Offline sale";
+  }
+
+  return language === "zh" ? "手动调整" : "Manual adjustment";
+}

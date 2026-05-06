@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Luis One Card Back Export</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1800px;
+        height: 1080px;
+        margin: 0;
+        overflow: hidden;
+        background: #fffaf7;
+        color: #161616;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .card {
+        position: relative;
+        width: 1800px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 84% 8%, rgba(244, 81, 22, 0.16), transparent 34%),
+          linear-gradient(135deg, #fff 0%, #fffaf7 100%);
+      }
+
+      .stripe {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 34px;
+        background: linear-gradient(180deg, #f45116, #c7350a);
+      }
+
+      .inner {
+        height: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 70px;
+        padding: 94px 96px 86px 128px;
+        align-items: center;
+      }
+
+      .qr-card {
+        min-width: 0;
+        height: 100%;
+        display: grid;
+        grid-template-rows: 1fr auto auto;
+        justify-items: center;
+        gap: 24px;
+        border-radius: 54px;
+        border: 6px solid #f0d4c3;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 58px 48px 44px;
+      }
+
+      .qr-card img {
+        width: 470px;
+        height: 470px;
+        border-radius: 34px;
+        background: #fff;
+        padding: 22px;
+        box-shadow: 0 30px 80px rgba(22, 22, 22, 0.12);
+      }
+
+      .qr-card strong {
+        display: block;
+        color: #161616;
+        font-size: 64px;
+        line-height: 1.02;
+        text-align: center;
+        letter-spacing: -0.05em;
+      }
+
+      .qr-card span {
+        display: block;
+        margin-top: 18px;
+        color: #666;
+        font-size: 34px;
+        line-height: 1.14;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .small-copy {
+        max-width: 590px;
+        margin: 0;
+        color: #7a3214;
+        font-size: 29px;
+        line-height: 1.22;
+        font-weight: 800;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="stripe"></div>
+      <section class="inner">
+        <div class="qr-card">
+          <img src="/print/qr-shopee.png" alt="Shopee QR code" />
+          <div>
+            <strong>Shopee Store</strong>
+            <span>Search: luisone</span>
+          </div>
+          <p class="small-copy">Save our shop for new arrivals, updates, and promos.</p>
+        </div>
+
+        <div class="qr-card">
+          <img src="/print/qr-facebook.png" alt="Facebook QR code" />
+          <div>
+            <strong>Facebook Page</strong>
+            <span>facebook.com/LuisOneSupplyHub</span>
+          </div>
+          <p class="small-copy">Follow our page. We often post promo updates and new products.</p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

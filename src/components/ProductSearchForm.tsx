@@ -10,7 +10,7 @@ export function ProductSearchForm() {
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const trimmed = query.trim();
+    const trimmed = query.trim().replace(/\s+/g, " ");
     router.push(trimmed ? `/category/all?q=${encodeURIComponent(trimmed)}` : "/");
   };
 
@@ -27,7 +27,7 @@ export function ProductSearchForm() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search SKU, model, Click, NMAX..."
-          className="min-w-0 flex-1 px-3 py-2 text-xs font-semibold text-zinc-800 outline-none sm:px-4 sm:py-3 sm:text-sm"
+          className="min-w-0 flex-1 px-2.5 py-2 text-[13px] font-semibold text-zinc-800 outline-none placeholder:text-zinc-400 sm:px-4 sm:py-3 sm:text-sm"
         />
         {query ? (
           <button
@@ -40,8 +40,9 @@ export function ProductSearchForm() {
           </button>
         ) : null}
       </div>
-      <button type="submit" className="bg-[#f65f18] px-3 py-2 text-xs font-black text-white transition hover:bg-[#df4f0d] sm:px-5 sm:py-3 sm:text-sm">
-        Search
+      <button type="submit" className="shrink-0 bg-[#f65f18] px-3 py-2 text-xs font-black text-white transition hover:bg-[#df4f0d] sm:px-5 sm:py-3 sm:text-sm">
+        <span className="sm:hidden">Go</span>
+        <span className="hidden sm:inline">Search</span>
       </button>
     </form>
   );

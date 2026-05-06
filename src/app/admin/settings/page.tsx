@@ -2,15 +2,16 @@
 
 import { AdminShell, useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPageTitle } from "@/components/admin/AdminUi";
+import { businessInfo } from "@/lib/business-info";
 
 function SettingsContent() {
   const { t } = useAdminI18n();
   const fields = [
-    { key: "storeName" as const, value: "WholesaleHub B2B Supply" },
-    { key: "facebookPageUrl" as const, value: "https://facebook.com/wholesalehub" },
-    { key: "messengerUrl" as const, value: "https://m.me/wholesalehub" },
-    { key: "phoneNumber" as const, value: "+63 900 000 0000" },
-    { key: "storeAddress" as const, value: "Warehouse District, Metro Manila" },
+    { key: "storeName" as const, value: businessInfo.name },
+    { key: "facebookPageUrl" as const, value: businessInfo.facebookUrl },
+    { key: "messengerUrl" as const, value: businessInfo.messengerUrl },
+    { key: "phoneNumber" as const, value: businessInfo.phoneDisplay },
+    { key: "storeAddress" as const, value: businessInfo.address },
   ];
 
   return (

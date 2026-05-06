@@ -7,7 +7,7 @@ export default async function AdminOrdersPage() {
 
   return (
     <AdminShell>
-      <AdminOrdersClient initialOrders={result.orders} initialError={result.error} />
+      <AdminOrdersClient initialOrders={result.orders} initialStaffUsers={result.staffUsers} initialError={result.error} />
     </AdminShell>
   );
 }

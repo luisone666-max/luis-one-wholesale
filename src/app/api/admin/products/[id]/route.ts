@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assertUniqueVariantSkus, saveProductVariants } from "@/lib/admin-product-variants";
 import { parseProductPayload, type ProductPayload } from "@/lib/admin-product-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { canManageProducts } from "@/lib/admin-role-access";
 import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -34,6 +35,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (guard.response) {
     return guard.response;
+  }
+
+  if (!guard.admin || !canManageProducts(guard.admin.role)) {
+    return jsonError("Only product managers can edit products.", 403);
   }
 
   const admin = createSupabaseAdminClient();
@@ -141,6 +146,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
   if (guard.response) {
     return guard.response;
+  }
+
+  if (!guard.admin || !canManageProducts(guard.admin.role)) {
+    return jsonError("Only product managers can delete products.", 403);
   }
 
   const admin = createSupabaseAdminClient();

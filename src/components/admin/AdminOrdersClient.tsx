@@ -5,7 +5,10 @@ import { useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import type { TranslationKey } from "@/lib/admin-i18n";
+import type { AdminStaffUser } from "@/lib/admin-users-data";
 import type { AdminOrderRecord, AdminPaymentRecord } from "@/lib/admin-orders-data";
+import { businessInfo } from "@/lib/business-info";
+import { formatLoyaltyPoints } from "@/lib/loyalty-points";
 import { formatPhp } from "@/lib/wholesale-pricing";
 
 type PaymentDraft = {
@@ -14,6 +17,13 @@ type PaymentDraft = {
   referenceNo: string;
   status: string;
   proofImageUrl: string;
+};
+
+type LoyaltyResult = {
+  ok: boolean;
+  points: number;
+  awarded: boolean;
+  message?: string;
 };
 
 const pageSize = 10;
@@ -47,6 +57,9 @@ const text = {
     saveAdminNotes: "Save Admin Notes",
     saved: "Saved.",
     printMock: "Print order mockup opened.",
+    printA6: "Print A6 Order Slip",
+    salesperson: "Salesperson",
+    unassignedSales: "Unassigned / Online order",
     confirmCancel: "Cancel this order?",
     noOrders: "No real orders found.",
     noPayments: "No payment records yet.",
@@ -67,6 +80,9 @@ const text = {
     saveAdminNotes: "保存后台备注",
     saved: "已保存。",
     printMock: "打印订单 mockup 已触发。",
+    printA6: "打印 A6 订单单据",
+    salesperson: "销售员工",
+    unassignedSales: "未分配 / 线上订单",
     confirmCancel: "确定取消这个订单？",
     noOrders: "暂无真实订单。",
     noPayments: "暂无付款记录。",
@@ -118,9 +134,11 @@ function labelFor(t: (key: TranslationKey) => string, map: Record<string, Transl
 
 export function AdminOrdersClient({
   initialOrders,
+  initialStaffUsers,
   initialError,
 }: {
   initialOrders: AdminOrderRecord[];
+  initialStaffUsers: AdminStaffUser[];
   initialError?: string;
 }) {
   const { t, language } = useAdminI18n();
@@ -173,6 +191,7 @@ export function AdminOrdersClient({
       ok?: boolean;
       message?: string;
       order?: Partial<AdminOrderRecord>;
+      loyalty?: LoyaltyResult | null;
     };
 
     if (!response.ok || !result.ok || !result.order) {
@@ -181,7 +200,12 @@ export function AdminOrdersClient({
     }
 
     setOrders((current) => current.map((order) => (order.orderNo === orderNo ? { ...order, ...result.order } : order)));
-    setMessage(copy.saved);
+    const loyaltyMessage = result.loyalty?.awarded
+      ? ` ${formatLoyaltyPoints(result.loyalty.points)} awarded to member.`
+      : result.loyalty && !result.loyalty.ok
+        ? ` Points need manual check: ${result.loyalty.message ?? "unknown error"}`
+        : "";
+    setMessage(`${copy.saved}${loyaltyMessage}`);
     return true;
   };
 
@@ -278,6 +302,7 @@ export function AdminOrdersClient({
                   <th className="px-4 py-3">{t("customerName")}</th>
                   <th className="px-4 py-3">{t("customerPhone")}</th>
                   <th className="px-4 py-3">{t("productTotal")}</th>
+                  <th className="px-4 py-3">{copy.salesperson}</th>
                   <th className="px-4 py-3">{t("orderStatus")}</th>
                   <th className="px-4 py-3">{t("paymentStatus")}</th>
                   <th className="px-4 py-3">{t("receivingMethod")}</th>
@@ -293,6 +318,7 @@ export function AdminOrdersClient({
                     <td className="px-4 py-4 text-zinc-700">{order.customerName}</td>
                     <td className="px-4 py-4 text-zinc-600">{order.customerPhone}</td>
                     <td className="px-4 py-4 font-black text-orange-700">{formatPhp(order.productTotal)}</td>
+                    <td className="px-4 py-4 text-zinc-600">{order.salesName || copy.unassignedSales}</td>
                     <td className="px-4 py-4"><StatusPill tone="orange">{labelFor(t, statusKeyByValue, order.orderStatus)}</StatusPill></td>
                     <td className="px-4 py-4"><StatusPill tone="green">{labelFor(t, statusKeyByValue, order.paymentStatus)}</StatusPill></td>
                     <td className="px-4 py-4 text-zinc-600">{labelFor(t, receivingMethodKeyByValue, order.receivingMethod)}</td>
@@ -307,7 +333,7 @@ export function AdminOrdersClient({
                 ))}
                 {!visibleOrders.length ? (
                   <tr>
-                    <td className="px-4 py-6 text-zinc-500" colSpan={10}>{copy.noOrders}</td>
+                    <td className="px-4 py-6 text-zinc-500" colSpan={11}>{copy.noOrders}</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -328,7 +354,7 @@ export function AdminOrdersClient({
         </TableShell>
 
         {selectedOrder ? (
-          <OrderDetail order={selectedOrder} patchOrder={patchOrder} addPaymentRecord={addPaymentRecord} />
+          <OrderDetail order={selectedOrder} staffUsers={initialStaffUsers} patchOrder={patchOrder} addPaymentRecord={addPaymentRecord} />
         ) : null}
       </div>
 
@@ -370,10 +396,12 @@ function FilterSelect({
 
 function OrderDetail({
   order,
+  staffUsers,
   patchOrder,
   addPaymentRecord,
 }: {
   order: AdminOrderRecord;
+  staffUsers: AdminStaffUser[];
   patchOrder: (orderNo: string, patch: Record<string, unknown>) => Promise<boolean>;
   addPaymentRecord: (orderNo: string, draft: PaymentDraft) => Promise<boolean>;
 }) {
@@ -407,6 +435,18 @@ function OrderDetail({
           </div>
           <div className="flex flex-wrap gap-2">
             <select
+              value={order.salesAdminUserId}
+              onChange={(event) => patchOrder(order.orderNo, { salesAdminUserId: event.target.value || null })}
+              className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-black text-zinc-700"
+            >
+              <option value="">{copy.unassignedSales}</option>
+              {staffUsers.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+            <select
               value={order.orderStatus}
               onChange={(event) => patchOrder(order.orderNo, { orderStatus: event.target.value })}
               className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-black text-orange-700"
@@ -425,7 +465,7 @@ function OrderDetail({
               ))}
             </select>
             <button className="rounded-md border border-zinc-200 px-4 py-2 text-sm font-black text-zinc-700" type="button" onClick={() => window.print()}>
-              {t("printOrder")}
+              {copy.printA6}
             </button>
             <button
               className="rounded-md border border-red-200 px-4 py-2 text-sm font-black text-red-700"
@@ -632,7 +672,19 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
             print-color-adjust: exact;
           }
 
+          body * {
+            visibility: hidden;
+          }
+
+          .a6-order-sheet,
+          .a6-order-sheet * {
+            visibility: visible;
+          }
+
           .a6-order-sheet {
+            position: absolute;
+            left: 0;
+            top: 0;
             width: 97mm;
             max-width: 97mm;
             min-height: 140mm;
@@ -651,12 +703,15 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
       <div className="a6-order-sheet">
         <div className="flex items-start justify-between gap-2 border-b border-zinc-950 pb-1.5">
           <div className="min-w-0">
-            <h1 className="text-[13px] font-black uppercase leading-4">Luis One Supply Hub</h1>
+            <h1 className="text-[13px] font-black uppercase leading-4">{businessInfo.name}</h1>
             <p className="text-[8px] font-bold uppercase tracking-wide text-zinc-600">Wholesale Order Slip</p>
+            <p className="mt-0.5 text-[7px] font-bold text-zinc-500">{businessInfo.address}</p>
+            <p className="text-[7px] font-bold text-zinc-500">{businessInfo.phoneDisplay} | {businessInfo.hours}</p>
           </div>
           <div className="text-right">
             <p className="text-[10px] font-black">{order.orderNo}</p>
             <p className="text-[8px] font-bold text-zinc-600">{order.createdDate}</p>
+            <p className="mt-1 text-[7px] font-black uppercase text-orange-700">{labelFor(t, statusKeyByValue, order.orderStatus)}</p>
           </div>
         </div>
 
@@ -707,9 +762,11 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
 
         <div className="mt-1.5 grid grid-cols-[1fr_37mm] gap-1.5">
           <A6Box title="Handling">
-            <p>Manual confirmation required.</p>
-            <p>Deposit may be required.</p>
-            <p>Freight collect is not added to product total.</p>
+            <A6Check label="Customer confirmed" />
+            <A6Check label="Items picked / packed" />
+            <A6Check label="Deposit / payment checked" />
+            <A6Check label="Pickup / delivery arranged" />
+            <p className="mt-1 text-[7px] text-zinc-600">Freight collect is not added to product total.</p>
           </A6Box>
           <A6Box title="Total">
             <A6Total label="Product" value={formatPhp(order.productTotal)} />
@@ -733,6 +790,15 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
         </div>
       </div>
     </section>
+  );
+}
+
+function A6Check({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-1 text-[8px] font-bold">
+      <span className="inline-block h-[7px] w-[7px] border border-zinc-700" />
+      <span>{label}</span>
+    </div>
   );
 }
 

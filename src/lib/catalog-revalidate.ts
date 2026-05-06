@@ -9,6 +9,9 @@ export function revalidateCatalogPages() {
   revalidatePath("/category/all");
   revalidatePath("/category/[slug]", "page");
   revalidatePath("/product/[slug]", "page");
+  revalidatePath("/share/product/[slug]", "page");
+  revalidatePath("/meta/catalog-feed.csv");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/products");
   revalidatePath("/admin/categories");
 }

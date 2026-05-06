@@ -80,10 +80,10 @@ export async function generateMetadata({
 
 const pageSize = 48;
 const sortOptions = [
-  { label: "Popular", value: "popular" },
-  { label: "Latest", value: "latest" },
-  { label: "Price Low to High", value: "price-low" },
-  { label: "Price High to Low", value: "price-high" },
+  { label: "Popular", shortLabel: "Popular", value: "popular" },
+  { label: "Latest", shortLabel: "Latest", value: "latest" },
+  { label: "Price Low to High", shortLabel: "Low Price", value: "price-low" },
+  { label: "Price High to Low", shortLabel: "High Price", value: "price-high" },
 ];
 
 function getLowestPrice(product: { tiers: { price: number }[] }) {
@@ -96,9 +96,24 @@ function getHighestPrice(product: { tiers: { price: number }[] }) {
   return prices.length ? Math.max(...prices) : 0;
 }
 
+function getProductCreatedTime(product: { createdAt?: string | null; slug: string }) {
+  if (!product.createdAt) {
+    return 0;
+  }
+
+  const time = Date.parse(product.createdAt);
+  return Number.isFinite(time) ? time : 0;
+}
+
 function normalizeSearch(value: string) {
   return value
     .toLowerCase()
+    .replace(/\bbreaks?\b/g, "brake")
+    .replace(/\btop\s*box\b/g, "topbox")
+    .replace(/\bkey\s*set\b/g, "keyset")
+    .replace(/\bn\s*max\b/g, "nmax")
+    .replace(/\baerox\s*155\b/g, "aerox155")
+    .replace(/\bhonda\s*click\b/g, "click")
     .replace(/&/g, " and ")
     .replace(/\+/g, " plus ")
     .replace(/([a-z])([0-9])/g, "$1 $2")
@@ -115,21 +130,39 @@ const searchAliases: Record<string, string[]> = {
   accessory: ["accessories"],
   accessories: ["accessory"],
   absorber: ["shock", "suspension"],
+  aerox: ["yamaha"],
+  automotive: ["car", "vehicle"],
+  beat: ["honda"],
   bracket: ["mount", "holder"],
+  brake: ["break", "lever"],
+  breaks: ["brake"],
   cable: ["wire", "charger"],
   cables: ["wire", "charger"],
   cleaner: ["cleaning", "spray"],
   click: ["honda"],
   coolant: ["fluid"],
+  full: ["helmet"],
+  gille: ["helmet"],
+  half: ["helmet"],
+  helmet: ["helmets", "half", "full", "modular", "visor"],
+  helmets: ["helmet"],
+  hnj: ["helmet"],
   key: ["keyset", "ignition", "switch"],
   keyset: ["key", "ignition", "switch"],
   lock: ["security"],
   locks: ["security"],
   mio: ["yamaha"],
+  mob: ["helmet"],
+  modular: ["helmet"],
+  motobox: ["topbox", "box"],
   nmax: ["yamaha"],
   seat: ["saddle"],
   shock: ["absorber", "suspension"],
+  shocks: ["shock", "absorber", "suspension"],
   switch: ["ignition", "keyset"],
+  topbox: ["top", "box", "bracket", "mount"],
+  visor: ["helmet", "shield"],
+  zebra: ["helmet"],
 };
 
 function expandSearchWords(words: string[]) {
@@ -183,6 +216,12 @@ type SearchableProduct = {
   description: string;
   details: string[];
   searchText?: string;
+  variants?: {
+    name: string;
+    sku?: string;
+    model?: string;
+    fits?: string;
+  }[];
 };
 
 function productSearchScore(product: SearchableProduct, query: string) {
@@ -202,6 +241,9 @@ function productSearchScore(product: SearchableProduct, query: string) {
     description: normalizeSearch(product.description),
     details: normalizeSearch(product.details.join(" ")),
     extra: normalizeSearch(product.searchText ?? ""),
+    variants: normalizeSearch(
+      product.variants?.map((variant) => [variant.name, variant.sku, variant.model, variant.fits].filter(Boolean).join(" ")).join(" ") ?? "",
+    ),
   };
   const haystack = Object.values(fields).join(" ");
   const haystackWordList = haystack.split(" ").filter(Boolean);
@@ -215,6 +257,7 @@ function productSearchScore(product: SearchableProduct, query: string) {
     product.description,
     product.details.join(" "),
     product.searchText ?? "",
+    product.variants?.map((variant) => [variant.name, variant.sku, variant.model, variant.fits].filter(Boolean).join(" ")).join(" ") ?? "",
   ].join(" "));
   let score = 0;
   let matchedWords = 0;
@@ -271,6 +314,10 @@ function productSearchScore(product: SearchableProduct, query: string) {
     return 0;
   }
 
+  if (originalWords.length > 1 && originalMatchedWords === originalWords.length) {
+    score += 30 + originalWords.length * 5;
+  }
+
   return matchedWords > 0 ? score + originalMatchedWords * 12 : 0;
 }
 
@@ -291,7 +338,7 @@ export default async function CategoryPage({
   const selectedSort = sortOptions.some((option) => option.value === query?.sort) ? query?.sort ?? "popular" : "popular";
   const compareProducts = (a: (typeof categoryProducts)[number], b: (typeof categoryProducts)[number]) => {
       if (selectedSort === "latest") {
-        return b.slug.localeCompare(a.slug);
+        return getProductCreatedTime(b) - getProductCreatedTime(a) || b.slug.localeCompare(a.slug);
       }
 
       if (selectedSort === "price-low") {
@@ -415,12 +462,13 @@ export default async function CategoryPage({
           </Container>
         </section>
 
-        <Container className="py-2 sm:py-4">
+        <Container className="px-1.5 py-2 sm:px-6 sm:py-4 lg:px-8">
             <div className="mb-2 flex flex-col gap-2 rounded-sm border border-zinc-200 bg-white p-1.5 shadow-sm sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-              <div className="flex gap-1 overflow-x-auto text-[11px] font-black sm:flex-wrap sm:gap-2 sm:text-sm">
+              <div className="flex snap-x gap-1 overflow-x-auto text-[11px] font-black [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-2 sm:text-sm [&::-webkit-scrollbar]:hidden">
                 {sortOptions.map((item) => (
-                  <Link key={item.value} href={sortHref(item.value)} className={`shrink-0 rounded-sm px-2 py-1.5 sm:px-3 sm:py-2 ${selectedSort === item.value ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700 hover:bg-orange-50 hover:text-orange-700"}`}>
-                    {item.label}
+                  <Link key={item.value} href={sortHref(item.value)} className={`shrink-0 snap-start rounded-sm px-2 py-1.5 sm:px-3 sm:py-2 ${selectedSort === item.value ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700 hover:bg-orange-50 hover:text-orange-700"}`}>
+                    <span className="sm:hidden">{item.shortLabel}</span>
+                    <span className="hidden sm:inline">{item.label}</span>
                   </Link>
                 ))}
               </div>
@@ -459,12 +507,12 @@ export default async function CategoryPage({
             ) : null}
 
             {totalPages > 1 ? (
-              <div className="mt-7 flex justify-center gap-2">
+              <div className="relative z-10 mt-6 flex justify-center gap-2 pb-2">
                 {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
                   <Link
                     key={page}
                     href={pageHref(page)}
-                    className={`grid h-10 w-10 place-items-center rounded-sm text-sm font-black ${
+                    className={`grid h-11 w-11 place-items-center rounded-sm text-base font-black ${
                       page === currentPage ? "bg-[#f65f18] text-white" : "border border-zinc-200 bg-white text-zinc-700"
                     }`}
                   >

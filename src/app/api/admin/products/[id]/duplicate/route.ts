@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { canManageProducts } from "@/lib/admin-role-access";
 import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -34,6 +35,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (guard.response) {
     return guard.response;
+  }
+
+  if (!guard.admin || !canManageProducts(guard.admin.role)) {
+    return jsonError("Only product managers can duplicate products.", 403);
   }
 
   const admin = createSupabaseAdminClient();

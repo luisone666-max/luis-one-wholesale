@@ -42,6 +42,10 @@ function metaAvailability(status: Product["stockStatus"]) {
     return "in stock";
   }
 
+  if (status === "Unavailable") {
+    return "out of stock";
+  }
+
   return "available for order";
 }
 

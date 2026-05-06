@@ -1,6 +1,7 @@
 "use client";
 
 import { getCurrentCustomerSession, type CustomerProfile } from "@/lib/customer-auth";
+import { isUnavailableStockStatus } from "@/lib/mock-data";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { getWholesalePriceForQuantity } from "@/lib/wholesale-pricing";
 
@@ -20,6 +21,7 @@ type CartProductRow = {
   slug: string;
   moq: number | null;
   image_url: string | null;
+  stock_status: string | null;
 };
 
 type CartVariantRow = {
@@ -89,7 +91,7 @@ export async function addProductToCart(productId: string | undefined, quantity: 
   const requestedQuantity = Math.max(1, Math.floor(quantity));
   const { data: productData, error: productError } = await supabase
     .from("customer_products")
-    .select("id,moq")
+    .select("id,moq,stock_status")
     .eq("id", productId)
     .maybeSingle();
 
@@ -101,13 +103,21 @@ export async function addProductToCart(productId: string | undefined, quantity: 
     return { ok: false, message: "This product is unavailable." };
   }
 
-  const product = productData as { id: string; moq: number | null };
+  const product = productData as { id: string; moq: number | null; stock_status: string | null };
+
+  if (isUnavailableStockStatus(product.stock_status)) {
+    return {
+      ok: false,
+      message: "This item is currently unavailable for direct order. Please ask on Messenger so we can check stock or arrange a special order.",
+    };
+  }
+
   let moq = product.moq ?? 1;
   const normalizedVariantId = variantId ?? null;
 
   const { data: variantRowsData, error: variantsError } = await supabase
     .from("product_variants")
-    .select("id,moq,active")
+    .select("id,moq,active,stock_status")
     .eq("product_id", productId)
     .eq("active", true);
 
@@ -115,7 +125,12 @@ export async function addProductToCart(productId: string | undefined, quantity: 
     return { ok: false, message: variantsError.message };
   }
 
-  const activeVariants = (variantRowsData ?? []) as { id: string; moq: number | null; active: boolean | null }[];
+  const activeVariants = (variantRowsData ?? []) as {
+    id: string;
+    moq: number | null;
+    active: boolean | null;
+    stock_status: string | null;
+  }[];
 
   if (activeVariants.length && !normalizedVariantId) {
     return { ok: false, message: "Please select a variant before adding this product." };
@@ -126,6 +141,13 @@ export async function addProductToCart(productId: string | undefined, quantity: 
 
     if (!variant) {
       return { ok: false, message: "Please select an available variant." };
+    }
+
+    if (isUnavailableStockStatus(variant.stock_status)) {
+      return {
+        ok: false,
+        message: "This variant is currently unavailable for direct order. Please ask on Messenger so we can check stock or arrange a special order.",
+      };
     }
 
     moq = variant.moq ?? 1;
@@ -204,7 +226,7 @@ export async function getCustomerCartItems(): Promise<{ items: CustomerCartItem[
 
   const { data: productRowsData, error: productsError } = await supabase
     .from("customer_products")
-    .select("id,sku,name,slug,moq,image_url")
+    .select("id,sku,name,slug,moq,image_url,stock_status")
     .in("id", productIds);
 
   if (productsError) {
@@ -235,6 +257,7 @@ export async function getCustomerCartItems(): Promise<{ items: CustomerCartItem[
 
     const variant = cartItem.variant_id ? variantsById.get(cartItem.variant_id) : null;
     const moq = variant?.moq ?? product.moq ?? 1;
+    const unavailable = isUnavailableStockStatus(product.stock_status) || isUnavailableStockStatus(variant?.stock_status);
     const pricing = await getWholesalePriceForQuantity(product.id, cartItem.quantity, { supabase, moq, variantId: variant?.id ?? null });
 
     items.push({
@@ -249,10 +272,14 @@ export async function getCustomerCartItems(): Promise<{ items: CustomerCartItem[
       image: variant?.image_url || product.image_url || "/products/phone-accessories.svg",
       moq,
       quantity: cartItem.quantity,
-      appliedUnitPrice: pricing.ok ? pricing.applied_unit_price : null,
-      subtotal: pricing.ok ? pricing.subtotal : null,
-      tierLabel: pricing.ok ? pricing.tier_label : null,
-      priceError: pricing.ok ? undefined : pricing.error,
+      appliedUnitPrice: unavailable ? null : pricing.ok ? pricing.applied_unit_price : null,
+      subtotal: unavailable ? null : pricing.ok ? pricing.subtotal : null,
+      tierLabel: unavailable ? null : pricing.ok ? pricing.tier_label : null,
+      priceError: unavailable
+        ? "This item is currently unavailable for direct checkout. Please ask on Messenger."
+        : pricing.ok
+          ? undefined
+          : pricing.error,
     });
   }
 
@@ -292,7 +319,7 @@ export async function updateCartItemQuantity(cartItemId: string, quantity: numbe
 
   const { data: productData, error: productError } = await supabase
     .from("customer_products")
-    .select("id,moq")
+    .select("id,moq,stock_status")
     .eq("id", cartItem.product_id)
     .maybeSingle();
 
@@ -300,10 +327,14 @@ export async function updateCartItemQuantity(cartItemId: string, quantity: numbe
     return { ok: false, message: productError.message };
   }
 
-  const product = productData as { id: string; moq: number | null } | null;
+  const product = productData as { id: string; moq: number | null; stock_status: string | null } | null;
 
   if (!product) {
     return { ok: false, message: "This product is unavailable." };
+  }
+
+  if (isUnavailableStockStatus(product.stock_status)) {
+    return { ok: false, message: "This item is currently unavailable for direct checkout. Please ask on Messenger." };
   }
 
   let moq = product.moq ?? 1;
@@ -311,7 +342,7 @@ export async function updateCartItemQuantity(cartItemId: string, quantity: numbe
   if (cartItem.variant_id) {
     const { data: variantData, error: variantError } = await supabase
       .from("product_variants")
-      .select("id,moq,active")
+      .select("id,moq,active,stock_status")
       .eq("id", cartItem.variant_id)
       .eq("product_id", product.id)
       .maybeSingle();
@@ -320,10 +351,14 @@ export async function updateCartItemQuantity(cartItemId: string, quantity: numbe
       return { ok: false, message: variantError.message };
     }
 
-    const variant = variantData as { id: string; moq: number | null; active: boolean | null } | null;
+    const variant = variantData as { id: string; moq: number | null; active: boolean | null; stock_status: string | null } | null;
 
     if (!variant || !variant.active) {
       return { ok: false, message: "Please select an available variant." };
+    }
+
+    if (isUnavailableStockStatus(variant.stock_status)) {
+      return { ok: false, message: "This variant is currently unavailable for direct checkout. Please ask on Messenger." };
     }
 
     moq = variant.moq ?? 1;

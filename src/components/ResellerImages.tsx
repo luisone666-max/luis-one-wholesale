@@ -3,19 +3,48 @@ import type { Product } from "@/lib/mock-data";
 
 const placeholderImages = new Set(["/products/phone-accessories.svg"]);
 
-function uniqueProductImages(product: Product) {
-  const images = [
-    product.image,
-    ...product.gallery,
-    ...(product.variants ?? []).map((variant) => variant.image),
-  ].filter((image): image is string => typeof image === "string" && !placeholderImages.has(image));
+type ResellerImageItem = {
+  url: string;
+  label: string;
+};
 
-  return Array.from(new Set(images));
+function isDownloadableImage(image: string | undefined): image is string {
+  if (!image || placeholderImages.has(image)) {
+    return false;
+  }
+
+  return !(image.startsWith("/products/") && image.toLowerCase().endsWith(".svg"));
 }
 
-function downloadHref(image: string, product: Product, index: number) {
+function uniqueProductImages(product: Product) {
+  const images: ResellerImageItem[] = [];
+  const seen = new Set<string>();
+
+  const addImage = (url: string | undefined, label: string) => {
+    if (!isDownloadableImage(url) || seen.has(url)) {
+      return;
+    }
+
+    seen.add(url);
+    images.push({ url, label });
+  };
+
+  addImage(product.image, "Main image");
+
+  for (const image of product.gallery) {
+    addImage(image, "Gallery image");
+  }
+
+  for (const variant of product.variants ?? []) {
+    addImage(variant.image, `Variant: ${variant.name}${variant.sku ? ` (${variant.sku})` : ""}`);
+  }
+
+  return images;
+}
+
+function downloadHref(image: ResellerImageItem, product: Product, index: number) {
   const params = new URLSearchParams({
-    url: image,
+    url: image.url,
     name: `${product.slug}-${index + 1}`,
   });
 
@@ -41,12 +70,12 @@ export function ResellerImages({ product }: { product: Product }) {
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {images.map((image, index) => (
-          <article key={image} className="overflow-hidden rounded-sm border border-zinc-200 bg-white">
+          <article key={image.url} className="overflow-hidden rounded-sm border border-zinc-200 bg-white">
             <div className="aspect-square bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-2">
-              <ProductImage src={image} alt={`${product.name} reseller image ${index + 1}`} />
+              <ProductImage src={image.url} alt={`${product.name} ${image.label}`} />
             </div>
             <div className="space-y-2 border-t border-zinc-100 p-2 sm:p-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">Image {index + 1}</p>
+              <p className="line-clamp-2 min-h-8 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">{image.label}</p>
               <a
                 href={downloadHref(image, product, index)}
                 className="grid h-10 place-items-center rounded-sm bg-[#f65f18] px-3 text-xs font-black text-white shadow-sm transition hover:bg-[#df4f0d] sm:text-sm"
@@ -54,11 +83,11 @@ export function ResellerImages({ product }: { product: Product }) {
                 Download Image
               </a>
               <a
-                href={image}
+                href={image.url}
                 target="_blank"
                 rel="noreferrer"
                 className="block truncate rounded-sm bg-zinc-50 px-2 py-1.5 text-[11px] font-bold text-zinc-500 hover:text-orange-700"
-                title={image}
+                title={image.url}
               >
                 Open original image
               </a>

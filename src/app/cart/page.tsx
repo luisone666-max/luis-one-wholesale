@@ -12,6 +12,7 @@ import {
   updateCartItemQuantity,
   type CustomerCartItem,
 } from "@/lib/customer-cart";
+import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty-points";
 import { formatPhp } from "@/lib/wholesale-pricing";
 
 export default function CartPage() {
@@ -35,6 +36,8 @@ function CartContent() {
     () => items.reduce((sum, item) => sum + (item.subtotal ?? 0), 0),
     [items],
   );
+  const hasBlockingCartIssue = useMemo(() => items.some((item) => Boolean(item.priceError) || item.subtotal === null), [items]);
+  const estimatedPoints = calculateLoyaltyPoints(productTotal);
 
   const loadCart = useCallback(async () => {
     const result = await getCustomerCartItems();
@@ -216,13 +219,31 @@ function CartContent() {
               <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-xs font-bold leading-5 text-orange-700">
                 If shipping is freight collect, shipping fee is paid by receiver and is not added to product total.
               </div>
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-700">
+                Member points estimate: {formatLoyaltyPoints(estimatedPoints)} after payment is confirmed. Every PHP 100 = 1 point.
+              </div>
+              {hasBlockingCartIssue ? (
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-5 text-amber-800">
+                  One or more items need Messenger confirmation before checkout. Please remove unavailable items or ask us first.
+                </div>
+              ) : null}
               <div className="border-t border-zinc-100 pt-4">
                 <SummaryRow label="Amount to Confirm" value={formatPhp(productTotal)} strong />
               </div>
             </div>
-            <Link href="/checkout" className="mt-6 block rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white">
-              Proceed to Checkout
-            </Link>
+            {hasBlockingCartIssue ? (
+              <button
+                type="button"
+                disabled
+                className="mt-6 block w-full cursor-not-allowed rounded-sm bg-zinc-200 px-5 py-3 text-center text-sm font-black text-zinc-500"
+              >
+                Checkout unavailable
+              </button>
+            ) : (
+              <Link href="/checkout" className="mt-6 block rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white">
+                Proceed to Checkout
+              </Link>
+            )}
           </aside>
         </div>
       </section>

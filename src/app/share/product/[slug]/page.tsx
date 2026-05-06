@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { ShareRedirect } from "@/components/ShareRedirect";
-import { getCatalogProductPage, getCatalogProductParams } from "@/lib/catalog-data";
+import { getCatalogProductPage } from "@/lib/catalog-data";
 import { getPriceRange } from "@/lib/mock-data";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const productionSiteUrl = "https://luisonesupplyhub.com";
 
@@ -35,10 +36,6 @@ function absoluteUrl(pathOrUrl: string | undefined) {
   }
 
   return `${getSiteUrl()}${value.startsWith("/") ? value : `/${value}`}`;
-}
-
-export async function generateStaticParams() {
-  return getCatalogProductParams();
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

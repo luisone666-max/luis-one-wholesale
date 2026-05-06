@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AdminLanguage, translate, TranslationKey } from "@/lib/admin-i18n";
 
+type AdminRole = "owner" | "admin" | "staff" | "sales" | "cashier" | "warehouse";
+
 type AdminI18nContextValue = {
   language: AdminLanguage;
   setLanguage: (language: AdminLanguage) => void;
@@ -15,38 +17,45 @@ const AdminI18nContext = createContext<AdminI18nContextValue | null>(null);
 
 const navSections: Array<{
   title: { en: string; zh: string };
-  items: Array<{ href: string; label: TranslationKey; icon: string; hint: { en: string; zh: string } }>;
+  items: Array<{ href: string; label: TranslationKey; icon: string; hint: { en: string; zh: string }; roles?: AdminRole[] }>;
 }> = [
   {
     title: { en: "Overview", zh: "总览" },
-    items: [{ href: "/admin", label: "dashboard", icon: "D", hint: { en: "Daily store summary", zh: "每日店铺概览" } }],
+    items: [{ href: "/admin", label: "dashboard", icon: "D", hint: { en: "Daily store summary", zh: "每日店铺概览" }, roles: ["owner", "admin"] }],
   },
   {
     title: { en: "Catalog", zh: "商品" },
     items: [
-      { href: "/admin/products", label: "products", icon: "P", hint: { en: "Manage products", zh: "管理商品" } },
-      { href: "/admin/categories", label: "categories", icon: "C", hint: { en: "Category tree", zh: "分类树" } },
-      { href: "/admin/wholesale-prices", label: "wholesalePrices", icon: "W", hint: { en: "Tier prices", zh: "批发阶梯价" } },
+      { href: "/admin/products", label: "products", icon: "P", hint: { en: "Manage products / price lookup", zh: "管理商品 / 销售查价" }, roles: ["owner", "admin", "warehouse", "sales", "staff"] },
+      { href: "/admin/categories", label: "categories", icon: "C", hint: { en: "Category tree", zh: "分类树" }, roles: ["owner", "admin"] },
     ],
   },
   {
-    title: { en: "Sales", zh: "订单" },
+    title: { en: "Online Store", zh: "线上订单" },
     items: [
-      { href: "/admin/orders", label: "orders", icon: "O", hint: { en: "Order handling", zh: "订单处理" } },
-      { href: "/admin/customers", label: "customers", icon: "U", hint: { en: "Customer records", zh: "客户资料" } },
-      { href: "/admin/payments", label: "payments", icon: "M", hint: { en: "Manual payments", zh: "人工收款" } },
+      { href: "/admin/orders", label: "orders", icon: "O", hint: { en: "Website order handling", zh: "网站订单处理" }, roles: ["owner", "admin", "warehouse"] },
+      { href: "/admin/customers", label: "customers", icon: "U", hint: { en: "Customer records / member points", zh: "客户资料 / 会员积分" }, roles: ["owner", "admin"] },
+      { href: "/admin/payments", label: "payments", icon: "M", hint: { en: "Website manual payments", zh: "线上人工收款" }, roles: ["owner", "admin"] },
+    ],
+  },
+  {
+    title: { en: "Offline POS", zh: "线下收银" },
+    items: [
+      { href: "/admin/sales-desk", label: "salesDesk", icon: "S", hint: { en: "In-store sales slip", zh: "门店销售开单" }, roles: ["owner", "admin", "sales", "staff"] },
+      { href: "/admin/cashier", label: "cashierCenter", icon: "C", hint: { en: "Cashier payment confirmation", zh: "收银确认收款" }, roles: ["owner", "admin", "cashier"] },
+      { href: "/admin/cash-drawer", label: "cashDrawer", icon: "P", hint: { en: "Daily cash drawer", zh: "每日收银钱箱" }, roles: ["owner", "admin", "cashier"] },
+      { href: "/admin/staff", label: "staffAccess", icon: "A", hint: { en: "Staff login and roles", zh: "员工账号与权限" }, roles: ["owner", "admin"] },
     ],
   },
   {
     title: { en: "Business", zh: "经营" },
     items: [
-      { href: "/admin/reports", label: "reports", icon: "R", hint: { en: "Reports", zh: "报表" } },
-      { href: "/admin/settings", label: "settings", icon: "S", hint: { en: "Store settings", zh: "店铺设置" } },
+      { href: "/admin/reports", label: "reports", icon: "R", hint: { en: "Reports", zh: "报表" }, roles: ["owner", "admin"] },
+      { href: "/admin/owner", label: "ownerCenter", icon: "K", hint: { en: "Owner password gate", zh: "老板中心" }, roles: ["owner", "admin"] },
+      { href: "/admin/settings", label: "settings", icon: "S", hint: { en: "Store settings", zh: "店铺设置" }, roles: ["owner", "admin"] },
     ],
   },
 ];
-
-const navItems = navSections.flatMap((section) => section.items);
 
 export function useAdminI18n() {
   const value = useContext(AdminI18nContext);
@@ -60,7 +69,7 @@ export function useAdminI18n() {
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [adminProfile, setAdminProfile] = useState<{ name: string; email: string } | null>(null);
+  const [adminProfile, setAdminProfile] = useState<{ name: string; email: string; role: AdminRole } | null>(null);
   const [language, setLanguageState] = useState<AdminLanguage>("en");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -90,7 +99,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
     void fetch("/api/admin/auth/me")
       .then((response) => response.json())
-      .then((result: { ok?: boolean; admin?: { name?: string; email?: string } }) => {
+      .then((result: { ok?: boolean; admin?: { name?: string; email?: string; role?: AdminRole } }) => {
         if (cancelled || !result.ok || !result.admin) {
           return;
         }
@@ -100,6 +109,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             setAdminProfile({
               name: result.admin?.name ?? "Admin",
               email: result.admin?.email ?? "",
+              role: result.admin?.role ?? "admin",
             });
           }
         });
@@ -117,7 +127,15 @@ export function AdminShell({ children }: { children: ReactNode }) {
   };
 
   const isActive = (href: string) => (href === "/admin" ? pathname === href : pathname.startsWith(href));
-  const activeItem = navItems.find((item) => isActive(item.href)) ?? navItems[0];
+  const role = adminProfile?.role;
+  const visibleNavSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.roles || (role ? item.roles.includes(role) : false)),
+    }))
+    .filter((section) => section.items.length > 0);
+  const navItems = visibleNavSections.flatMap((section) => section.items);
+  const activeItem = navItems.find((item) => isActive(item.href)) ?? navItems[0] ?? navSections[0].items[0];
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
@@ -139,8 +157,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">WholesaleHub</p>
             </div>
           </div>
-          <nav className="space-y-4 p-3">
-            {navSections.map((section) => (
+          <nav className="h-[calc(100vh-4rem)] space-y-4 overflow-y-auto p-3">
+            {visibleNavSections.map((section) => (
               <div key={section.title.en}>
                 <p className={`mb-2 px-2 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400 ${sidebarCollapsed ? "sr-only" : ""}`}>
                   {language === "zh" ? section.title.zh : section.title.en}
@@ -175,7 +193,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </nav>
         </aside>
 
-        <div className={`transition-all ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-72"}`}>
+        <div className={`min-w-0 transition-all ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-72"}`}>
           <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white">
             <div className="flex min-h-16 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between lg:px-8">
               <div className="flex items-center gap-3">
@@ -183,7 +201,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   =
                 </button>
                 <button type="button" onClick={() => setSidebarCollapsed((current) => !current)} className="hidden h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm font-black text-zinc-700 lg:block">
-                  {sidebarCollapsed ? "Open" : "Fold"}
+                  {sidebarCollapsed ? (language === "zh" ? "展开" : "Open") : language === "zh" ? "折叠" : "Fold"}
                 </button>
                 <div>
                   <p className="text-xs font-bold text-zinc-500">WholesaleHub</p>
@@ -226,7 +244,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               ))}
             </nav>
           </header>
-          <main className="px-4 py-6 lg:px-8">{children}</main>
+          <main className="min-w-0 overflow-x-auto px-4 py-6 pb-28 lg:px-8">{children}</main>
         </div>
       </div>
     </AdminI18nContext.Provider>

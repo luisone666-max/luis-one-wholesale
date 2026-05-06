@@ -40,7 +40,7 @@ export const seoGuides: SeoGuide[] = [
       {
         heading: "Categories in one supply hub",
         body: [
-          "The catalog can include motorcycle parts, daily essentials, electronics, food and spices, and other fast-moving wholesale items.",
+          "The catalog can include motorcycle parts, helmets, riding accessories, automotive supplies, electronics, and other fast-moving wholesale items.",
           "This helps buyers source multiple categories in one place instead of sending separate messages for every product.",
         ],
       },

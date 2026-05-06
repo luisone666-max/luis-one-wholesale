@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AuthHashRedirect } from "@/components/AuthHashRedirect";
 import { MetaPixel } from "@/components/MetaPixel";
+import { businessInfo } from "@/lib/business-info";
 import { getMetaPixelId } from "@/lib/meta-pixel";
 import "./globals.css";
 
@@ -16,8 +18,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://luisonesupplyhub.com"),
-  title: "Luis One Supply Hub | Wholesale Ordering",
-  description: "A professional Philippine wholesale shopping site with public tier pricing.",
+  title: "Luis One Supply Hub | Motorcycle Helmets & Wholesale Supplies",
+  description:
+    "Motorcycle helmets, accessories, top boxes, parts, and wholesale supplies for resellers and shops in the Philippines. Located at 1373 Narra St, Tondo, Manila.",
   icons: {
     icon: "/brand/luis-one-logo.jpg",
     apple: "/brand/luis-one-logo.jpg",
@@ -26,8 +29,8 @@ export const metadata: Metadata = {
     google: "r77e8LP4lW3rg86Bu7f3LonWcWu0JCeb162YeGaF7X0",
   },
   openGraph: {
-    title: "Luis One Supply Hub | Wholesale Ordering",
-    description: "Wholesale supply for resellers and shops with public tier pricing.",
+    title: "Luis One Supply Hub | Motorcycle Helmets & Wholesale Supplies",
+    description: businessInfo.description,
     url: "https://luisonesupplyhub.com",
     siteName: "Luis One Supply Hub",
     type: "website",
@@ -42,8 +45,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Luis One Supply Hub | Wholesale Ordering",
-    description: "Wholesale supply for resellers and shops with public tier pricing.",
+    title: "Luis One Supply Hub | Motorcycle Helmets & Wholesale Supplies",
+    description: businessInfo.description,
     images: ["/brand/luis-one-logo.jpg"],
   },
 };
@@ -80,6 +83,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-950">
+        <AuthHashRedirect />
         {children}
         <MetaPixel />
         <noscript>

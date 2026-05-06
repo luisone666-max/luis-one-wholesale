@@ -6,6 +6,7 @@ import {
   type BulkProductCsvRow,
 } from "@/lib/admin-product-bulk-upload";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { canManageProducts } from "@/lib/admin-role-access";
 import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 
 function jsonError(message: string, status = 400) {
@@ -45,6 +46,10 @@ export async function POST(request: Request) {
 
   if (guard.response) {
     return guard.response;
+  }
+
+  if (!guard.admin || !canManageProducts(guard.admin.role)) {
+    return jsonError("Only product managers can bulk upload products.", 403);
   }
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;

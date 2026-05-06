@@ -2,9 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatMoney, type Category, type PriceTier, type Product } from "@/lib/mock-data";
+import { businessInfo } from "@/lib/business-info";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-labels";
 
-const facebookDirectChatUrl = "https://www.messenger.com/t/61582454726803";
+const facebookDirectChatUrl = businessInfo.messengerUrl;
 
 export const messengerUrl = process.env.NEXT_PUBLIC_MESSENGER_URL?.includes("facebook.com/messages")
   ? process.env.NEXT_PUBLIC_MESSENGER_URL

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { canManageProducts } from "@/lib/admin-role-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 const bucketName = "product-images";
@@ -48,6 +49,10 @@ export async function POST(request: Request) {
 
   if (guard.response) {
     return guard.response;
+  }
+
+  if (!guard.admin || !canManageProducts(guard.admin.role)) {
+    return jsonError("Only product managers can upload product images.", 403);
   }
 
   const admin = createSupabaseAdminClient();

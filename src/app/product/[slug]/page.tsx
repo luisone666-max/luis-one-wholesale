@@ -7,11 +7,12 @@ import { ProductDetailExperience } from "@/components/ProductDetailExperience";
 import { ResellerImages } from "@/components/ResellerImages";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { getCatalogProductPage, getCatalogProductParams } from "@/lib/catalog-data";
+import { getCatalogProductPage } from "@/lib/catalog-data";
 import { getPriceRange } from "@/lib/mock-data";
 import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const productionSiteUrl = "https://luisonesupplyhub.com";
 
@@ -43,10 +44,6 @@ function absoluteUrl(pathOrUrl: string | undefined) {
   }
 
   return `${getSiteUrl()}${value.startsWith("/") ? value : `/${value}`}`;
-}
-
-export async function generateStaticParams() {
-  return getCatalogProductParams();
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

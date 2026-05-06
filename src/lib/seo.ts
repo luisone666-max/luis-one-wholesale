@@ -1,9 +1,10 @@
 import type { Category, Product } from "@/lib/mock-data";
+import { businessInfo } from "@/lib/business-info";
 
 export const productionSiteUrl = "https://luisonesupplyhub.com";
 export const siteName = "Luis One Supply Hub";
 export const siteDescription =
-  "Wholesale supply for resellers and shops in the Philippines with public tier pricing and manual order confirmation.";
+  "Motorcycle helmets, accessories, parts, and wholesale supplies for resellers and shops in the Philippines with public tier pricing and manual order confirmation.";
 
 export function getSiteUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
@@ -65,6 +66,10 @@ function stockAvailability(product: Product) {
     return "https://schema.org/LimitedAvailability";
   }
 
+  if (product.stockStatus === "Unavailable") {
+    return "https://schema.org/OutOfStock";
+  }
+
   return "https://schema.org/PreOrder";
 }
 
@@ -113,11 +118,21 @@ export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
 export function organizationJsonLd() {
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "LocalBusiness",
     name: siteName,
     url: getSiteUrl(),
     logo: absoluteUrl("/brand/luis-one-logo.jpg"),
-    sameAs: ["https://www.facebook.com/profile.php?id=61582454726803"],
+    image: absoluteUrl("/brand/luis-one-logo.jpg"),
+    description: businessInfo.description,
+    telephone: businessInfo.phoneTel,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "1373 Narra St",
+      addressLocality: "Tondo, Manila",
+      addressCountry: "PH",
+    },
+    openingHours: "Mo-Su 08:00-18:00",
+    sameAs: [businessInfo.facebookUrl],
   };
 }
 

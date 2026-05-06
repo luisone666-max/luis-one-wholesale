@@ -24,6 +24,7 @@ type ProductRow = {
   name: string;
   moq: number | null;
   active: boolean | null;
+  stock_status: string | null;
   supplier_notes: string | null;
 };
 
@@ -42,6 +43,7 @@ type VariantRow = {
   variant_sku: string | null;
   moq: number | null;
   active: boolean | null;
+  stock_status: string | null;
   supplier_notes?: never;
 };
 
@@ -73,6 +75,10 @@ function getBearerToken(request: Request) {
 
 function clean(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function isUnavailableStockStatus(status: string | null | undefined) {
+  return status === "Unavailable" || status === "unavailable";
 }
 
 function validateCheckoutPayload(payload: CheckoutPayload): { value: ValidCheckoutPayload } | { error: string } {
@@ -245,10 +251,10 @@ export async function POST(request: Request) {
     variantsResult,
     variantTiersResult,
   ] = await Promise.all([
-    admin.from("products").select("id,sku,name,moq,active,supplier_notes").in("id", productIds),
+    admin.from("products").select("id,sku,name,moq,active,stock_status,supplier_notes").in("id", productIds),
     admin.from("product_price_tiers").select("product_id,min_qty,max_qty,unit_price").in("product_id", productIds),
     variantIds.length
-      ? admin.from("product_variants").select("id,product_id,variant_name,variant_sku,moq,active").in("id", variantIds)
+      ? admin.from("product_variants").select("id,product_id,variant_name,variant_sku,moq,active,stock_status").in("id", variantIds)
       : Promise.resolve({ data: [], error: null }),
     variantIds.length
       ? admin.from("product_variant_price_tiers").select("variant_id,min_qty,max_qty,unit_price").in("variant_id", variantIds)
@@ -285,10 +291,18 @@ export async function POST(request: Request) {
       return jsonError("One or more products in your cart are no longer available.");
     }
 
+    if (isUnavailableStockStatus(product.stock_status)) {
+      return jsonError(`${product.name} is currently unavailable for direct checkout. Please contact us on Messenger so we can check stock or arrange a special order.`);
+    }
+
     const variant = cartItem.variant_id ? variantsById.get(cartItem.variant_id) : null;
 
     if (cartItem.variant_id && (!variant || !variant.active || variant.product_id !== product.id)) {
       return jsonError(`${product.name}: selected variant is no longer available.`);
+    }
+
+    if (isUnavailableStockStatus(variant?.stock_status)) {
+      return jsonError(`${product.name} / ${variant.variant_name} is currently unavailable for direct checkout. Please contact us on Messenger so we can check stock or arrange a special order.`);
     }
 
     const moq = variant?.moq ?? product.moq ?? 1;

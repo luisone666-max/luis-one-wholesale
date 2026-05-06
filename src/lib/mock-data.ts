@@ -17,10 +17,11 @@ export type Product = {
   gallery: string[];
   moq: number;
   retailPrice?: number | null;
-  stockStatus: "In stock" | "Low stock" | "Preorder";
+  stockStatus: "In stock" | "Low stock" | "Preorder" | "Unavailable";
   stockCount: number;
   sold: number;
   rating: number;
+  createdAt?: string | null;
   description: string;
   details: string[];
   tiers: PriceTier[];
@@ -65,30 +66,22 @@ export const categories: Category[] = [
   {
     slug: "motorcycle-parts",
     name: "Motorcycle Parts",
-    description: "Fast-moving replacement parts for scooters and commuter bikes.",
+    description: "Helmets, accessories, storage, and fast-moving motorcycle supplies.",
     itemCount: 3,
     active: true,
     image: "/products/topbox-bracket.svg",
   },
   {
-    slug: "automotive-care",
-    name: "Automotive Care",
-    description: "Cleaning, maintenance, and workshop supply products.",
+    slug: "automotive",
+    name: "Automotive",
+    description: "Maintenance, parts, oils, fluids, and workshop supply products.",
     itemCount: 1,
     active: true,
     image: "/products/contact-cleaner.svg",
   },
   {
-    slug: "grocery",
-    name: "Grocery Wholesale",
-    description: "Shelf-ready food items for retail and food service buyers.",
-    itemCount: 1,
-    active: true,
-    image: "/products/chili-powder.svg",
-  },
-  {
     slug: "electronics",
-    name: "Phone Accessories",
+    name: "Electronics",
     description: "Daily demand mobile accessories for counters and kiosks.",
     itemCount: 1,
     active: true,
@@ -151,8 +144,8 @@ export const products: Product[] = [
   {
     slug: "contact-cleaner-spray-450ml",
     name: "Contact Cleaner Spray 450ml",
-    category: "Automotive Care",
-    categorySlug: "automotive-care",
+    category: "Automotive",
+    categorySlug: "automotive",
     image: "/products/contact-cleaner.svg",
     gallery: ["/products/contact-cleaner.svg", "/products/contact-cleaner-alt.svg"],
     moq: 1,
@@ -166,26 +159,9 @@ export const products: Product[] = [
     tiers: standardTiers(3.8),
   },
   {
-    slug: "chili-powder",
-    name: "Chili Powder",
-    category: "Grocery Wholesale",
-    categorySlug: "grocery",
-    image: "/products/chili-powder.svg",
-    gallery: ["/products/chili-powder.svg", "/products/chili-powder-alt.svg"],
-    moq: 1,
-    stockStatus: "In stock",
-    stockCount: 1200,
-    sold: 5360,
-    rating: 4.8,
-    description:
-      "Retail-ready chili powder packs for grocery stores, canteens, and food service buyers needing repeat wholesale supply.",
-    details: ["Shelf-ready pouch packing", "Stable bulk inventory", "Suitable for mixed carton orders"],
-    tiers: standardTiers(1.6),
-  },
-  {
     slug: "phone-accessories",
     name: "Phone Accessories",
-    category: "Phone Accessories",
+    category: "Electronics",
     categorySlug: "electronics",
     image: "/products/phone-accessories.svg",
     gallery: ["/products/phone-accessories.svg", "/products/phone-accessories-alt.svg"],
@@ -254,5 +230,9 @@ export function getTierForQuantity(product: Product, quantity: number) {
     product.tiers.find((tier) => quantity >= tier.min && (tier.max === null || quantity <= tier.max)) ??
     product.tiers[0]
   );
+}
+
+export function isUnavailableStockStatus(status: string | null | undefined) {
+  return status === "Unavailable" || status === "unavailable";
 }
 

@@ -117,6 +117,27 @@ export type AdminProductRecord = {
   hasOrderItems: boolean;
 };
 
+export type AdminProductLookupRecord = Pick<
+  AdminProductRecord,
+  | "id"
+  | "sku"
+  | "name"
+  | "slug"
+  | "category"
+  | "subcategory"
+  | "childCategory"
+  | "brand"
+  | "model"
+  | "moq"
+  | "retailPrice"
+  | "stockStatus"
+  | "leadTime"
+  | "image"
+  | "priceRange"
+  | "tiers"
+  | "variants"
+>;
+
 export type AdminProductsResult = {
   products: AdminProductRecord[];
   categories: AdminCategoryOption[];
@@ -130,6 +151,28 @@ function getPriceRange(tiers: AdminProductTier[]) {
 
   const prices = tiers.map((tier) => tier.unitPrice);
   return `PHP ${Math.min(...prices).toLocaleString("en-US")} - PHP ${Math.max(...prices).toLocaleString("en-US")}`;
+}
+
+export function toAdminProductLookupRecords(products: AdminProductRecord[]): AdminProductLookupRecord[] {
+  return products.map((product) => ({
+    id: product.id,
+    sku: product.sku,
+    name: product.name,
+    slug: product.slug,
+    category: product.category,
+    subcategory: product.subcategory,
+    childCategory: product.childCategory,
+    brand: product.brand,
+    model: product.model,
+    moq: product.moq,
+    retailPrice: product.retailPrice,
+    stockStatus: product.stockStatus,
+    leadTime: product.leadTime,
+    image: product.image,
+    priceRange: product.priceRange,
+    tiers: product.tiers,
+    variants: product.variants,
+  }));
 }
 
 export async function getAdminProducts(): Promise<AdminProductsResult> {

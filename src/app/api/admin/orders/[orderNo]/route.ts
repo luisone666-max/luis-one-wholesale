@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { awardCustomerLoyaltyPoints } from "@/lib/loyalty-points-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 const orderStatuses = new Set([
@@ -99,6 +100,34 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
     update.admin_notes = payload.adminNotes;
   }
 
+  if ("salesAdminUserId" in payload) {
+    const salesAdminUserId = typeof payload.salesAdminUserId === "string" ? payload.salesAdminUserId.trim() : "";
+
+    if (!salesAdminUserId) {
+      update.sales_admin_user_id = null;
+      update.sales_name_snapshot = null;
+      update.sales_assigned_at = null;
+      update.sales_assigned_by_admin_user_id = null;
+    } else {
+      const { data: salesUser, error: salesUserError } = await admin
+        .from("admin_users")
+        .select("id,name,email,active")
+        .eq("id", salesAdminUserId)
+        .eq("active", true)
+        .maybeSingle();
+
+      if (salesUserError || !salesUser) {
+        return jsonError(salesUserError?.message ?? "Salesperson was not found.", 404);
+      }
+
+      const user = salesUser as { id: string; name: string | null; email: string | null };
+      update.sales_admin_user_id = user.id;
+      update.sales_name_snapshot = user.name || user.email || "Admin User";
+      update.sales_assigned_at = new Date().toISOString();
+      update.sales_assigned_by_admin_user_id = guard.admin.id;
+    }
+  }
+
   if (!Object.keys(update).length) {
     return jsonError("No valid update fields were provided.");
   }
@@ -107,7 +136,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
     .from("orders")
     .update(update)
     .eq("order_no", orderNo)
-    .select("order_no,product_total,order_status,payment_status,shipping_fee_payment_method,shipping_fee_amount,shipping_fee_status,admin_notes")
+    .select("id,order_no,customer_id,product_total,order_status,payment_status,shipping_fee_payment_method,shipping_fee_amount,shipping_fee_status,admin_notes,sales_admin_user_id,sales_name_snapshot")
     .single();
 
   if (error || !data) {
@@ -115,7 +144,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
   }
 
   const row = data as {
+    id: string;
     order_no: string;
+    customer_id: string | null;
     product_total: number | string | null;
     order_status: string | null;
     payment_status: string | null;
@@ -123,10 +154,25 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
     shipping_fee_amount: number | string | null;
     shipping_fee_status: string | null;
     admin_notes: string | null;
+    sales_admin_user_id: string | null;
+    sales_name_snapshot: string | null;
   };
+  const loyalty =
+    update.payment_status === "fully_paid"
+      ? await awardCustomerLoyaltyPoints({
+          supabase: admin,
+          customerId: row.customer_id,
+          sourceType: "online_order",
+          sourceId: row.id,
+          amount: Number(row.product_total ?? 0),
+          createdByAdminUserId: guard.admin.id,
+          note: `Online order ${row.order_no} marked fully paid.`,
+        })
+      : null;
 
   return NextResponse.json({
     ok: true,
+    loyalty,
     order: {
       orderNo: row.order_no,
       productTotal: Number(row.product_total ?? 0),
@@ -137,6 +183,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
       shippingFeeAmount: row.shipping_fee_amount === null ? null : Number(row.shipping_fee_amount),
       shippingFeeStatus: row.shipping_fee_status ?? "to_be_confirmed",
       adminNotes: row.admin_notes ?? "",
+      salesAdminUserId: row.sales_admin_user_id ?? "",
+      salesName: row.sales_name_snapshot ?? "",
     },
   });
 }

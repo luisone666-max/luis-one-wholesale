@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { assertUniqueVariantSkus, saveProductVariants } from "@/lib/admin-product-variants";
 import { parseProductPayload, type ProductPayload } from "@/lib/admin-product-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
-import { getAdminProducts } from "@/lib/admin-products-data";
+import { getAdminProducts, toAdminProductLookupRecords } from "@/lib/admin-products-data";
+import { canManageProducts } from "@/lib/admin-role-access";
 import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -21,6 +22,14 @@ export async function GET(request: Request) {
 
   if (result.error) {
     return jsonError(result.error, 500);
+  }
+
+  if (guard.admin.role === "sales" || guard.admin.role === "staff") {
+    return NextResponse.json({ ok: true, products: toAdminProductLookupRecords(result.products), categories: [] });
+  }
+
+  if (!canManageProducts(guard.admin.role)) {
+    return jsonError("Only product managers or sales staff can view product data.", 403);
   }
 
   return NextResponse.json({ ok: true, products: result.products, categories: result.categories });
@@ -51,6 +60,10 @@ export async function POST(request: Request) {
 
   if (guard.response) {
     return guard.response;
+  }
+
+  if (!guard.admin || !canManageProducts(guard.admin.role)) {
+    return jsonError("Only product managers can create products.", 403);
   }
 
   const admin = createSupabaseAdminClient();

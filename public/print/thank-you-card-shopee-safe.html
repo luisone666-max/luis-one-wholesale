@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Luis One Shopee Thank You Card</title>
+    <style>
+      :root {
+        --orange: #f45116;
+        --orange-dark: #c7350a;
+        --ink: #161616;
+        --muted: #646464;
+        --line: #f0d6c6;
+        --paper: #fff9f5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #eeeeee;
+        color: var(--ink);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .card {
+        width: 105mm;
+        height: 148mm;
+        overflow: hidden;
+        position: relative;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background:
+          radial-gradient(circle at 84% 8%, rgba(244, 81, 22, 0.16), transparent 32%),
+          linear-gradient(180deg, #fff 0%, var(--paper) 100%);
+        box-shadow: 0 24px 80px rgba(22, 22, 22, 0.16);
+      }
+
+      .stripe {
+        height: 10px;
+        background: linear-gradient(90deg, var(--orange-dark), var(--orange));
+      }
+
+      .inner {
+        padding: 18px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+      }
+
+      .brand img {
+        width: 52px;
+        height: 52px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 10px 22px rgba(244, 81, 22, 0.26);
+      }
+
+      .brand strong {
+        display: block;
+        font-size: 21px;
+        line-height: 1;
+        letter-spacing: -0.035em;
+      }
+
+      .brand span {
+        display: block;
+        margin-top: 4px;
+        color: var(--orange);
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.22em;
+      }
+
+      h1 {
+        margin: 20px 0 7px;
+        font-size: 31px;
+        line-height: 0.96;
+        letter-spacing: -0.055em;
+      }
+
+      .lead {
+        margin: 0;
+        color: #4f4f4f;
+        font-size: 12px;
+        line-height: 1.45;
+        font-weight: 700;
+      }
+
+      .benefits {
+        margin-top: 15px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.82);
+      }
+
+      .benefits p {
+        margin: 0 0 8px;
+        color: var(--orange-dark);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .benefits ul {
+        display: grid;
+        gap: 5px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        color: #282828;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .scan {
+        margin-top: 15px;
+        display: grid;
+        grid-template-columns: 136px 1fr;
+        gap: 13px;
+        align-items: center;
+        padding: 12px;
+        border-radius: 16px;
+        background: #161616;
+        color: #fff;
+      }
+
+      .scan img {
+        width: 136px;
+        height: 136px;
+        border-radius: 12px;
+        background: #fff;
+        padding: 7px;
+      }
+
+      .scan h2 {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.04;
+        letter-spacing: -0.045em;
+      }
+
+      .scan p {
+        margin: 8px 0 0;
+        color: #ffd8c5;
+        font-size: 11px;
+        line-height: 1.45;
+        font-weight: 800;
+      }
+
+      .follow {
+        margin-top: 11px;
+        display: grid;
+        grid-template-columns: 60px 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+      }
+
+      .follow img {
+        width: 60px;
+        height: 60px;
+      }
+
+      .follow strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .follow span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.35;
+        font-weight: 800;
+      }
+
+      .safe-note {
+        margin-top: 11px;
+        border-radius: 12px;
+        background: #fff3eb;
+        color: #7a3416;
+        padding: 10px;
+        font-size: 9.5px;
+        line-height: 1.4;
+        font-weight: 800;
+      }
+
+      .footer {
+        position: absolute;
+        inset-inline: 18px;
+        bottom: 13px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        border-top: 1px solid var(--line);
+        padding-top: 9px;
+        color: #7b3c20;
+        font-size: 8.5px;
+        line-height: 1.2;
+        font-weight: 900;
+      }
+
+      .print-button {
+        position: fixed;
+        left: 24px;
+        bottom: 24px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--orange);
+        color: #fff;
+        padding: 11px 16px;
+        font-size: 13px;
+        font-weight: 900;
+        box-shadow: 0 12px 30px rgba(244, 81, 22, 0.35);
+        cursor: pointer;
+      }
+
+      @page {
+        size: A6;
+        margin: 0;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+          padding: 0;
+        }
+
+        .card {
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+
+        .print-button {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" aria-label="Luis One Shopee thank you card">
+      <div class="stripe"></div>
+      <section class="inner">
+        <header class="brand">
+          <img src="/brand/luis-one-logo.jpg" alt="Luis One logo" />
+          <div>
+            <strong>Luis One</strong>
+            <span>MOTO SUPPLY PH</span>
+          </div>
+        </header>
+
+        <h1>THANK YOU<br />FOR YOUR ORDER &#10084;</h1>
+        <p class="lead">
+          We appreciate your purchase. Save our shop and follow our page for product updates.
+        </p>
+
+        <section class="benefits">
+          <p>Follow us for:</p>
+          <ul>
+            <li>&#10003; New arrivals</li>
+            <li>&#10003; Restock updates</li>
+            <li>&#10003; Shopee promos</li>
+            <li>&#10003; Small surprises for followers</li>
+          </ul>
+        </section>
+
+        <section class="scan">
+          <img src="/print/qr-shopee.png" alt="Shopee shop QR code" />
+          <div>
+            <h2>Scan to visit our Shopee shop</h2>
+            <p>Save Luis One and check our latest items on Shopee.</p>
+          </div>
+        </section>
+
+        <section class="follow">
+          <img src="/print/qr-facebook.png" alt="Facebook page QR code" />
+          <div>
+            <strong>Follow our Facebook page</strong>
+            <span>Luis One Moto Supply PH for new product posts and store updates.</span>
+          </div>
+        </section>
+
+        <div class="safe-note">
+          For Shopee order concerns, please use your Shopee order page or Shopee chat so your purchase remains protected.
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>Luis One Moto Supply PH</span>
+        <span>Thank you for supporting our shop.</span>
+      </footer>
+    </main>
+
+    <button class="print-button" type="button" onclick="window.print()">Print A6 Card</button>
+  </body>
+</html>

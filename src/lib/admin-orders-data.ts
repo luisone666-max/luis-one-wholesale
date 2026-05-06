@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import type { AdminStaffUser } from "@/lib/admin-users-data";
 
 type OrderRow = {
   id: string;
@@ -16,6 +17,8 @@ type OrderRow = {
   shipping_fee_status: string | null;
   order_notes: string | null;
   admin_notes: string | null;
+  sales_admin_user_id: string | null;
+  sales_name_snapshot: string | null;
   created_at: string | null;
 };
 
@@ -45,6 +48,12 @@ type OrderItemRow = {
 };
 
 type ProductRow = {
+  id: string;
+  image_url: string | null;
+  stock_status: string | null;
+};
+
+type ProductVariantRow = {
   id: string;
   image_url: string | null;
   stock_status: string | null;
@@ -108,6 +117,8 @@ export type AdminOrderRecord = {
   amountToConfirm: number;
   orderStatus: string;
   paymentStatus: string;
+  salesAdminUserId: string;
+  salesName: string;
   items: AdminOrderItem[];
   payments: AdminPaymentRecord[];
   adminNotes: string;
@@ -115,6 +126,7 @@ export type AdminOrderRecord = {
 
 export type AdminOrdersResult = {
   orders: AdminOrderRecord[];
+  staffUsers: AdminStaffUser[];
   error?: string;
 };
 
@@ -162,21 +174,49 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
   const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
-    return { orders: [], error: "Supabase admin client is not configured." };
+    return { orders: [], staffUsers: [], error: "Supabase admin client is not configured." };
   }
 
-  const { data: ordersData, error: ordersError } = await supabase
-    .from("orders")
-    .select(
-      "id,order_no,customer_id,product_total,order_status,payment_status,receiver_name,receiver_phone,receiving_method,complete_address,shipping_fee_payment_method,shipping_fee_amount,shipping_fee_status,order_notes,admin_notes,created_at",
-    )
-    .order("created_at", { ascending: false });
+  const [ordersResult, staffResult] = await Promise.all([
+    supabase
+      .from("orders")
+      .select(
+        "id,order_no,customer_id,product_total,order_status,payment_status,receiver_name,receiver_phone,receiving_method,complete_address,shipping_fee_payment_method,shipping_fee_amount,shipping_fee_status,order_notes,admin_notes,sales_admin_user_id,sales_name_snapshot,created_at",
+      )
+      .order("created_at", { ascending: false }),
+    supabase.from("admin_users").select("id,email,name,role,active").eq("active", true).order("name", { ascending: true }),
+  ]);
+
+  const { data: ordersData, error: ordersError } = ordersResult;
 
   if (ordersError) {
-    return { orders: [], error: ordersError.message };
+    return { orders: [], staffUsers: [], error: ordersError.message };
+  }
+
+  if (staffResult.error) {
+    return { orders: [], staffUsers: [], error: staffResult.error.message };
   }
 
   const orders = (ordersData ?? []) as OrderRow[];
+  const staffUsers: AdminStaffUser[] = ((staffResult.data ?? []) as Array<{
+    id: string;
+    email: string | null;
+    name: string | null;
+    role: string | null;
+    active: boolean | null;
+    employee_no?: string | null;
+    notes?: string | null;
+    created_at?: string | null;
+  }>).map((user) => ({
+    id: user.id,
+    email: user.email ?? "",
+    name: user.name || user.email || "Admin User",
+    role: user.role ?? "staff",
+    active: user.active ?? false,
+    employeeNo: user.employee_no ?? "",
+    notes: user.notes ?? "",
+    createdAt: user.created_at ?? "",
+  }));
   const orderIds = orders.map((order) => order.id);
   const customerIds = [...new Set(orders.map((order) => order.customer_id).filter((id): id is string => Boolean(id)))];
 
@@ -196,29 +236,40 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
   ]);
 
   if (customersResult.error) {
-    return { orders: [], error: customersResult.error.message };
+    return { orders: [], staffUsers, error: customersResult.error.message };
   }
 
   if (itemsResult.error) {
-    return { orders: [], error: itemsResult.error.message };
+    return { orders: [], staffUsers, error: itemsResult.error.message };
   }
 
   if (paymentsResult.error) {
-    return { orders: [], error: paymentsResult.error.message };
+    return { orders: [], staffUsers, error: paymentsResult.error.message };
   }
 
   const orderItems = (itemsResult.data ?? []) as OrderItemRow[];
   const productIds = [...new Set(orderItems.map((item) => item.product_id).filter((id): id is string => Boolean(id)))];
-  const productsResult = productIds.length
-    ? await supabase.from("products").select("id,image_url,stock_status").in("id", productIds)
-    : { data: [], error: null };
+  const variantIds = [...new Set(orderItems.map((item) => item.variant_id).filter((id): id is string => Boolean(id)))];
+  const [productsResult, variantsResult] = await Promise.all([
+    productIds.length
+      ? supabase.from("products").select("id,image_url,stock_status").in("id", productIds)
+      : Promise.resolve({ data: [], error: null }),
+    variantIds.length
+      ? supabase.from("product_variants").select("id,image_url,stock_status").in("id", variantIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
   if (productsResult.error) {
-    return { orders: [], error: productsResult.error.message };
+    return { orders: [], staffUsers, error: productsResult.error.message };
+  }
+
+  if (variantsResult.error) {
+    return { orders: [], staffUsers, error: variantsResult.error.message };
   }
 
   const customersById = new Map(((customersResult.data ?? []) as CustomerRow[]).map((customer) => [customer.id, customer]));
   const productsById = new Map(((productsResult.data ?? []) as ProductRow[]).map((product) => [product.id, product]));
+  const variantsById = new Map(((variantsResult.data ?? []) as ProductVariantRow[]).map((variant) => [variant.id, variant]));
   const itemsByOrderId = new Map<string, OrderItemRow[]>();
   const paymentsByOrderId = new Map<string, PaymentRecordRow[]>();
 
@@ -239,6 +290,7 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
   }
 
   return {
+    staffUsers,
     orders: orders.map((order) => {
       const customer = order.customer_id ? customersById.get(order.customer_id) : undefined;
       const productTotal = Number(order.product_total ?? 0);
@@ -265,14 +317,17 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
         amountToConfirm: productTotal,
         orderStatus: normalizeOrderStatus(order.order_status),
         paymentStatus: order.payment_status ?? "no_payment",
+        salesAdminUserId: order.sales_admin_user_id ?? "",
+        salesName: order.sales_name_snapshot ?? "",
         adminNotes: order.admin_notes ?? "",
         items: (itemsByOrderId.get(order.id) ?? []).map((item) => {
           const product = item.product_id ? productsById.get(item.product_id) : undefined;
+          const variant = item.variant_id ? variantsById.get(item.variant_id) : undefined;
 
           return {
             id: item.id,
             productId: item.product_id,
-            image: product?.image_url ?? "/products/phone-accessories.svg",
+            image: variant?.image_url || product?.image_url || "/products/phone-accessories.svg",
             sku: item.sku_snapshot ?? "",
             variantName: item.variant_name_snapshot ?? "",
             variantSku: item.variant_sku_snapshot ?? "",
@@ -280,7 +335,7 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
             quantity: item.quantity,
             unitPrice: Number(item.unit_price_snapshot),
             subtotal: Number(item.subtotal),
-            stockStatus: normalizeStockStatus(product?.stock_status ?? null),
+            stockStatus: normalizeStockStatus(variant?.stock_status ?? product?.stock_status ?? null),
             supplierNotesSnapshot: item.supplier_notes_snapshot ?? "",
           };
         }),

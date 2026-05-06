@@ -7,6 +7,7 @@ import { CustomerAuthGate } from "@/components/auth/CustomerAuthGate";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCustomerOrderDetail, type CustomerOrderDetail } from "@/lib/customer-orders";
+import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty-points";
 import {
   getOrderStatusLabel,
   getPaymentStatusLabel,
@@ -124,6 +125,10 @@ function OrderDetailContent() {
               <div className="mt-5 space-y-3 text-sm">
                 <SummaryRow label="Order No" value={order.orderNo} />
                 <SummaryRow label="Product Total" value={formatPhp(order.productTotal)} strong />
+                <SummaryRow
+                  label="Member Points"
+                  value={`${formatLoyaltyPoints(calculateLoyaltyPoints(order.productTotal))} after payment confirmation`}
+                />
                 <SummaryRow label="Order Status" value={getOrderStatusLabel(order.orderStatus)} />
                 <SummaryRow label="Payment Status" value={getPaymentStatusLabel(order.paymentStatus)} />
                 <SummaryRow label="Shipping Fee" value="Arranged manually" />

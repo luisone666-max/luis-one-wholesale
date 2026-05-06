@@ -11,7 +11,8 @@ export type ActiveAdminUser = {
   authUserId: string;
   email: string;
   name: string;
-  role: "owner" | "admin" | "staff";
+  role: "owner" | "admin" | "staff" | "sales" | "cashier" | "warehouse";
+  employeeNo: string;
 };
 
 type AdminUserRow = {
@@ -21,6 +22,7 @@ type AdminUserRow = {
   name: string | null;
   role: string | null;
   active: boolean | null;
+  employee_no: string | null;
 };
 
 export function getAdminTokenFromCookieHeader(cookieHeader: string | null) {
@@ -39,14 +41,16 @@ export function getAdminTokenFromCookieHeader(cookieHeader: string | null) {
 }
 
 function mapAdminRow(row: AdminUserRow, fallbackEmail: string): ActiveAdminUser {
-  const role = row.role === "owner" || row.role === "staff" ? row.role : "admin";
+  const validRoles = new Set(["owner", "admin", "staff", "sales", "cashier", "warehouse"]);
+  const role = validRoles.has(row.role ?? "") ? row.role : "admin";
 
   return {
     id: row.id,
     authUserId: row.auth_user_id,
     email: row.email ?? fallbackEmail,
     name: row.name ?? row.email ?? fallbackEmail,
-    role,
+    role: role as ActiveAdminUser["role"],
+    employeeNo: row.employee_no ?? "",
   };
 }
 
@@ -69,7 +73,7 @@ export async function getActiveAdminByToken(token: string): Promise<{ admin: Act
 
   const { data, error } = await supabase
     .from("admin_users")
-    .select("id,auth_user_id,email,name,role,active")
+    .select("id,auth_user_id,email,name,role,active,employee_no")
     .eq("auth_user_id", userResult.user.id)
     .eq("active", true)
     .maybeSingle();

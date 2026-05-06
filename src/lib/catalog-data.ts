@@ -33,6 +33,7 @@ type ProductRow = Pick<
   | "image_url"
   | "description"
   | "active"
+  | "created_at"
 >;
 type PriceTierRow = Pick<
   Database["public"]["Tables"]["product_price_tiers"]["Row"],
@@ -61,7 +62,23 @@ export type CatalogResult<T> = {
 };
 
 const fallbackMessage =
-  "Using mock catalog data because Supabase is not configured or the database is not reachable yet.";
+  "Catalog is refreshing. Please reload in a moment or contact us on Messenger if you need help.";
+
+function getFallbackCatalog(): CatalogSnapshot {
+  if (process.env.NODE_ENV !== "production") {
+    return {
+      categories: getMockActiveCategories(),
+      products: getMockActiveProducts(),
+      allCategoryRows: [],
+    };
+  }
+
+  return {
+    categories: [],
+    products: [],
+    allCategoryRows: [],
+  };
+}
 
 function formatCatalogError(error: unknown) {
   if (error instanceof Error) {
@@ -91,6 +108,10 @@ function toStockStatus(status: string | null): Product["stockStatus"] {
 
   if (status === "low_stock") {
     return "Low stock";
+  }
+
+  if (status === "unavailable") {
+    return "Unavailable";
   }
 
   return "Preorder";
@@ -225,6 +246,7 @@ function mapSupabaseSnapshot(
       stockCount: 0,
       sold: 900 - index * 37,
       rating: 4.6,
+      createdAt: product.created_at,
       description: product.description ?? "Wholesale product details will be maintained by admin.",
       details,
       tiers: tiers.length ? tiers : [{ label: "1+ pcs", min: 1, max: null, price: 0 }],
@@ -288,7 +310,7 @@ async function readSupabaseCatalogUncached(): Promise<CatalogSnapshot | null> {
     supabase
       .from("customer_products")
       .select(
-        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,active",
+        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,active,created_at",
       )
       .eq("active", true)
       .order("name", { ascending: true }),
@@ -344,23 +366,15 @@ export async function getCatalogSnapshot(): Promise<CatalogResult<CatalogSnapsho
     }
 
     return {
-      data: {
-        categories: getMockActiveCategories(),
-        products: getMockActiveProducts(),
-        allCategoryRows: [],
-      },
+      data: getFallbackCatalog(),
       source: "mock",
       message: fallbackMessage,
     };
   } catch (error) {
     return {
-      data: {
-        categories: getMockActiveCategories(),
-        products: getMockActiveProducts(),
-        allCategoryRows: [],
-      },
+      data: getFallbackCatalog(),
       source: "mock",
-      message: `${fallbackMessage} ${formatCatalogError(error)}`,
+      message: process.env.NODE_ENV === "production" ? fallbackMessage : `${fallbackMessage} ${formatCatalogError(error)}`,
     };
   }
 }

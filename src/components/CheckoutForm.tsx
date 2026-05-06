@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getCustomerCartItems, type CustomerCartItem } from "@/lib/customer-cart";
+import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty-points";
 import type { ReceivingMethod, ShippingFeePayment } from "@/lib/order-labels";
 import { receivingMethodLabels, shippingFeePaymentLabels } from "@/lib/order-labels";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -88,6 +89,7 @@ export function CheckoutForm() {
   const [orderNotes, setOrderNotes] = useState("");
   const shippingOptions = useMemo(() => getShippingOptions(receivingMethod), [receivingMethod]);
   const productTotal = useMemo(() => items.reduce((sum, item) => sum + (item.subtotal ?? 0), 0), [items]);
+  const estimatedPoints = calculateLoyaltyPoints(productTotal);
   const invalidCartItem = items.find((item) => item.priceError || item.appliedUnitPrice === null || item.subtotal === null);
   const addressRequired = receivingMethod === "local_delivery" || receivingMethod === "courier_shipping";
 
@@ -325,6 +327,11 @@ export function CheckoutForm() {
                 Your cart is empty. Add products before checkout.
               </div>
             ) : null}
+            {invalidCartItem ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-5 text-amber-800">
+                One or more items need Messenger confirmation before checkout. Please go back to cart and remove unavailable items.
+              </div>
+            ) : null}
             {items.map((item) => (
               <div key={item.id} className="rounded-md bg-zinc-50 p-3 ring-1 ring-zinc-100">
                 <p className="font-black text-zinc-950">{item.name}</p>
@@ -348,6 +355,9 @@ export function CheckoutForm() {
             <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-xs font-bold leading-5 text-orange-700">
               Freight collect is not added to product total. Shipping and pickup are arranged manually.
             </div>
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-700">
+              Member points estimate: {formatLoyaltyPoints(estimatedPoints)} after payment is confirmed. Every PHP 100 = 1 point.
+            </div>
             <div className="border-t border-zinc-100 pt-4">
               <SummaryRow label="Amount to Confirm" value={formatPhp(productTotal)} strong />
             </div>
@@ -355,7 +365,7 @@ export function CheckoutForm() {
           <button
             type="button"
             onClick={submitOrder}
-            disabled={loading || submitting || !items.length}
+            disabled={loading || submitting || !items.length || Boolean(invalidCartItem)}
             className="mt-6 block w-full rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
           >
             {submitting ? "Submitting..." : "Place Order"}

@@ -1,5 +1,5 @@
 export function DataSourceNotice({ message }: { message?: string }) {
-  if (!message || process.env.NODE_ENV === "production") {
+  if (!message) {
     return null;
   }
 

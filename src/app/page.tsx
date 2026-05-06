@@ -4,6 +4,7 @@ import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { businessInfo } from "@/lib/business-info";
 import { getCatalogSnapshot } from "@/lib/catalog-data";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 
@@ -64,10 +65,12 @@ export default async function Home() {
 
           {!visibleProducts.length ? (
             <div className="rounded-sm border border-dashed border-orange-200 bg-white p-8 text-center">
-              <p className="text-lg font-black text-zinc-950">No products found</p>
-              <p className="mt-2 text-sm font-bold text-zinc-500">Add products in the admin dashboard to show them here.</p>
-              <Link href="/admin/products" className="mt-4 inline-flex rounded-sm bg-[#f65f18] px-4 py-2 text-sm font-black text-white">
-                Manage Products
+              <p className="text-lg font-black text-zinc-950">{catalog.message ? "Catalog is refreshing" : "No products found"}</p>
+              <p className="mt-2 text-sm font-bold text-zinc-500">
+                {catalog.message ? "Please reload in a moment, or message us if you need product availability." : "Please check back soon for current wholesale products."}
+              </p>
+              <Link href={businessInfo.messengerUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-sm bg-[#f65f18] px-4 py-2 text-sm font-black text-white">
+                Chat on Messenger
               </Link>
             </div>
           ) : null}
@@ -79,6 +82,27 @@ export default async function Home() {
               </Link>
             </div>
           ) : null}
+
+          <section className="mt-8 grid gap-3 rounded-sm border border-orange-100 bg-white p-4 shadow-sm md:grid-cols-[1.2fr_0.8fr] md:p-6">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">About Luis One Supply Hub</p>
+              <h2 className="mt-2 text-xl font-black text-zinc-950 sm:text-2xl">Motorcycle helmets, accessories, and wholesale supplies in Manila</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">{businessInfo.description}</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">{businessInfo.extendedDescription}</p>
+              <p className="mt-3 text-sm font-bold leading-6 text-zinc-700">{businessInfo.serviceArea}</p>
+            </div>
+            <div className="rounded-sm bg-orange-50 p-4 text-sm font-bold text-zinc-700 ring-1 ring-orange-100">
+              <p className="font-black text-zinc-950">Contact & Pick-up</p>
+              <div className="mt-3 space-y-2">
+                <p>{businessInfo.address}</p>
+                <a href={`tel:${businessInfo.phoneTel}`} className="block text-orange-700">{businessInfo.phoneDisplay}</a>
+                <p>{businessInfo.hours}</p>
+                <a href={businessInfo.facebookUrl} target="_blank" rel="noreferrer" className="block text-orange-700">
+                  Facebook: Luis One Supply Hub
+                </a>
+              </div>
+            </div>
+          </section>
         </Container>
       </MarketplaceShell>
       <SiteFooter />
