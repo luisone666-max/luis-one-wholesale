@@ -105,6 +105,28 @@ function getProductCreatedTime(product: { createdAt?: string | null; slug: strin
   return Number.isFinite(time) ? time : 0;
 }
 
+function getPaginationItems(currentPage: number, totalPages: number) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
+  const sortedPages = Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+  const items: Array<number | "ellipsis"> = [];
+
+  sortedPages.forEach((page, index) => {
+    const previous = sortedPages[index - 1];
+    if (previous && page - previous > 1) {
+      items.push("ellipsis");
+    }
+    items.push(page);
+  });
+
+  return items;
+}
+
 function normalizeSearch(value: string) {
   return value
     .toLowerCase()
@@ -514,18 +536,50 @@ export default async function CategoryPage({
             ) : null}
 
             {totalPages > 1 ? (
-              <div className="relative z-10 mt-6 flex justify-center gap-2 pb-2">
-                {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-                  <Link
-                    key={page}
-                    href={pageHref(page)}
-                    className={`grid h-11 w-11 place-items-center rounded-sm text-base font-black ${
-                      page === currentPage ? "bg-[#f65f18] text-white" : "border border-zinc-200 bg-white text-zinc-700"
-                    }`}
-                  >
-                    {page}
-                  </Link>
-                ))}
+              <div className="relative z-10 mt-6 flex flex-wrap justify-center gap-1.5 pb-2 sm:gap-2">
+                <Link
+                  href={pageHref(Math.max(1, currentPage - 1))}
+                  aria-disabled={currentPage === 1}
+                  className={`grid h-10 min-w-10 place-items-center rounded-sm px-3 text-sm font-black sm:h-11 sm:min-w-11 ${
+                    currentPage === 1
+                      ? "pointer-events-none border border-zinc-100 bg-zinc-50 text-zinc-300"
+                      : "border border-zinc-200 bg-white text-zinc-700"
+                  }`}
+                >
+                  Prev
+                </Link>
+                {getPaginationItems(currentPage, totalPages).map((page, index) =>
+                  page === "ellipsis" ? (
+                    <span
+                      key={`ellipsis-${index}`}
+                      className="grid h-10 w-7 place-items-center text-sm font-black text-zinc-400 sm:h-11"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <Link
+                      key={page}
+                      href={pageHref(page)}
+                      aria-current={page === currentPage ? "page" : undefined}
+                      className={`grid h-10 w-10 place-items-center rounded-sm text-sm font-black sm:h-11 sm:w-11 sm:text-base ${
+                        page === currentPage ? "bg-[#f65f18] text-white" : "border border-zinc-200 bg-white text-zinc-700"
+                      }`}
+                    >
+                      {page}
+                    </Link>
+                  ),
+                )}
+                <Link
+                  href={pageHref(Math.min(totalPages, currentPage + 1))}
+                  aria-disabled={currentPage === totalPages}
+                  className={`grid h-10 min-w-10 place-items-center rounded-sm px-3 text-sm font-black sm:h-11 sm:min-w-11 ${
+                    currentPage === totalPages
+                      ? "pointer-events-none border border-zinc-100 bg-zinc-50 text-zinc-300"
+                      : "border border-zinc-200 bg-white text-zinc-700"
+                  }`}
+                >
+                  Next
+                </Link>
               </div>
             ) : null}
         </Container>
