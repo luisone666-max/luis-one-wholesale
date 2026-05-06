@@ -79,13 +79,26 @@ function getTierRange(tiers: AdminProductTier[]) {
   return `${formatPhp(Math.min(...prices))} - ${formatPhp(Math.max(...prices))}`;
 }
 
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\bbreaks?\b/g, "brake")
+    .replace(/\btop\s*box\b/g, "topbox")
+    .replace(/\bkey\s*set\b/g, "keyset")
+    .replace(/\bn\s*max\b/g, "nmax")
+    .replace(/([a-z])([0-9])/g, "$1 $2")
+    .replace(/([0-9])([a-z])/g, "$1 $2")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 export function AdminProductPriceLookupClient({ products, initialError }: { products: AdminProductLookupRecord[]; initialError?: string }) {
   const { language } = useAdminI18n();
   const t = language === "zh" ? { ...priceLookupZh, ...readablePriceLookupZh } : copy.en;
   const [search, setSearch] = useState("");
 
   const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = normalizeSearchText(search);
 
     if (!query) {
       return products;
@@ -93,7 +106,7 @@ export function AdminProductPriceLookupClient({ products, initialError }: { prod
 
     return products.filter((product) => {
       const variantText = product.variants.map((variant) => `${variant.name} ${variant.sku} ${variant.model} ${variant.fits}`).join(" ");
-      const haystack = `${product.sku} ${product.name} ${product.category} ${product.subcategory} ${product.childCategory} ${product.brand} ${product.model} ${variantText}`.toLowerCase();
+      const haystack = normalizeSearchText(`${product.sku} ${product.name} ${product.category} ${product.subcategory} ${product.childCategory} ${product.brand} ${product.model} ${variantText}`);
       return query.split(/\s+/).every((word) => haystack.includes(word));
     });
   }, [products, search]);
