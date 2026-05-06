@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { canUseCashierCenter } from "@/lib/admin-role-access";
+import { getCashDrawerData } from "@/lib/cash-drawer-data";
 import { awardCustomerLoyaltyPoints } from "@/lib/loyalty-points-server";
 import { writePosSaleAuditLog } from "@/lib/pos-audit-log";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
@@ -121,5 +122,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     snapshot: { saleNo: sale.sale_no, amount: paidAmount, paymentMethod: sale.payment_method, referenceNo },
   });
 
-  return NextResponse.json({ ok: true, saleId: sale.id, status: "paid", loyalty });
+  const cashDrawer = await getCashDrawerData();
+
+  return NextResponse.json({
+    ok: true,
+    saleId: sale.id,
+    status: "paid",
+    loyalty,
+    cashDrawer: {
+      businessDate: cashDrawer.businessDate,
+      cashSalesTotal: cashDrawer.cashSalesTotal,
+      gcashSalesTotal: cashDrawer.gcashSalesTotal,
+      bankTransferSalesTotal: cashDrawer.bankTransferSalesTotal,
+      transferSalesTotal: cashDrawer.transferSalesTotal,
+      expectedCash: cashDrawer.expectedCash,
+    },
+  });
 }

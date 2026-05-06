@@ -34,6 +34,9 @@ export type CashDrawerData = {
   entries: CashDrawerEntry[];
   offlineSalesTotal: number;
   cashSalesTotal: number;
+  gcashSalesTotal: number;
+  bankTransferSalesTotal: number;
+  otherSalesTotal: number;
   transferSalesTotal: number;
   cashOutTotal: number;
   cashInAdjustmentTotal: number;
@@ -100,6 +103,9 @@ export async function getCashDrawerData(date?: string | null): Promise<CashDrawe
       entries: [],
       offlineSalesTotal: 0,
       cashSalesTotal: 0,
+      gcashSalesTotal: 0,
+      bankTransferSalesTotal: 0,
+      otherSalesTotal: 0,
       transferSalesTotal: 0,
       cashOutTotal: 0,
       cashInAdjustmentTotal: 0,
@@ -128,6 +134,9 @@ export async function getCashDrawerData(date?: string | null): Promise<CashDrawe
       entries: [],
       offlineSalesTotal: 0,
       cashSalesTotal: 0,
+      gcashSalesTotal: 0,
+      bankTransferSalesTotal: 0,
+      otherSalesTotal: 0,
       transferSalesTotal: 0,
       cashOutTotal: 0,
       cashInAdjustmentTotal: 0,
@@ -144,6 +153,9 @@ export async function getCashDrawerData(date?: string | null): Promise<CashDrawe
       entries: [],
       offlineSalesTotal: 0,
       cashSalesTotal: 0,
+      gcashSalesTotal: 0,
+      bankTransferSalesTotal: 0,
+      otherSalesTotal: 0,
       transferSalesTotal: 0,
       cashOutTotal: 0,
       cashInAdjustmentTotal: 0,
@@ -165,6 +177,9 @@ export async function getCashDrawerData(date?: string | null): Promise<CashDrawe
       entries: [],
       offlineSalesTotal: 0,
       cashSalesTotal: 0,
+      gcashSalesTotal: 0,
+      bankTransferSalesTotal: 0,
+      otherSalesTotal: 0,
       transferSalesTotal: 0,
       cashOutTotal: 0,
       cashInAdjustmentTotal: 0,
@@ -184,8 +199,13 @@ export async function getCashDrawerData(date?: string | null): Promise<CashDrawe
 
   const paymentBreakdown = Array.from(paymentBreakdownMap.entries()).map(([method, amount]) => ({ method, amount }));
   const cashSalesTotal = paymentBreakdownMap.get("cash") ?? 0;
+  const gcashSalesTotal = paymentBreakdownMap.get("gcash") ?? 0;
+  const bankTransferSalesTotal = paymentBreakdownMap.get("bank_transfer") ?? 0;
+  const otherSalesTotal = paymentBreakdown
+    .filter((payment) => payment.method !== "cash" && payment.method !== "gcash" && payment.method !== "bank_transfer")
+    .reduce((total, payment) => total + payment.amount, 0);
   const offlineSalesTotal = paymentBreakdown.reduce((total, payment) => total + payment.amount, 0);
-  const transferSalesTotal = offlineSalesTotal - cashSalesTotal;
+  const transferSalesTotal = gcashSalesTotal + bankTransferSalesTotal;
   const cashOutTotal = entries.filter((entry) => entry.entryType === "cash_out").reduce((total, entry) => total + entry.amount, 0);
   const cashInAdjustmentTotal = entries
     .filter((entry) => entry.entryType === "cash_in_adjustment" && !entry.reason.toLowerCase().startsWith("pos cash sale"))
@@ -198,6 +218,9 @@ export async function getCashDrawerData(date?: string | null): Promise<CashDrawe
     entries,
     offlineSalesTotal,
     cashSalesTotal,
+    gcashSalesTotal,
+    bankTransferSalesTotal,
+    otherSalesTotal,
     transferSalesTotal,
     cashOutTotal,
     cashInAdjustmentTotal,

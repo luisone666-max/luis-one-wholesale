@@ -17,6 +17,9 @@ const copy = {
     offlineSalesTotal: "Offline Sales Total",
     cashSales: "Cash Received",
     transferSales: "GCash / Bank Transfer",
+    gcashSales: "GCash Received",
+    bankTransferSales: "Bank Transfer Received",
+    otherSales: "Other Payment",
     cashInAdjustment: "Cash In Adjustment",
     cashOut: "Cash Out",
     expectedCash: "Expected Cash",
@@ -55,6 +58,9 @@ const copy = {
     offlineSalesTotal: "线下总销售额",
     cashSales: "现金收入",
     transferSales: "GCash / 银行转账",
+    gcashSales: "GCash 收入",
+    bankTransferSales: "银行转账收入",
+    otherSales: "其他收款",
     cashInAdjustment: "补入现金",
     cashOut: "现金支出",
     expectedCash: "系统应有现金",
@@ -95,6 +101,9 @@ const zhCopy = {
   offlineSalesTotal: "线下总销售额",
   cashSales: "现金收入",
   transferSales: "GCash / 银行转账",
+  gcashSales: "GCash 收入",
+  bankTransferSales: "银行转账收入",
+  otherSales: "其他收款",
   cashInAdjustment: "补入现金",
   cashOut: "现金支出",
   expectedCash: "系统应有现金",
@@ -291,12 +300,19 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Card title={t.offlineSalesTotal} value={formatPhp(data.offlineSalesTotal)} tone="orange" />
         <Card title={t.cashSales} value={formatPhp(data.cashSalesTotal)} tone="green" />
-        <Card title={t.transferSales} value={formatPhp(data.transferSalesTotal)} />
+        <Card title={t.gcashSales} value={formatPhp(data.gcashSalesTotal)} />
+        <Card title={t.bankTransferSales} value={formatPhp(data.bankTransferSalesTotal)} />
         <Card title={t.expectedCash} value={formatPhp(data.expectedCash)} tone="green" />
       </section>
+
+      {data.otherSalesTotal > 0 ? (
+        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-black text-amber-900">
+          {t.otherSales}: {formatPhp(data.otherSalesTotal)}
+        </section>
+      ) : null}
 
       {!session ? (
         <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">

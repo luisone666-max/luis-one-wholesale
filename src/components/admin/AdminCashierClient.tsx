@@ -15,6 +15,15 @@ type LoyaltyResult = {
   message?: string;
 };
 
+type CashDrawerConfirmSummary = {
+  businessDate: string;
+  cashSalesTotal: number;
+  gcashSalesTotal: number;
+  bankTransferSalesTotal: number;
+  transferSalesTotal: number;
+  expectedCash: number;
+};
+
 const copy = {
   en: {
     caption: "Offline cashier only. Review sales slips from Sales Desk, check the payment method and amount, then confirm payment.",
@@ -162,6 +171,20 @@ function isTransferPayment(method: string) {
   return method === "gcash" || method === "bank_transfer";
 }
 
+function cashDrawerSummaryMessage(summary: CashDrawerConfirmSummary | undefined, language: "en" | "zh") {
+  if (!summary) {
+    return "";
+  }
+
+  const transferTotal = summary.gcashSalesTotal + summary.bankTransferSalesTotal;
+
+  if (language === "zh") {
+    return ` 今日钱箱：现金 ${formatPhp(summary.cashSalesTotal)}，GCash/银行 ${formatPhp(transferTotal)}，应有现金 ${formatPhp(summary.expectedCash)}。`;
+  }
+
+  return ` Today drawer: cash ${formatPhp(summary.cashSalesTotal)}, GCash/bank ${formatPhp(transferTotal)}, expected cash ${formatPhp(summary.expectedCash)}.`;
+}
+
 function SummaryCard({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "orange" | "green" | "neutral" }) {
   const toneClass = {
     green: "text-emerald-700",
@@ -241,7 +264,12 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
           notes: notesBySale[sale.id] ?? "",
         }),
       });
-      const result = (await response.json()) as { ok?: boolean; message?: string; loyalty?: LoyaltyResult };
+      const result = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+        loyalty?: LoyaltyResult;
+        cashDrawer?: CashDrawerConfirmSummary;
+      };
 
       if (!response.ok || !result.ok) {
         setMessage(result.message ?? "Payment confirmation failed.");
@@ -254,7 +282,7 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
         : result.loyalty && !result.loyalty.ok
           ? ` Points need manual check: ${result.loyalty.message ?? "unknown error"}`
           : "";
-      setMessage(`${t.confirmed}${loyaltyMessage} ${t.cashDrawerUpdated}`);
+      setMessage(`${t.confirmed}${loyaltyMessage} ${t.cashDrawerUpdated}${cashDrawerSummaryMessage(result.cashDrawer, language)}`);
     } finally {
       setLoading(false);
     }
