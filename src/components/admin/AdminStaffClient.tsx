@@ -28,6 +28,15 @@ const copy = {
     refresh: "Refresh",
     noUsers: "No staff users found.",
     ownerHint: "Owner/Admin can create staff accounts. Staff users cannot create other admin users.",
+    roleGuideTitle: "Role guide",
+    roleGuide: [
+      { role: "sales", description: "Sales Desk only. Create offline sales slips and view own sales." },
+      { role: "cashier", description: "Cashier Center and Cash Drawer. Confirm offline payments and cash totals." },
+      { role: "warehouse", description: "Products and online orders. Check stock, prepare items, and update product data." },
+      { role: "staff", description: "Basic staff access. Sales Desk plus product lookup." },
+      { role: "admin", description: "Manage products, orders, customers, reports, and staff accounts." },
+      { role: "owner", description: "Full access, including owner-level password actions and sensitive records." },
+    ],
   },
   zh: {
     caption: "在后台创建员工登录账号，并控制谁可以进入各个工作中心。",
@@ -51,6 +60,15 @@ const copy = {
     refresh: "刷新",
     noUsers: "暂无员工账号。",
     ownerHint: "Owner/Admin 可以创建员工账号。普通员工不能创建其他后台账号。",
+    roleGuideTitle: "权限说明",
+    roleGuide: [
+      { role: "sales", description: "只进销售开单。负责线下开销售单，并查看自己的销售额。" },
+      { role: "cashier", description: "进入收银中心和钱箱。负责确认线下收款和核对现金。" },
+      { role: "warehouse", description: "进入商品和线上订单。负责查库存、备货和维护商品资料。" },
+      { role: "staff", description: "基础员工权限。可用销售开单，也可查商品价格。" },
+      { role: "admin", description: "管理商品、订单、客户、报表和员工账号。" },
+      { role: "owner", description: "最高权限，可以做老板密码相关操作和查看敏感记录。" },
+    ],
   },
 };
 
@@ -180,6 +198,18 @@ export function AdminStaffClient({ initialUsers, initialError }: { initialUsers:
 
       <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-800">{t.ownerHint}</div>
       {message ? <div className="rounded-md border border-zinc-200 bg-white p-3 text-sm font-bold text-zinc-700">{message}</div> : null}
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-black uppercase tracking-[0.14em] text-zinc-500">{t.roleGuideTitle}</h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {t.roleGuide.map((item) => (
+            <div key={item.role} className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+              <p className="text-sm font-black text-zinc-950">{item.role}</p>
+              <p className="mt-1 text-xs font-bold leading-5 text-zinc-600">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <label className="block max-w-sm">
