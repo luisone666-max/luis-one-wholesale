@@ -132,12 +132,15 @@ const searchAliases: Record<string, string[]> = {
   absorber: ["shock", "suspension"],
   aerox: ["yamaha"],
   automotive: ["car", "vehicle"],
+  box: ["topbox", "motobox"],
   beat: ["honda"],
   bracket: ["mount", "holder"],
   brake: ["break", "lever"],
   breaks: ["brake"],
   cable: ["wire", "charger"],
   cables: ["wire", "charger"],
+  cap: ["helmet"],
+  child: ["kids", "helmet"],
   cleaner: ["cleaning", "spray"],
   click: ["honda"],
   coolant: ["fluid"],
@@ -154,8 +157,11 @@ const searchAliases: Record<string, string[]> = {
   mio: ["yamaha"],
   mob: ["helmet"],
   modular: ["helmet"],
+  moto: ["motorcycle"],
   motobox: ["topbox", "box"],
+  motorcycle: ["moto"],
   nmax: ["yamaha"],
+  phone: ["accessory", "accessories"],
   seat: ["saddle"],
   shock: ["absorber", "suspension"],
   shocks: ["shock", "absorber", "suspension"],
@@ -164,6 +170,7 @@ const searchAliases: Record<string, string[]> = {
   visor: ["helmet", "shield"],
   zebra: ["helmet"],
 };
+const searchStopWords = new Set(["a", "an", "and", "for", "of", "the", "to", "with"]);
 
 function expandSearchWords(words: string[]) {
   const expanded = new Set(words);
@@ -227,7 +234,7 @@ type SearchableProduct = {
 function productSearchScore(product: SearchableProduct, query: string) {
   const originalWords = normalizeSearch(query)
     .split(" ")
-    .filter((word) => word.length > 1);
+    .filter((word) => word.length > 1 && !searchStopWords.has(word));
   const words = expandSearchWords(originalWords);
 
   if (!originalWords.length) {
