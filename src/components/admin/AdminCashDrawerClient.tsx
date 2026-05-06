@@ -86,6 +86,45 @@ const copy = {
   },
 };
 
+const zhCopy = {
+  caption: "记录每日开店备用现金、线下现金收款、GCash / 银行转账、现金调整和关账差额。",
+  businessDate: "营业日期",
+  openDrawer: "打开今日钱箱",
+  openingCash: "开店备用现金",
+  openingNotes: "开店备注",
+  offlineSalesTotal: "线下总销售额",
+  cashSales: "现金收入",
+  transferSales: "GCash / 银行转账",
+  cashInAdjustment: "补入现金",
+  cashOut: "现金支出",
+  expectedCash: "系统应有现金",
+  actualCash: "实际点现金",
+  difference: "差额",
+  paymentBreakdown: "收款方式汇总",
+  paymentMethod: "收款方式",
+  addEntry: "新增现金记录",
+  entryType: "记录类型",
+  amount: "金额",
+  reason: "原因",
+  notes: "备注",
+  closeDrawer: "关账",
+  closingNotes: "关账备注",
+  entries: "现金记录",
+  refresh: "刷新",
+  noSession: "这个日期还没有打开钱箱。",
+  noEntries: "还没有现金支出或补现金记录。",
+  noPayments: "这个日期还没有已确认的线下收款记录。",
+  openedBy: "开账人员",
+  status: "状态",
+  opened: "进行中",
+  closed: "已关账",
+  saved: "已保存。",
+  cashOutOption: "现金支出 / 费用",
+  cashInOption: "补入现金",
+  closeHint: "系统应有现金 = 开店备用现金 + 已确认现金收款 + 补入现金 - 现金支出。GCash 和银行转账会单独显示，不加入实体钱箱现金。",
+  scopeNote: "钱箱只统计线下 POS 收银员已确认的收款。网站线上订单仍在“线上订单 / 付款”里处理。",
+} satisfies typeof copy.en;
+
 type ApiResult = (CashDrawerData & { ok: true }) | { ok: false; message?: string };
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -117,6 +156,17 @@ function Card({ title, value, tone = "neutral" }: { title: string; value: string
 }
 
 function paymentMethodLabel(method: string, language: "en" | "zh") {
+  if (language === "zh") {
+    const zhLabels: Record<string, string> = {
+      cash: "现金",
+      gcash: "GCash",
+      bank_transfer: "银行转账",
+      other: "其他",
+    };
+
+    return zhLabels[method] ?? method;
+  }
+
   const labels = {
     en: {
       cash: "Cash",
@@ -137,7 +187,7 @@ function paymentMethodLabel(method: string, language: "en" | "zh") {
 
 export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawerData }) {
   const { language } = useAdminI18n();
-  const t = language === "zh" ? copy.zh : copy.en;
+  const t = language === "zh" ? zhCopy : copy.en;
   const [data, setData] = useState(initialData);
   const [businessDate, setBusinessDate] = useState(initialData.businessDate);
   const [openingCash, setOpeningCash] = useState("");

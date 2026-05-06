@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { canUseCashierCenter, canUseSalesDesk } from "@/lib/admin-role-access";
+import { writePosSaleAuditLog } from "@/lib/pos-audit-log";
 import { getPosSales } from "@/lib/pos-data";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -202,6 +203,16 @@ export async function POST(request: Request) {
     await admin.from("pos_sales").delete().eq("id", sale.id);
     return jsonError(itemsError.message, 500);
   }
+
+  await writePosSaleAuditLog({
+    supabase: admin,
+    saleId: sale.id,
+    action: "created",
+    admin: guard.admin,
+    newStatus: "waiting_cashier",
+    reason: "Sales slip created and sent to cashier.",
+    snapshot: { saleNo: sale.sale_no, productTotal, totalAmount },
+  });
 
   return NextResponse.json({ ok: true, saleNo: sale.sale_no, saleId: sale.id });
 }

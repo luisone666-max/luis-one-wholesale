@@ -145,6 +145,71 @@ const copy = {
   },
 };
 
+const zhCopy = {
+  caption: "这里只做门店线下销售。销售员先开销售单，保存后交给收银员确认收款。",
+  employeeNo: "销售员工号",
+  customer: "客户",
+  walkInCustomer: "散客 / 手动客户",
+  customerName: "客户姓名",
+  customerPhone: "客户电话",
+  paymentMethod: "收款方式",
+  discount: "折扣金额",
+  priceNotes: "改价 / 折扣备注",
+  saleNotes: "销售备注",
+  addManualItem: "添加一行商品",
+  saveSale: "保存并发送给收银",
+  product: "商品",
+  qty: "数量",
+  unitPrice: "单价",
+  subtotal: "小计",
+  total: "应收金额",
+  remove: "删除",
+  saved: "销售单已保存，正在等待收银员确认收款。",
+  discountTooHigh: "折扣不能大于商品小计。",
+  selectProduct: "选择商品",
+  onlineOrdersLink: "网站客户订单请去“线上订单”处理，这里只处理线下门店销售。",
+  flowTitle: "线下 POS 流程",
+  flowStep1: "1. 销售员开单",
+  flowStep2: "2. 收银员确认收款",
+  flowStep3: "3. 老板查看报表",
+  myStats: "我的销售",
+  allStats: "门店 POS 销售",
+  todaySales: "今日已收款销售额",
+  monthSales: "本月已收款销售额",
+  waitingCashier: "待收银",
+  paidSales: "已收款",
+  productSearch: "搜索商品 SKU 或名称",
+  statNote: "今日和本月销售额只统计收银员已确认收款的销售单，待收银金额单独显示。",
+  slips: "张单",
+  recentSales: "最近销售单",
+  refreshRecent: "刷新销售单",
+  saleNo: "销售单号",
+  status: "状态",
+  waitingStatus: "等待收银",
+  paidStatus: "已收款",
+  cancelledStatus: "已取消",
+  date: "日期",
+  printA6: "打印 A6",
+  stepCustomer: "1. 客户与收款方式",
+  stepItems: "2. 商品与价格",
+  stepSubmit: "3. 发送给收银",
+  memberCustomer: "已选择会员客户。收银确认后会自动计算积分。",
+  walkInNoPoints: "散客单。除非选择客户账号，否则不会累计会员积分。",
+  amountPreview: "收银员应收",
+  cashPaymentHint: "现金单会在收银确认后进入钱箱现金统计。",
+  transferPaymentHint: "GCash / 银行转账会单独统计，不进入实体钱箱现金。",
+  customerNamePlaceholder: "散客姓名",
+  memberBadge: "会员",
+  walkInBadge: "散客",
+  employeeLocked: "工号已锁定，用于销售归属和审计记录。",
+  quickAddProducts: "快速加商品",
+  tapProductToAdd: "点击下面商品加入销售单，重复点同款会自动增加数量。",
+  noProductResults: "没有找到商品，也可以手动添加一行。",
+  orderBreakdown: "订单拆分",
+  productTotal: "商品小计",
+  cashierReceives: "收银员应收",
+} satisfies typeof copy.en;
+
 const salesDeskFlowText = {
   en: {
     quickAddProducts: "Quick Add Products",
@@ -161,6 +226,37 @@ const salesDeskFlowText = {
     orderBreakdown: "\u8ba2\u5355\u62c6\u5206",
     productTotal: "\u5546\u54c1\u5c0f\u8ba1",
     cashierReceives: "\u6536\u94f6\u5458\u5e94\u6536",
+  },
+};
+
+const saleActionsText = {
+  en: {
+    editSale: "Edit",
+    cancelSale: "Cancel",
+    voidPaidSale: "Void Paid",
+    stopEditing: "Stop Editing",
+    editingSale: "Editing sale",
+    updateSale: "Save Changes and Send to Cashier",
+    editReason: "Corrected before cashier confirmation.",
+    cancelReasonPrompt: "Reason for cancelling this sales slip?",
+    voidReasonPrompt: "Owner/Admin reason for voiding this paid sale?",
+    cancelDone: "Sales slip cancelled.",
+    voidDone: "Paid sale voided. Payment total was reversed.",
+    action: "Action",
+  },
+  zh: {
+    editSale: "修改",
+    cancelSale: "取消",
+    voidPaidSale: "作废已收款",
+    stopEditing: "停止修改",
+    editingSale: "正在修改销售单",
+    updateSale: "保存修改并发送给收银",
+    editReason: "收银确认前修改销售单。",
+    cancelReasonPrompt: "请输入取消这张销售单的原因：",
+    voidReasonPrompt: "老板/Admin 作废已收款销售单的原因：",
+    cancelDone: "销售单已取消。",
+    voidDone: "已收款销售单已作废，收款金额已反向冲销。",
+    action: "操作",
   },
 };
 
@@ -213,6 +309,17 @@ function productMatchesSearch(product: Product, search: string) {
 }
 
 function paymentMethodLabel(method: string, language: "en" | "zh") {
+  if (language === "zh") {
+    const zhLabels: Record<string, string> = {
+      cash: "现金",
+      gcash: "GCash",
+      bank_transfer: "银行转账",
+      other: "其他",
+    };
+
+    return zhLabels[method] ?? method;
+  }
+
   const labels = {
     en: {
       cash: "Cash",
@@ -251,8 +358,9 @@ export function AdminSalesDeskClient({
   initialError?: string;
 }) {
   const { language } = useAdminI18n();
-  const t = language === "zh" ? copy.zh : copy.en;
+  const t = language === "zh" ? zhCopy : copy.en;
   const ui = salesDeskFlowText[language];
+  const actionText = saleActionsText[language];
   const [employeeNo, setEmployeeNo] = useState(defaultEmployeeNo);
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -265,6 +373,8 @@ export function AdminSalesDeskClient({
   const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
   const [sales, setSales] = useState(recentSales);
   const [printSale, setPrintSale] = useState<PosSaleRecord | null>(null);
+  const [editingSaleId, setEditingSaleId] = useState("");
+  const [editingSaleNo, setEditingSaleNo] = useState("");
   const [message, setMessage] = useState(initialError ?? "");
   const [loading, setLoading] = useState(false);
   const selectedCustomer = useMemo(() => customers.find((item) => item.id === customerId), [customerId, customers]);
@@ -363,7 +473,57 @@ export function AdminSalesDeskClient({
       return t.cancelledStatus;
     }
 
+    if (status === "returned_to_sales") {
+      return language === "zh" ? "退回销售修改" : "Returned to Sales";
+    }
+
+    if (status === "voided") {
+      return language === "zh" ? "已作废" : "Voided";
+    }
+
     return status;
+  }
+
+  function resetForm() {
+    setItems([emptyItem()]);
+    setCustomerId("");
+    setCustomerName("");
+    setCustomerPhone("");
+    setDiscountAmount("0");
+    setPriceChangeNotes("");
+    setSaleNotes("");
+    setEditingSaleId("");
+    setEditingSaleNo("");
+
+    if (!canChangeEmployeeNo) {
+      setEmployeeNo(defaultEmployeeNo);
+    }
+  }
+
+  function loadSaleForEdit(sale: PosSaleRecord) {
+    setEditingSaleId(sale.id);
+    setEditingSaleNo(sale.saleNo);
+    setEmployeeNo(sale.salespersonEmployeeNo || defaultEmployeeNo);
+    setCustomerId(sale.customerId);
+    setCustomerName(sale.customerName);
+    setCustomerPhone(sale.customerPhone);
+    setPaymentMethod(sale.paymentMethod || "cash");
+    setDiscountAmount(String(sale.discountAmount ?? 0));
+    setPriceChangeNotes(sale.priceChangeNotes);
+    setSaleNotes(sale.saleNotes);
+    setItems(
+      sale.items.length
+        ? sale.items.map((item) => ({
+            productId: item.productId,
+            sku: item.sku,
+            name: item.name,
+            quantity: String(item.quantity),
+            unitPrice: String(item.unitPrice),
+            notes: item.notes,
+          }))
+        : [emptyItem()],
+    );
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function refreshRecent() {
@@ -384,6 +544,36 @@ export function AdminSalesDeskClient({
     window.setTimeout(() => window.print(), 50);
   }
 
+  async function runSaleAction(sale: PosSaleRecord, action: "cancel" | "void_paid", promptText: string, successText: string) {
+    const reason = window.prompt(promptText);
+
+    if (!reason?.trim()) {
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/pos/sales/${sale.id}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, reason }),
+      });
+      const result = (await response.json()) as { ok?: boolean; message?: string };
+
+      if (!response.ok || !result.ok) {
+        setMessage(result.message ?? "Sale action failed.");
+        return;
+      }
+
+      setMessage(successText);
+      await refreshRecent();
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function saveSale() {
     if ((Number(discountAmount) || 0) > productTotal) {
       setMessage(t.discountTooHigh);
@@ -394,8 +584,8 @@ export function AdminSalesDeskClient({
     setMessage("");
 
     try {
-      const response = await fetch("/api/admin/pos/sales", {
-        method: "POST",
+      const response = await fetch(editingSaleId ? `/api/admin/pos/sales/${editingSaleId}` : "/api/admin/pos/sales", {
+        method: editingSaleId ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           employeeNo,
@@ -407,6 +597,7 @@ export function AdminSalesDeskClient({
           priceChangeNotes,
           saleNotes,
           items,
+          reason: actionText.editReason,
         }),
       });
       const result = (await response.json()) as { ok?: boolean; message?: string; saleNo?: string };
@@ -416,14 +607,8 @@ export function AdminSalesDeskClient({
         return;
       }
 
-      setMessage(`${t.saved} ${result.saleNo ?? ""}`);
-      setItems([emptyItem()]);
-      setCustomerId("");
-      setCustomerName("");
-      setCustomerPhone("");
-      setDiscountAmount("0");
-      setPriceChangeNotes("");
-      setSaleNotes("");
+      setMessage(`${editingSaleId ? actionText.updateSale : t.saved} ${result.saleNo ?? ""}`);
+      resetForm();
       await refreshRecent();
     } finally {
       setLoading(false);
@@ -447,6 +632,16 @@ export function AdminSalesDeskClient({
         </div>
       </section>
       {message ? <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-800">{message}</div> : null}
+      {editingSaleId ? (
+        <section className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            {actionText.editingSale}: {editingSaleNo}
+          </span>
+          <button type="button" onClick={resetForm} className="rounded-md border border-amber-300 bg-white px-4 py-2 text-xs font-black text-amber-800">
+            {actionText.stopEditing}
+          </button>
+        </section>
+      ) : null}
 
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -657,7 +852,7 @@ export function AdminSalesDeskClient({
             {t.addManualItem}
           </button>
           <button type="button" disabled={loading} onClick={() => void saveSale()} className="rounded-md bg-[#f65f18] px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">
-            {t.saveSale}
+            {editingSaleId ? actionText.updateSale : t.saveSale}
           </button>
         </div>
       </section>
@@ -683,6 +878,7 @@ export function AdminSalesDeskClient({
                 <th className="px-4 py-3">{t.status}</th>
                 <th className="px-4 py-3">{t.date}</th>
                 <th className="px-4 py-3">{t.printA6}</th>
+                <th className="px-4 py-3">{actionText.action}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -691,7 +887,7 @@ export function AdminSalesDeskClient({
                   <tr key={sale.id}>
                     <td className="px-4 py-3 font-black text-zinc-950">{sale.saleNo}</td>
                     <td className="px-4 py-3 text-zinc-600">{sale.customerName}</td>
-                    <td className="px-4 py-3 text-zinc-600">{sale.paymentMethod}</td>
+                    <td className="px-4 py-3 text-zinc-600">{paymentMethodLabel(sale.paymentMethod, language)}</td>
                     <td className="px-4 py-3 font-black text-orange-700">{formatPhp(sale.totalAmount)}</td>
                     <td className="px-4 py-3">
                       <StatusPill tone={sale.status === "paid" ? "green" : "orange"}>{statusLabel(sale.status)}</StatusPill>
@@ -702,11 +898,40 @@ export function AdminSalesDeskClient({
                         {t.printA6}
                       </button>
                     </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        {sale.status === "waiting_cashier" || sale.status === "returned_to_sales" ? (
+                          <>
+                            <button type="button" onClick={() => loadSaleForEdit(sale)} className="rounded-md border border-zinc-200 px-3 py-2 text-xs font-black text-zinc-700">
+                              {actionText.editSale}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={loading}
+                              onClick={() => void runSaleAction(sale, "cancel", actionText.cancelReasonPrompt, actionText.cancelDone)}
+                              className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-60"
+                            >
+                              {actionText.cancelSale}
+                            </button>
+                          </>
+                        ) : null}
+                        {canChangeEmployeeNo && sale.status === "paid" ? (
+                          <button
+                            type="button"
+                            disabled={loading}
+                            onClick={() => void runSaleAction(sale, "void_paid", actionText.voidReasonPrompt, actionText.voidDone)}
+                            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-60"
+                          >
+                            {actionText.voidPaidSale}
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td className="px-4 py-6 text-center text-sm font-bold text-zinc-500" colSpan={7}>
+                  <td className="px-4 py-6 text-center text-sm font-bold text-zinc-500" colSpan={8}>
                     -
                   </td>
                 </tr>

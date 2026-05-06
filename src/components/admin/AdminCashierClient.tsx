@@ -78,7 +78,64 @@ const copy = {
   },
 };
 
+const zhCopy = {
+  caption: "这里只做线下收银确认。收银员核对销售单、收款方式和金额后，再确认收款。",
+  refresh: "刷新待收款销售单",
+  confirmPayment: "确认已收款",
+  saleNo: "销售单号",
+  salesperson: "销售员",
+  customer: "客户",
+  paymentMethod: "收款方式",
+  amount: "应收金额",
+  referenceNo: "GCash / 银行参考号",
+  notes: "收银备注",
+  items: "商品明细",
+  waiting: "等待收银",
+  noSales: "暂无等待收银的线下销售单。",
+  confirmed: "已确认收款。",
+  flowTitle: "收银员确认步骤",
+  flowStep1: "核对销售单",
+  flowStep2: "确认现金 / GCash / 银行转账",
+  flowStep3: "点击确认收款",
+  onlineOrdersLink: "网站客户订单在“线上订单”里处理，这里只处理线下门店销售。",
+  cashDrawerUpdated: "钱箱统计会自动更新。",
+  transferReferenceHint: "GCash 和银行转账必须填写参考号。",
+  printA6: "打印 A6",
+  waitingTotal: "待收款总额",
+  cashWaiting: "待收现金",
+  transferWaiting: "待收 GCash / 银行",
+  cashierAction: "收银操作",
+  cashConfirmHint: "现金单：点清现金后再确认收款。",
+  transferConfirmHint: "转账单：核对到账记录，并填写参考号后再确认。",
+} satisfies typeof copy.en;
+
+const cashierActionText = {
+  en: {
+    returnToSales: "Return to Sales",
+    returnReasonPrompt: "Reason for returning this sale to Sales Desk?",
+    returned: "Sale returned to Sales Desk for correction.",
+  },
+  zh: {
+    returnToSales: "退回销售修改",
+    returnReasonPrompt: "请输入退回销售修改的原因：",
+    returned: "已退回销售开单页面修改。",
+  },
+};
+
 function paymentMethodLabel(method: string, language: "en" | "zh") {
+  if (language === "zh") {
+    const zhLabels: Record<string, string> = {
+      cash: "现金",
+      gcash: "GCash",
+      bank_transfer: "银行转账",
+      other: "其他",
+    };
+
+    return (
+      zhLabels[method] ?? method
+    );
+  }
+
   const labels = {
     en: {
       cash: "Cash",
@@ -122,7 +179,8 @@ function SummaryCard({ label, value, tone = "neutral" }: { label: string; value:
 
 export function AdminCashierClient({ initialSales, initialError }: { initialSales: PosSaleRecord[]; initialError?: string }) {
   const { language } = useAdminI18n();
-  const t = language === "zh" ? copy.zh : copy.en;
+  const t = language === "zh" ? zhCopy : copy.en;
+  const actionText = cashierActionText[language];
   const [sales, setSales] = useState(initialSales);
   const [message, setMessage] = useState(initialError ?? "");
   const [referenceNoBySale, setReferenceNoBySale] = useState<Record<string, string>>({});
@@ -197,6 +255,36 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
           ? ` Points need manual check: ${result.loyalty.message ?? "unknown error"}`
           : "";
       setMessage(`${t.confirmed}${loyaltyMessage} ${t.cashDrawerUpdated}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function returnToSales(sale: PosSaleRecord) {
+    const reason = window.prompt(actionText.returnReasonPrompt);
+
+    if (!reason?.trim()) {
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/pos/sales/${sale.id}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "return_to_sales", reason }),
+      });
+      const result = (await response.json()) as { ok?: boolean; message?: string };
+
+      if (!response.ok || !result.ok) {
+        setMessage(result.message ?? "Unable to return sale to Sales Desk.");
+        return;
+      }
+
+      setSales((current) => current.filter((item) => item.id !== sale.id));
+      setMessage(actionText.returned);
     } finally {
       setLoading(false);
     }
@@ -298,7 +386,7 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
                 </p>
               </div>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto_auto]">
+              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto_auto_auto]">
                 <input
                   className={inputClass()}
                   placeholder={isTransferPayment(sale.paymentMethod) ? t.referenceNo : `${t.referenceNo} (${paymentMethodLabel(sale.paymentMethod, language)})`}
@@ -309,6 +397,9 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
                 <input className={inputClass()} placeholder={t.notes} value={notesBySale[sale.id] ?? ""} onChange={(event) => setNotesBySale((current) => ({ ...current, [sale.id]: event.target.value }))} />
                 <button type="button" disabled={loading} onClick={() => printPosSale(sale)} className="rounded-md border border-zinc-200 px-5 py-2 text-sm font-black text-zinc-700 disabled:opacity-60">
                   {t.printA6}
+                </button>
+                <button type="button" disabled={loading} onClick={() => void returnToSales(sale)} className="rounded-md border border-amber-200 bg-amber-50 px-5 py-2 text-sm font-black text-amber-800 disabled:opacity-60">
+                  {actionText.returnToSales}
                 </button>
                 <button type="button" disabled={loading} onClick={() => void confirm(sale)} className="rounded-md bg-[#f65f18] px-5 py-2 text-sm font-black text-white disabled:opacity-60">
                   {t.confirmPayment}

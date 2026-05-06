@@ -1,4 +1,5 @@
 import { AdminCashDrawerClient } from "@/components/admin/AdminCashDrawerClient";
+import { AdminAccessDeniedPanel } from "@/components/admin/AdminAccessDeniedPanel";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { requireActiveAdminPage } from "@/lib/admin-auth";
 import { canUseCashierCenter } from "@/lib/admin-role-access";
@@ -10,9 +11,10 @@ export default async function AdminCashDrawerPage() {
   if (!canUseCashierCenter(admin.role)) {
     return (
       <AdminShell>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm font-bold text-amber-800">
-          Only cashier, admin, or owner can access Cash Drawer.
-        </div>
+        <AdminAccessDeniedPanel
+          title="Cash Drawer is for cashier and owner control"
+          message="Only cashier, admin, or owner accounts can review cash drawer totals. Sales staff should use Sales Desk to create slips and view their own sales summary."
+        />
       </AdminShell>
     );
   }

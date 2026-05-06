@@ -1,3 +1,4 @@
+import { AdminAccessDeniedPanel } from "@/components/admin/AdminAccessDeniedPanel";
 import { AdminCashierClient } from "@/components/admin/AdminCashierClient";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { requireActiveAdminPage } from "@/lib/admin-auth";
@@ -10,7 +11,10 @@ export default async function AdminCashierPage() {
   if (!canUseCashierCenter(admin.role)) {
     return (
       <AdminShell>
-        <AdminCashierClient initialSales={[]} initialError="Only cashier, admin, or owner can access Cashier Center." />
+        <AdminAccessDeniedPanel
+          title="Cashier Center is for payment confirmation only"
+          message="Only cashier, admin, or owner accounts can confirm POS payments and update cashier records. Sales staff should create sales slips in Sales Desk, then wait for cashier confirmation."
+        />
       </AdminShell>
     );
   }

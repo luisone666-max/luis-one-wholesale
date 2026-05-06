@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { canUseCashierCenter } from "@/lib/admin-role-access";
 import { awardCustomerLoyaltyPoints } from "@/lib/loyalty-points-server";
+import { writePosSaleAuditLog } from "@/lib/pos-audit-log";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 function jsonError(message: string, status = 400) {
@@ -107,6 +108,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     amount: paidAmount,
     createdByAdminUserId: guard.admin.id,
     note: `Offline sale ${sale.sale_no} payment confirmed.`,
+  });
+
+  await writePosSaleAuditLog({
+    supabase: admin,
+    saleId: sale.id,
+    action: "payment_confirmed",
+    admin: guard.admin,
+    previousStatus: sale.status,
+    newStatus: "paid",
+    reason: notes || "Cashier confirmed payment.",
+    snapshot: { saleNo: sale.sale_no, amount: paidAmount, paymentMethod: sale.payment_method, referenceNo },
   });
 
   return NextResponse.json({ ok: true, saleId: sale.id, status: "paid", loyalty });

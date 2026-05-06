@@ -156,7 +156,7 @@ function isToday(value: string | null, dayStart: string, dayEnd: string) {
 }
 
 function isCancelled(status: string | null) {
-  return status === "cancelled" || status === "unavailable_refund";
+  return status === "cancelled" || status === "voided" || status === "unavailable_refund";
 }
 
 function isPendingOnline(status: string | null) {

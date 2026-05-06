@@ -99,6 +99,52 @@ const copy = {
   },
 };
 
+const zhCopy = {
+  caption: "老板报表：线上订单、线下 POS、收银确认、收款方式、员工销售额统一查看。",
+  todayOverview: "今日总览",
+  monthOverview: "本月总览",
+  paymentBreakdown: "收款方式",
+  paymentMethod: "收款方式",
+  employeeReport: "员工月销售",
+  salesTotal: "销售总额",
+  paidTotal: "已收款金额",
+  onlineSubmitted: "线上提交订单",
+  offlineSubmitted: "线下开单金额",
+  onlinePaid: "线上已确认收款",
+  offlinePaid: "线下收银已收款",
+  cash: "现金",
+  gcash: "GCash",
+  bankTransfer: "银行转账",
+  otherPayment: "其他收款",
+  waitingCashier: "待收银",
+  pendingOnline: "待确认线上订单",
+  month: "月份",
+  allMonths: "全部月份",
+  salesperson: "销售员",
+  orderCount: "订单 / 销售单",
+  productTotal: "销售总额",
+  paidOrders: "已收款单数",
+  noRows: "暂无销售记录。",
+  selectedTotal: "所选销售总额",
+  selectedPaidTotal: "所选已收款金额",
+  selectedOrders: "所选单数",
+  selectedStaff: "销售人数",
+  note: "销售总额统计未取消的线上订单和线下销售单；已收款金额统计线上已确认付款和线下收银员已确认收款。",
+  bossFocus: "老板重点",
+  todayCollected: "今日已收款",
+  todayCashInBox: "今日钱箱现金",
+  todayTransfers: "今日 GCash / 银行",
+  monthCollected: "本月已收款",
+  actionQueue: "待处理事项",
+  needCashier: "线下待收银单",
+  needOnlineFollowUp: "线上待跟进订单",
+  onlineSales: "线上",
+  offlineSales: "线下 POS",
+  waitingAmount: "待收款",
+  paidRate: "收款率",
+  collectedCashflow: "已收款流向",
+} satisfies typeof copy.en;
+
 function SummaryCard({ label, value, tone = "neutral", detail }: { label: string; value: string; tone?: "orange" | "green" | "neutral"; detail?: string }) {
   const toneClass = {
     green: "text-emerald-700",
@@ -149,7 +195,7 @@ export function AdminReportsClient({
   initialError?: string;
 }) {
   const { language } = useAdminI18n();
-  const t = language === "zh" ? copy.zh : copy.en;
+  const t = language === "zh" ? zhCopy : copy.en;
   const [month, setMonth] = useState(monthOptions[0] ?? "all");
   const visibleRows = useMemo(() => rows.filter((row) => month === "all" || row.month === month), [month, rows]);
   const summary = useMemo(
