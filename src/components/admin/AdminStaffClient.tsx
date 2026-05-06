@@ -7,7 +7,7 @@ import type { AdminStaffUser } from "@/lib/admin-users-data";
 
 const copy = {
   en: {
-    caption: "Create staff login accounts and control who can access the admin dashboard.",
+    caption: "Create staff login accounts and control who can access each work center.",
     createStaff: "Create Staff Account",
     name: "Name",
     email: "Email",
@@ -15,6 +15,8 @@ const copy = {
     role: "Role",
     employeeNo: "Employee No.",
     notes: "Notes",
+    status: "Status",
+    actions: "Actions",
     active: "Active",
     inactive: "Inactive",
     save: "Save",
@@ -28,7 +30,7 @@ const copy = {
     ownerHint: "Owner/Admin can create staff accounts. Staff users cannot create other admin users.",
   },
   zh: {
-    caption: "在后台创建员工登录账号，并控制谁可以进入后台。",
+    caption: "在后台创建员工登录账号，并控制谁可以进入各个工作中心。",
     createStaff: "创建员工账号",
     name: "姓名",
     email: "邮箱",
@@ -36,6 +38,8 @@ const copy = {
     role: "权限",
     employeeNo: "工号",
     notes: "备注",
+    status: "状态",
+    actions: "操作",
     active: "启用",
     inactive: "停用",
     save: "保存",
@@ -46,7 +50,7 @@ const copy = {
     saved: "已保存。",
     refresh: "刷新",
     noUsers: "暂无员工账号。",
-    ownerHint: "Owner/Admin 可以创建员工账号。Staff 员工不能创建其他后台账号。",
+    ownerHint: "Owner/Admin 可以创建员工账号。普通员工不能创建其他后台账号。",
   },
 };
 
@@ -225,9 +229,9 @@ export function AdminStaffClient({ initialUsers, initialError }: { initialUsers:
                 <th className="px-4 py-3">{t.email}</th>
                 <th className="px-4 py-3">{t.employeeNo}</th>
                 <th className="px-4 py-3">{t.role}</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">{t.status}</th>
                 <th className="px-4 py-3">{t.notes}</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 bg-white">
