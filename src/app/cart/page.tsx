@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CustomerAuthGate } from "@/components/auth/CustomerAuthGate";
+import { messengerUrl } from "@/components/CustomerUi";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
@@ -131,71 +132,86 @@ function CartContent() {
               <div className="p-6 text-sm font-bold text-zinc-600">Loading order cart...</div>
             ) : items.length ? (
               <div className="divide-y divide-zinc-100">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="grid gap-4 p-5 lg:grid-cols-[96px_1fr_150px_120px_130px_100px] lg:items-center"
-                  >
-                    <div className="h-24 w-24 rounded-md bg-orange-50 p-2">
-                      <Image src={item.image} alt={item.name} width={120} height={120} className="h-full w-full object-contain" />
-                    </div>
-                    <div>
-                      <Link href={`/product/${item.slug}`} className="font-black text-zinc-950 hover:text-orange-700">
-                        {item.name}
-                      </Link>
-                      {item.variantName ? (
-                        <p className="mt-2 text-sm font-black text-orange-700">Variant: {item.variantName}</p>
-                      ) : null}
-                      <p className="mt-2 text-sm font-bold text-zinc-500">
-                        {item.variantSku ? `Variant SKU: ${item.variantSku}` : `SKU: ${item.sku}`}
-                      </p>
-                      <p className="mt-1 text-xs font-bold text-orange-700">
-                        {item.tierLabel ? `${item.tierLabel} applied` : item.priceError}
-                      </p>
-                      <p className="mt-1 text-xs font-bold text-zinc-500">MOQ {item.moq} pc</p>
-                    </div>
-                    <div className="flex w-full items-center overflow-hidden rounded-md border border-zinc-200 bg-white">
-                      <button
-                        type="button"
-                        onClick={() => saveQuantity(item.id, item.quantity - 1)}
-                        disabled={actionLoadingId === item.id}
-                        className="h-11 w-10 border-r border-zinc-200 text-lg font-black text-zinc-600 disabled:text-zinc-300"
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min={1}
-                        value={item.quantity}
-                        onChange={(event) => setLocalQuantity(item.id, Number(event.target.value) || 1)}
-                        onBlur={() => saveQuantity(item.id, item.quantity)}
-                        className="h-11 w-full px-2 text-center text-sm font-black outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => saveQuantity(item.id, item.quantity + 1)}
-                        disabled={actionLoadingId === item.id}
-                        className="h-11 w-10 border-l border-zinc-200 text-lg font-black text-zinc-600 disabled:text-zinc-300"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <p className="font-black text-orange-700">
-                      {item.appliedUnitPrice === null ? "Contact us" : formatPhp(item.appliedUnitPrice)}
-                    </p>
-                    <p className="text-lg font-black text-zinc-950">
-                      {item.subtotal === null ? "To confirm" : formatPhp(item.subtotal)}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.id)}
-                      disabled={actionLoadingId === item.id}
-                      className="h-10 rounded-md border border-red-200 px-3 text-sm font-black text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                {items.map((item) => {
+                  const itemNeedsMessenger = Boolean(item.priceError) || item.subtotal === null;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="grid gap-4 p-5 lg:grid-cols-[96px_1fr_150px_120px_130px_100px] lg:items-center"
                     >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                      <div className="h-24 w-24 rounded-md bg-orange-50 p-2">
+                        <Image src={item.image} alt={item.name} width={120} height={120} className="h-full w-full object-contain" />
+                      </div>
+                      <div>
+                        <Link href={`/product/${item.slug}`} className="font-black text-zinc-950 hover:text-orange-700">
+                          {item.name}
+                        </Link>
+                        {item.variantName ? (
+                          <p className="mt-2 text-sm font-black text-orange-700">Variant: {item.variantName}</p>
+                        ) : null}
+                        <p className="mt-2 text-sm font-bold text-zinc-500">
+                          {item.variantSku ? `Variant SKU: ${item.variantSku}` : `SKU: ${item.sku}`}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-orange-700">
+                          {item.tierLabel ? `${item.tierLabel} applied` : item.priceError}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-zinc-500">MOQ {item.moq} pc</p>
+                        {itemNeedsMessenger ? (
+                          <a
+                            href={messengerUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-3 inline-flex rounded-sm bg-[#f65f18] px-3 py-2 text-xs font-black text-white hover:bg-[#df4f0d]"
+                          >
+                            Ask on Messenger
+                          </a>
+                        ) : null}
+                      </div>
+                      <div className="flex w-full items-center overflow-hidden rounded-md border border-zinc-200 bg-white">
+                        <button
+                          type="button"
+                          onClick={() => saveQuantity(item.id, item.quantity - 1)}
+                          disabled={actionLoadingId === item.id || itemNeedsMessenger}
+                          className="h-11 w-10 border-r border-zinc-200 text-lg font-black text-zinc-600 disabled:text-zinc-300"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.quantity}
+                          disabled={itemNeedsMessenger}
+                          onChange={(event) => setLocalQuantity(item.id, Number(event.target.value) || 1)}
+                          onBlur={() => saveQuantity(item.id, item.quantity)}
+                          className="h-11 w-full px-2 text-center text-sm font-black outline-none disabled:bg-zinc-50 disabled:text-zinc-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => saveQuantity(item.id, item.quantity + 1)}
+                          disabled={actionLoadingId === item.id || itemNeedsMessenger}
+                          className="h-11 w-10 border-l border-zinc-200 text-lg font-black text-zinc-600 disabled:text-zinc-300"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <p className="font-black text-orange-700">
+                        {item.appliedUnitPrice === null ? "Contact us" : formatPhp(item.appliedUnitPrice)}
+                      </p>
+                      <p className="text-lg font-black text-zinc-950">
+                        {item.subtotal === null ? "To confirm" : formatPhp(item.subtotal)}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        disabled={actionLoadingId === item.id}
+                        className="h-10 rounded-md border border-red-200 px-3 text-sm font-black text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="p-8 text-center">
@@ -232,13 +248,23 @@ function CartContent() {
               </div>
             </div>
             {hasBlockingCartIssue ? (
-              <button
-                type="button"
-                disabled
-                className="mt-6 block w-full cursor-not-allowed rounded-sm bg-zinc-200 px-5 py-3 text-center text-sm font-black text-zinc-500"
-              >
-                Checkout unavailable
-              </button>
+              <div className="mt-6 space-y-3">
+                <a
+                  href={messengerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white"
+                >
+                  Ask on Messenger
+                </a>
+                <button
+                  type="button"
+                  disabled
+                  className="block w-full cursor-not-allowed rounded-sm bg-zinc-200 px-5 py-3 text-center text-sm font-black text-zinc-500"
+                >
+                  Checkout unavailable
+                </button>
+              </div>
             ) : (
               <Link href="/checkout" className="mt-6 block rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white">
                 Proceed to Checkout
