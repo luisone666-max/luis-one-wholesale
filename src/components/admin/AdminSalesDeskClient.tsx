@@ -78,6 +78,12 @@ const copy = {
     memberBadge: "Member",
     walkInBadge: "Walk-in",
     employeeLocked: "Your employee number is locked for audit records.",
+    quickAddProducts: "Quick Add Products",
+    tapProductToAdd: "Click a product below to add it to the sales slip. Click again to increase quantity.",
+    noProductResults: "No matching products. You can still add a manual item.",
+    orderBreakdown: "Order Breakdown",
+    productTotal: "Product Total",
+    cashierReceives: "Cashier Receives",
   },
   zh: {
     caption: "这里只做门店线下销售。销售员先开销售单，保存后交给收银员确认收款。",
@@ -136,6 +142,25 @@ const copy = {
     memberBadge: "会员",
     walkInBadge: "散客",
     employeeLocked: "工号已锁定，用于销售归属和审计记录。",
+  },
+};
+
+const salesDeskFlowText = {
+  en: {
+    quickAddProducts: "Quick Add Products",
+    tapProductToAdd: "Click a product below to add it to the sales slip. Click again to increase quantity.",
+    noProductResults: "No matching products. You can still add a manual item.",
+    orderBreakdown: "Order Breakdown",
+    productTotal: "Product Total",
+    cashierReceives: "Cashier Receives",
+  },
+  zh: {
+    quickAddProducts: "\u5feb\u901f\u52a0\u5546\u54c1",
+    tapProductToAdd: "\u70b9\u51fb\u4e0b\u9762\u5546\u54c1\u52a0\u5165\u9500\u552e\u5355\uff0c\u91cd\u590d\u70b9\u540c\u6b3e\u4f1a\u81ea\u52a8\u589e\u52a0\u6570\u91cf\u3002",
+    noProductResults: "\u6ca1\u6709\u627e\u5230\u5546\u54c1\uff0c\u4e5f\u53ef\u4ee5\u624b\u52a8\u6dfb\u52a0\u4e00\u884c\u3002",
+    orderBreakdown: "\u8ba2\u5355\u62c6\u5206",
+    productTotal: "\u5546\u54c1\u5c0f\u8ba1",
+    cashierReceives: "\u6536\u94f6\u5458\u5e94\u6536",
   },
 };
 
@@ -227,6 +252,7 @@ export function AdminSalesDeskClient({
 }) {
   const { language } = useAdminI18n();
   const t = language === "zh" ? copy.zh : copy.en;
+  const ui = salesDeskFlowText[language];
   const [employeeNo, setEmployeeNo] = useState(defaultEmployeeNo);
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -288,6 +314,40 @@ export function AdminSalesDeskClient({
           : item,
       ),
     );
+  }
+
+  function addProductToSlip(product: Product) {
+    setItems((current) => {
+      const existingIndex = current.findIndex((item) => item.productId === product.id);
+      const productPrice = String(product.retailPrice ?? 0);
+
+      if (existingIndex >= 0) {
+        return current.map((item, index) =>
+          index === existingIndex
+            ? {
+                ...item,
+                quantity: String((Number(item.quantity) || 0) + 1),
+              }
+            : item,
+        );
+      }
+
+      const nextItem: DraftItem = {
+        productId: product.id,
+        sku: product.sku,
+        name: product.name,
+        quantity: "1",
+        unitPrice: productPrice,
+        notes: "",
+      };
+      const emptyIndex = current.findIndex((item) => !item.productId && !item.sku && !item.name);
+
+      if (emptyIndex >= 0) {
+        return current.map((item, index) => (index === emptyIndex ? nextItem : item));
+      }
+
+      return [...current, nextItem];
+    });
   }
 
   function statusLabel(status: string) {
@@ -487,6 +547,33 @@ export function AdminSalesDeskClient({
         <div className="border-b border-zinc-100 bg-white p-4">
           <p className="mb-3 text-lg font-black text-zinc-950">{t.stepItems}</p>
           <input className={inputClass()} value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder={t.productSearch} />
+          <div className="mt-4 rounded-lg border border-orange-100 bg-orange-50/60 p-3">
+            <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-700">{ui.quickAddProducts}</p>
+                <p className="mt-1 text-xs font-bold text-orange-900">{ui.tapProductToAdd}</p>
+              </div>
+              <span className="text-xs font-black text-zinc-500">{filteredProducts.length} results</span>
+            </div>
+            {filteredProducts.length ? (
+              <div className="grid max-h-64 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-4">
+                {filteredProducts.slice(0, 16).map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => addProductToSlip(product)}
+                    className="rounded-md border border-orange-100 bg-white p-3 text-left shadow-sm transition hover:border-orange-300 hover:bg-white"
+                  >
+                    <span className="block truncate text-[11px] font-black uppercase tracking-[0.1em] text-orange-600">{product.sku}</span>
+                    <span className="mt-1 line-clamp-2 min-h-8 text-xs font-black leading-4 text-zinc-950">{product.name}</span>
+                    <span className="mt-2 block text-sm font-black text-zinc-700">{formatPhp(product.retailPrice ?? 0)}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-md border border-dashed border-orange-200 bg-white p-4 text-sm font-bold text-zinc-500">{ui.noProductResults}</p>
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto pb-2">
           <table className="w-full min-w-[980px] text-left text-sm">
@@ -548,7 +635,24 @@ export function AdminSalesDeskClient({
             {t.amountPreview}: {formatPhp(total)} · {paymentMethodLabel(paymentMethod, language)}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="w-full rounded-md border border-orange-100 bg-orange-50 p-3 md:max-w-xs">
+          <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-orange-700">{ui.orderBreakdown}</p>
+          <div className="space-y-1 text-sm font-bold text-zinc-700">
+            <div className="flex justify-between gap-3">
+              <span>{ui.productTotal}</span>
+              <span>{formatPhp(productTotal)}</span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span>{t.discount}</span>
+              <span>{formatPhp(Number(discountAmount) || 0)}</span>
+            </div>
+            <div className="flex justify-between gap-3 border-t border-orange-200 pt-2 text-base font-black text-orange-700">
+              <span>{ui.cashierReceives}</span>
+              <span>{formatPhp(total)}</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 md:justify-end">
           <button type="button" onClick={() => setItems((current) => [...current, emptyItem()])} className="rounded-md border border-zinc-200 px-4 py-2.5 text-sm font-black text-zinc-700">
             {t.addManualItem}
           </button>
