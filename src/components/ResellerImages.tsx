@@ -29,23 +29,38 @@ function uniqueProductImages(product: Product) {
     images.push({ url, label });
   };
 
-  addImage(product.image, "Main image");
+  addImage(product.image, `${product.name} - Main image`);
 
-  for (const image of product.gallery) {
-    addImage(image, "Gallery image");
-  }
+  product.gallery.forEach((image, index) => {
+    addImage(image, `${product.name} - Gallery image ${index + 1}`);
+  });
 
   for (const variant of product.variants ?? []) {
-    addImage(variant.image, `Variant: ${variant.name}${variant.sku ? ` (${variant.sku})` : ""}`);
+    if (!variant.active) {
+      continue;
+    }
+
+    const variantLabel = [variant.name, variant.sku].filter(Boolean).join(" - ");
+    addImage(variant.image, `Variant image - ${variantLabel}`);
   }
 
   return images;
 }
 
+function safeFileSlug(value: string) {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "image"
+  );
+}
+
 function downloadHref(image: ResellerImageItem, product: Product, index: number) {
   const params = new URLSearchParams({
     url: image.url,
-    name: `${product.slug}-${index + 1}`,
+    name: `${product.slug}-${String(index + 1).padStart(2, "0")}-${safeFileSlug(image.label)}`,
   });
 
   return `/api/product-images/download?${params.toString()}`;
