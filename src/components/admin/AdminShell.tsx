@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { AdminLanguage, translate, TranslationKey } from "@/lib/admin-i18n";
+import { translate, type AdminLanguage, type TranslationKey } from "@/lib/admin-i18n";
 
 type AdminRole = "owner" | "admin" | "staff" | "sales" | "cashier" | "warehouse";
 
@@ -13,80 +13,144 @@ type AdminI18nContextValue = {
   t: (key: TranslationKey) => string;
 };
 
+type NavItem = {
+  href: string;
+  label: TranslationKey;
+  icon: string;
+  hint: { en: string; zh: string };
+  roles?: AdminRole[];
+};
+
 const AdminI18nContext = createContext<AdminI18nContextValue | null>(null);
 
 const navSections: Array<{
   title: { en: string; zh: string };
-  items: Array<{ href: string; label: TranslationKey; icon: string; hint: { en: string; zh: string }; roles?: AdminRole[] }>;
+  items: NavItem[];
 }> = [
   {
-    title: { en: "Overview", zh: "总览" },
-    items: [{ href: "/admin", label: "dashboard", icon: "D", hint: { en: "Daily store summary", zh: "每日店铺概览" }, roles: ["owner", "admin"] }],
-  },
-  {
-    title: { en: "Catalog", zh: "商品" },
+    title: { en: "Overview", zh: "\u603b\u89c8" },
     items: [
-      { href: "/admin/products", label: "products", icon: "P", hint: { en: "Manage products / price lookup", zh: "管理商品 / 销售查价" }, roles: ["owner", "admin", "warehouse", "sales", "staff"] },
-      { href: "/admin/categories", label: "categories", icon: "C", hint: { en: "Category tree", zh: "分类树" }, roles: ["owner", "admin"] },
+      {
+        href: "/admin",
+        label: "dashboard",
+        icon: "D",
+        hint: { en: "Daily store summary", zh: "\u6bcf\u65e5\u5e97\u94fa\u6982\u89c8" },
+        roles: ["owner", "admin"],
+      },
     ],
   },
   {
-    title: { en: "Online Store", zh: "线上订单" },
+    title: { en: "Catalog", zh: "\u5546\u54c1" },
     items: [
-      { href: "/admin/orders", label: "orders", icon: "O", hint: { en: "Website order handling", zh: "网站订单处理" }, roles: ["owner", "admin", "warehouse"] },
-      { href: "/admin/customers", label: "customers", icon: "U", hint: { en: "Customer records / member points", zh: "客户资料 / 会员积分" }, roles: ["owner", "admin"] },
-      { href: "/admin/payments", label: "payments", icon: "M", hint: { en: "Website manual payments", zh: "线上人工收款" }, roles: ["owner", "admin"] },
+      {
+        href: "/admin/products",
+        label: "products",
+        icon: "P",
+        hint: { en: "Manage products / price lookup", zh: "\u7ba1\u7406\u5546\u54c1 / \u9500\u552e\u67e5\u4ef7" },
+        roles: ["owner", "admin", "warehouse", "sales", "staff"],
+      },
+      {
+        href: "/admin/categories",
+        label: "categories",
+        icon: "C",
+        hint: { en: "Category tree", zh: "\u5206\u7c7b\u6811" },
+        roles: ["owner", "admin"],
+      },
     ],
   },
   {
-    title: { en: "Offline POS", zh: "线下收银" },
+    title: { en: "Online Store", zh: "\u7ebf\u4e0a\u8ba2\u5355" },
     items: [
-      { href: "/admin/sales-desk", label: "salesDesk", icon: "S", hint: { en: "In-store sales slip", zh: "门店销售开单" }, roles: ["owner", "admin", "sales", "staff"] },
-      { href: "/admin/cashier", label: "cashierCenter", icon: "C", hint: { en: "Cashier payment confirmation", zh: "收银确认收款" }, roles: ["owner", "admin", "cashier"] },
-      { href: "/admin/cash-drawer", label: "cashDrawer", icon: "P", hint: { en: "Daily cash drawer", zh: "每日收银钱箱" }, roles: ["owner", "admin", "cashier"] },
-      { href: "/admin/staff", label: "staffAccess", icon: "A", hint: { en: "Staff login and roles", zh: "员工账号与权限" }, roles: ["owner", "admin"] },
+      {
+        href: "/admin/orders",
+        label: "orders",
+        icon: "O",
+        hint: { en: "Website order handling", zh: "\u7f51\u7ad9\u8ba2\u5355\u5904\u7406" },
+        roles: ["owner", "admin", "warehouse"],
+      },
+      {
+        href: "/admin/customers",
+        label: "customers",
+        icon: "U",
+        hint: { en: "Customer records / member points", zh: "\u5ba2\u6237\u8d44\u6599 / \u4f1a\u5458\u79ef\u5206" },
+        roles: ["owner", "admin"],
+      },
+      {
+        href: "/admin/payments",
+        label: "payments",
+        icon: "M",
+        hint: { en: "Website manual payments", zh: "\u7ebf\u4e0a\u4eba\u5de5\u6536\u6b3e" },
+        roles: ["owner", "admin"],
+      },
     ],
   },
   {
-    title: { en: "Business", zh: "经营" },
+    title: { en: "Offline POS", zh: "\u7ebf\u4e0b\u6536\u94f6" },
     items: [
-      { href: "/admin/reports", label: "reports", icon: "R", hint: { en: "Reports", zh: "报表" }, roles: ["owner", "admin"] },
-      { href: "/admin/owner", label: "ownerCenter", icon: "K", hint: { en: "Owner password gate", zh: "老板中心" }, roles: ["owner", "admin"] },
-      { href: "/admin/settings", label: "settings", icon: "S", hint: { en: "Store settings", zh: "店铺设置" }, roles: ["owner", "admin"] },
+      {
+        href: "/admin/sales-desk",
+        label: "salesDesk",
+        icon: "S",
+        hint: { en: "In-store sales slip", zh: "\u95e8\u5e97\u9500\u552e\u5f00\u5355" },
+        roles: ["owner", "admin", "sales", "staff"],
+      },
+      {
+        href: "/admin/cashier",
+        label: "cashierCenter",
+        icon: "C",
+        hint: { en: "Cashier payment confirmation", zh: "\u6536\u94f6\u786e\u8ba4\u6536\u6b3e" },
+        roles: ["owner", "admin", "cashier"],
+      },
+      {
+        href: "/admin/cash-drawer",
+        label: "cashDrawer",
+        icon: "P",
+        hint: { en: "Daily cash drawer", zh: "\u6bcf\u65e5\u6536\u94f6\u94b1\u7bb1" },
+        roles: ["owner", "admin", "cashier"],
+      },
+      {
+        href: "/admin/staff",
+        label: "staffAccess",
+        icon: "A",
+        hint: { en: "Staff login and roles", zh: "\u5458\u5de5\u8d26\u53f7\u4e0e\u6743\u9650" },
+        roles: ["owner", "admin"],
+      },
+    ],
+  },
+  {
+    title: { en: "Business", zh: "\u7ecf\u8425" },
+    items: [
+      {
+        href: "/admin/reports",
+        label: "reports",
+        icon: "R",
+        hint: { en: "Reports", zh: "\u62a5\u8868" },
+        roles: ["owner", "admin"],
+      },
+      {
+        href: "/admin/owner",
+        label: "ownerCenter",
+        icon: "K",
+        hint: { en: "Owner password gate", zh: "\u8001\u677f\u4e2d\u5fc3" },
+        roles: ["owner", "admin"],
+      },
+      {
+        href: "/admin/settings",
+        label: "settings",
+        icon: "S",
+        hint: { en: "Store settings", zh: "\u5e97\u94fa\u8bbe\u7f6e" },
+        roles: ["owner", "admin"],
+      },
     ],
   },
 ];
 
-const adminSectionTitleZh: Record<string, string> = {
-  Overview: "\u603b\u89c8",
-  Catalog: "\u5546\u54c1",
-  "Online Store": "\u7ebf\u4e0a\u8ba2\u5355",
-  "Offline POS": "\u7ebf\u4e0b\u6536\u94f6",
-  Business: "\u7ecf\u8425",
-};
-
-const adminNavHintZh: Record<string, string> = {
-  "/admin": "\u6bcf\u65e5\u5e97\u94fa\u6982\u89c8",
-  "/admin/products": "\u7ba1\u7406\u5546\u54c1 / \u9500\u552e\u67e5\u4ef7",
-  "/admin/categories": "\u5206\u7c7b\u6811",
-  "/admin/orders": "\u7f51\u7ad9\u8ba2\u5355\u5904\u7406",
-  "/admin/customers": "\u5ba2\u6237\u8d44\u6599 / \u4f1a\u5458\u79ef\u5206",
-  "/admin/payments": "\u7ebf\u4e0a\u4eba\u5de5\u6536\u6b3e",
-  "/admin/sales-desk": "\u95e8\u5e97\u9500\u552e\u5f00\u5355",
-  "/admin/cashier": "\u6536\u94f6\u786e\u8ba4\u6536\u6b3e",
-  "/admin/cash-drawer": "\u6bcf\u65e5\u6536\u94f6\u94b1\u7bb1",
-  "/admin/staff": "\u5458\u5de5\u8d26\u53f7\u4e0e\u6743\u9650",
-  "/admin/reports": "\u62a5\u8868",
-  "/admin/owner": "\u8001\u677f\u4e2d\u5fc3",
-  "/admin/settings": "\u5e97\u94fa\u8bbe\u7f6e",
-};
-
 function adminSectionTitle(section: (typeof navSections)[number], language: AdminLanguage) {
-  return language === "zh" ? adminSectionTitleZh[section.title.en] ?? section.title.zh : section.title.en;
+  return language === "zh" ? section.title.zh : section.title.en;
 }
 
-function adminNavHint(item: (typeof navSections)[number]["items"][number], language: AdminLanguage) {
-  return language === "zh" ? adminNavHintZh[item.href] ?? item.hint.zh : item.hint.en;
+function adminNavHint(item: NavItem, language: AdminLanguage) {
+  return language === "zh" ? item.hint.zh : item.hint.en;
 }
 
 export function useAdminI18n() {
@@ -233,7 +297,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   =
                 </button>
                 <button type="button" onClick={() => setSidebarCollapsed((current) => !current)} className="hidden h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm font-black text-zinc-700 lg:block">
-                  {sidebarCollapsed ? (language === "zh" ? "展开" : "Open") : language === "zh" ? "折叠" : "Fold"}
+                  {sidebarCollapsed ? (language === "zh" ? "\u5c55\u5f00" : "Open") : language === "zh" ? "\u6298\u53e0" : "Fold"}
                 </button>
                 <div>
                   <p className="text-xs font-bold text-zinc-500">WholesaleHub</p>
