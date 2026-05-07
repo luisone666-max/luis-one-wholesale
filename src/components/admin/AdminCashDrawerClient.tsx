@@ -25,6 +25,10 @@ const copy = {
     expectedCash: "Expected Cash",
     actualCash: "Actual Cash Count",
     difference: "Difference",
+    closePreview: "Close Preview",
+    balanced: "Cash drawer balances.",
+    varianceNeedsReview: "Variance needs review before closing.",
+    varianceCheckHint: "Check missing cashier confirmations, cash-out entries, change fund, or manual cash adjustments before closing.",
     paymentBreakdown: "Payment Breakdown",
     paymentMethod: "Payment Method",
     addEntry: "Add Cash Entry",
@@ -66,6 +70,10 @@ const copy = {
     expectedCash: "系统应有现金",
     actualCash: "实际点现金",
     difference: "差额",
+    closePreview: "关账预览",
+    balanced: "钱箱金额一致。",
+    varianceNeedsReview: "关账前请检查差额。",
+    varianceCheckHint: "请检查是否有漏确认收款、现金支出、备用找零或手动补现金记录。",
     paymentBreakdown: "收款方式汇总",
     paymentMethod: "收款方式",
     addEntry: "新增现金记录",
@@ -109,6 +117,10 @@ const zhCopy = {
   expectedCash: "系统应有现金",
   actualCash: "实际点现金",
   difference: "差额",
+  closePreview: "关账预览",
+  balanced: "钱箱金额一致。",
+  varianceNeedsReview: "关账前请检查差额。",
+  varianceCheckHint: "请检查是否有漏确认收款、现金支出、备用找零或手动补现金记录。",
   paymentBreakdown: "收款方式汇总",
   paymentMethod: "收款方式",
   addEntry: "新增现金记录",
@@ -212,10 +224,21 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
 
   const session = data.session;
   const isClosed = session?.status === "closed";
+  const actualCashNumber = Number(actualCash);
+  const hasActualCashInput = actualCash.trim() !== "" && Number.isFinite(actualCashNumber);
+  const liveDifference = hasActualCashInput ? Math.round((actualCashNumber - data.expectedCash) * 100) / 100 : null;
+  const closedDifference = session?.differenceAmount ?? null;
+  const displayedDifference = isClosed ? closedDifference : liveDifference;
+  const displayedActualCash = isClosed ? (session?.actualCash ?? null) : hasActualCashInput ? actualCashNumber : null;
+  const hasDisplayedDifference = displayedDifference !== null;
+  const hasVariance = hasDisplayedDifference && Math.abs(displayedDifference) >= 0.01;
   const varianceTone = useMemo(() => {
-    const variance = session?.differenceAmount ?? (actualCash ? Number(actualCash) - data.expectedCash : 0);
-    return variance === 0 ? "green" : "orange";
-  }, [actualCash, data.expectedCash, session?.differenceAmount]);
+    if (displayedDifference === null) {
+      return "green";
+    }
+
+    return Math.abs(displayedDifference) < 0.01 ? "green" : "orange";
+  }, [displayedDifference]);
 
   async function load(date = businessDate) {
     setLoading(true);
@@ -345,10 +368,28 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
             <Card title={t.openingCash} value={formatPhp(session.openingCash)} />
             <Card title={t.cashInAdjustment} value={formatPhp(data.cashInAdjustmentTotal)} />
             <Card title={t.cashOut} value={formatPhp(data.cashOutTotal)} tone="orange" />
-            <Card title={t.actualCash} value={session.actualCash === null ? "-" : formatPhp(session.actualCash)} />
-            <Card title={t.difference} value={session.differenceAmount === null ? "-" : formatPhp(session.differenceAmount)} tone={varianceTone} />
+            <Card title={t.actualCash} value={displayedActualCash === null ? "-" : formatPhp(displayedActualCash)} />
+            <Card title={t.difference} value={displayedDifference === null ? "-" : formatPhp(displayedDifference)} tone={varianceTone} />
             <Card title={t.status} value={isClosed ? t.closed : t.opened} />
           </section>
+
+          {isClosed && hasDisplayedDifference ? (
+            <section className={`rounded-lg border p-4 text-sm font-bold leading-6 ${hasVariance ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>
+              <p className="text-base font-black">{hasVariance ? t.varianceNeedsReview : t.balanced}</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <span>
+                  {t.expectedCash}: {formatPhp(data.expectedCash)}
+                </span>
+                <span>
+                  {t.actualCash}: {displayedActualCash === null ? "-" : formatPhp(displayedActualCash)}
+                </span>
+                <span>
+                  {t.difference}: {formatPhp(displayedDifference ?? 0)}
+                </span>
+              </div>
+              {hasVariance ? <p className="mt-2 text-xs font-black">{t.varianceCheckHint}</p> : null}
+            </section>
+          ) : null}
 
           {!isClosed ? (
             <section className="grid gap-5 xl:grid-cols-2">
@@ -398,6 +439,24 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
                     <input className={inputClass()} value={closingNotes} onChange={(event) => setClosingNotes(event.target.value)} />
                   </Field>
                 </div>
+                {hasActualCashInput && liveDifference !== null ? (
+                  <div className={`mt-4 rounded-md border p-3 text-sm font-bold leading-6 ${hasVariance ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>
+                    <p className="font-black">{t.closePreview}</p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                      <span>
+                        {t.expectedCash}: {formatPhp(data.expectedCash)}
+                      </span>
+                      <span>
+                        {t.actualCash}: {formatPhp(actualCashNumber)}
+                      </span>
+                      <span>
+                        {t.difference}: {formatPhp(liveDifference)}
+                      </span>
+                    </div>
+                    <p className="mt-2">{hasVariance ? t.varianceNeedsReview : t.balanced}</p>
+                    {hasVariance ? <p className="mt-1 text-xs font-black">{t.varianceCheckHint}</p> : null}
+                  </div>
+                ) : null}
                 <button
                   type="button"
                   disabled={loading}
