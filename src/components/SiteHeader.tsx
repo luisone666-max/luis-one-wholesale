@@ -8,12 +8,12 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { CartIconLink } from "@/components/CartIconLink";
 import { messengerUrl } from "@/components/CustomerUi";
 import { ProductSearchForm } from "@/components/ProductSearchForm";
-import { getActiveCategories, type Category } from "@/lib/mock-data";
+import type { Category } from "@/lib/mock-data";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const [categories, setCategories] = useState<Category[]>(() => getActiveCategories());
+  const [categories, setCategories] = useState<Category[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
