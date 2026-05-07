@@ -4,7 +4,7 @@ import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { getCatalogCategoryPage, getCatalogCategoryParams } from "@/lib/catalog-data";
 import { absoluteUrl, categoryDescription, getSiteUrl, siteName } from "@/lib/seo";
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, MarketplaceShell, PrimaryButton } from "@/components/CustomerUi";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { seoGuides } from "@/lib/seo-content";
 
 export const metadata: Metadata = {

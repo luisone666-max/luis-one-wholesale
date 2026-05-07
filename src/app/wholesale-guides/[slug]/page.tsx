@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Container, MarketplaceShell, MessengerButton, PrimaryButton, SecondaryButton } from "@/components/CustomerUi";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { getSiteUrl, siteName } from "@/lib/seo";
 import { getSeoGuide, seoGuideJsonLd, seoGuides } from "@/lib/seo-content";
 

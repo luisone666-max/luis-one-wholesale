@@ -1,7 +1,7 @@
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 
 export default function RegisterPage() {
   return (

@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailExperience } from "@/components/ProductDetailExperience";
 import { ResellerImages } from "@/components/ResellerImages";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { getCatalogProductPage } from "@/lib/catalog-data";
 import { getPriceRange } from "@/lib/mock-data";
 import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo";

@@ -3,7 +3,7 @@ import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { businessInfo } from "@/lib/business-info";
 import { getCatalogSnapshot } from "@/lib/catalog-data";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";

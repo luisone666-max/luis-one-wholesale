@@ -1,7 +1,7 @@
 import { LoginForm } from "@/components/auth/LoginForm";
 import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ registered?: string }> }) {
   const params = await searchParams;
