@@ -1,12 +1,17 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 export function ProductSearchForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
+
+  useEffect(() => {
+    const nextQuery = searchParams.get("q") ?? "";
+    queueMicrotask(() => setQuery(nextQuery));
+  }, [searchParams]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

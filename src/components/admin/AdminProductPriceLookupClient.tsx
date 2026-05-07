@@ -92,23 +92,127 @@ function normalizeSearchText(value: string) {
     .trim();
 }
 
+function compactSearchText(value: string) {
+  return normalizeSearchText(value).replace(/\s+/g, "");
+}
+
+const lookupAliases: Record<string, string[]> = {
+  accessory: ["accessories"],
+  accessories: ["accessory"],
+  aerox: ["yamaha"],
+  beat: ["honda"],
+  box: ["topbox", "motobox"],
+  brake: ["break", "lever"],
+  bracket: ["mount", "holder"],
+  click: ["honda"],
+  full: ["helmet"],
+  gille: ["helmet"],
+  half: ["helmet"],
+  helmet: ["helmets", "visor"],
+  hnj: ["helmet"],
+  ignition: ["keyset", "switch"],
+  key: ["keyset", "ignition", "switch"],
+  keyset: ["key", "ignition", "switch"],
+  mio: ["yamaha"],
+  mob: ["helmet"],
+  modular: ["helmet"],
+  moto: ["motorcycle"],
+  motobox: ["topbox", "box"],
+  motorcycle: ["moto"],
+  nmax: ["yamaha"],
+  shock: ["absorber", "suspension"],
+  shocks: ["shock", "absorber", "suspension"],
+  switch: ["ignition", "keyset"],
+  topbox: ["top", "box", "bracket", "mount"],
+  visor: ["helmet", "shield"],
+  zebra: ["helmet"],
+};
+
+const lookupStopWords = new Set(["a", "an", "and", "for", "of", "the", "to", "with"]);
+
+function expandLookupWords(words: string[]) {
+  const expanded = new Set(words);
+
+  for (const word of words) {
+    const singular = word.endsWith("s") && word.length > 3 ? word.slice(0, -1) : "";
+
+    if (singular) {
+      expanded.add(singular);
+    }
+
+    for (const alias of lookupAliases[word] ?? []) {
+      expanded.add(alias);
+    }
+  }
+
+  return Array.from(expanded);
+}
+
+function lookupScore(product: AdminProductLookupRecord, rawQuery: string) {
+  const originalWords = normalizeSearchText(rawQuery)
+    .split(" ")
+    .filter((word) => word.length > 1 && !lookupStopWords.has(word));
+
+  if (!originalWords.length) {
+    return 1;
+  }
+
+  const words = expandLookupWords(originalWords);
+  const variantText = product.variants.map((variant) => `${variant.name} ${variant.sku} ${variant.model} ${variant.fits}`).join(" ");
+  const fields = {
+    sku: normalizeSearchText(product.sku),
+    name: normalizeSearchText(product.name),
+    category: normalizeSearchText(`${product.category} ${product.subcategory} ${product.childCategory}`),
+    details: normalizeSearchText(`${product.brand} ${product.model} ${variantText}`),
+  };
+  const haystack = Object.values(fields).join(" ");
+  const haystackWords = new Set(haystack.split(" ").filter(Boolean));
+  const compactQuery = compactSearchText(rawQuery);
+  const compactHaystack = compactSearchText(`${product.sku} ${product.name} ${product.category} ${product.subcategory} ${product.childCategory} ${product.brand} ${product.model} ${variantText}`);
+  let score = 0;
+  let originalMatches = 0;
+
+  if (compactQuery && compactHaystack.includes(compactQuery)) {
+    score += 90;
+    originalMatches = originalWords.length;
+  }
+
+  for (const word of words) {
+    const matched = haystackWords.has(word) || haystack.includes(word);
+
+    if (matched) {
+      score += fields.sku.includes(word) ? 18 : fields.name.includes(word) ? 14 : 8;
+
+      if (originalWords.includes(word)) {
+        originalMatches += 1;
+      }
+    }
+  }
+
+  if (originalWords.length > 1 && originalMatches < Math.ceil(originalWords.length / 2)) {
+    return 0;
+  }
+
+  return originalMatches > 0 ? score + originalMatches * 12 : 0;
+}
+
 export function AdminProductPriceLookupClient({ products, initialError }: { products: AdminProductLookupRecord[]; initialError?: string }) {
   const { language } = useAdminI18n();
   const t = language === "zh" ? { ...priceLookupZh, ...readablePriceLookupZh } : copy.en;
   const [search, setSearch] = useState("");
 
   const filteredProducts = useMemo(() => {
-    const query = normalizeSearchText(search);
+    const query = search.trim();
 
     if (!query) {
       return products;
     }
 
-    return products.filter((product) => {
-      const variantText = product.variants.map((variant) => `${variant.name} ${variant.sku} ${variant.model} ${variant.fits}`).join(" ");
-      const haystack = normalizeSearchText(`${product.sku} ${product.name} ${product.category} ${product.subcategory} ${product.childCategory} ${product.brand} ${product.model} ${variantText}`);
-      return query.split(/\s+/).every((word) => haystack.includes(word));
-    });
+    return products
+      .map((product) => ({ product, score: lookupScore(product, query) }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name))
+      .map((item) => item.product);
   }, [products, search]);
 
   return (
