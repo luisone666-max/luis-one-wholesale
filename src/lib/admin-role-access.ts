@@ -12,6 +12,10 @@ export function canManageProducts(role: ActiveAdminUser["role"]) {
   return role === "owner" || role === "admin" || role === "warehouse";
 }
 
+export function canManageCategories(role: ActiveAdminUser["role"]) {
+  return role === "owner" || role === "admin";
+}
+
 export function canViewCustomerRecords(role: ActiveAdminUser["role"]) {
   return role === "owner" || role === "admin";
 }

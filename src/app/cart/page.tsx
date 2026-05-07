@@ -13,6 +13,7 @@ import {
   updateCartItemQuantity,
   type CustomerCartItem,
 } from "@/lib/customer-cart";
+import { notifyCustomerCartUpdated } from "@/lib/customer-cart-events";
 import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty-points";
 import { formatPhp } from "@/lib/wholesale-pricing";
 
@@ -45,6 +46,7 @@ function CartContent() {
     setItems(result.items);
     setMessage(result.error ?? "");
     setLoading(false);
+    notifyCustomerCartUpdated();
   }, []);
 
   useEffect(() => {
@@ -61,6 +63,7 @@ function CartContent() {
         setItems(result.items);
         setMessage(result.error ?? "");
         setLoading(false);
+        notifyCustomerCartUpdated();
       })();
     });
 

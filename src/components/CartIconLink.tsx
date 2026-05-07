@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getCurrentCustomerSession } from "@/lib/customer-auth";
+import { customerCartUpdatedEvent } from "@/lib/customer-cart-events";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function CartIconLink({ className = "" }: { className?: string }) {
@@ -11,33 +12,44 @@ export function CartIconLink({ className = "" }: { className?: string }) {
   useEffect(() => {
     let active = true;
 
-    queueMicrotask(() => {
-      void (async () => {
-        const supabase = createBrowserSupabaseClient();
+    const loadCount = async () => {
+      const supabase = createBrowserSupabaseClient();
 
-        if (!supabase) {
-          return;
-        }
+      if (!supabase) {
+        return;
+      }
 
-        const session = await getCurrentCustomerSession();
+      const session = await getCurrentCustomerSession();
 
-        if (!active || !session.customer) {
-          return;
-        }
-
-        const { count: cartCount } = await supabase
-          .from("cart_items")
-          .select("id", { count: "exact", head: true })
-          .eq("customer_id", session.customer.id);
-
+      if (!active || !session.customer) {
         if (active) {
-          setCount(cartCount ?? 0);
+          setCount(0);
         }
-      })();
+        return;
+      }
+
+      const { count: cartCount } = await supabase
+        .from("cart_items")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", session.customer.id);
+
+      if (active) {
+        setCount(cartCount ?? 0);
+      }
+    };
+
+    const handleCartUpdated = () => {
+      void loadCount();
+    };
+
+    queueMicrotask(() => {
+      void loadCount();
     });
+    window.addEventListener(customerCartUpdatedEvent, handleCartUpdated);
 
     return () => {
       active = false;
+      window.removeEventListener(customerCartUpdatedEvent, handleCartUpdated);
     };
   }, []);
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseCategoryPayload, type CategoryPayload } from "@/lib/admin-category-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
+import { canManageCategories } from "@/lib/admin-role-access";
 import { revalidateCatalogPages } from "@/lib/catalog-revalidate";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -46,6 +47,10 @@ export async function POST(request: Request) {
 
   if (guard.response) {
     return guard.response;
+  }
+
+  if (!canManageCategories(guard.admin.role)) {
+    return jsonError("Only owner or admin can manage categories.", 403);
   }
 
   const admin = createSupabaseAdminClient();

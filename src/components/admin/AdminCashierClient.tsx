@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPosSalePrintTemplate } from "@/components/admin/AdminPosSalePrintTemplate";
@@ -55,6 +55,7 @@ const copy = {
     cashConfirmHint: "Count the cash, then confirm payment.",
     transferConfirmHint: "Check the transfer receipt and enter the reference number before confirming.",
     referenceRequired: "Enter the GCash / bank reference number before confirming.",
+    autoRefresh: "This page checks for new sales every 15 seconds.",
   },
   zh: {
     caption: "这里只做线下收银确认。收银员核对销售单、收款方式和金额后，再确认收款。",
@@ -86,6 +87,7 @@ const copy = {
     cashConfirmHint: "现金单：点清现金后再确认收款。",
     transferConfirmHint: "转账单：核对到账记录，并填写参考号后再确认。",
     referenceRequired: "请先填写 GCash / 银行参考号，再确认收款。",
+    autoRefresh: "本页面每 15 秒自动检查新的销售单。",
   },
 };
 
@@ -119,6 +121,7 @@ const zhCopy = {
   cashConfirmHint: "现金单：点清现金后再确认收款。",
   transferConfirmHint: "转账单：核对到账记录，并填写参考号后再确认。",
   referenceRequired: "请先填写 GCash / 银行参考号，再确认收款。",
+  autoRefresh: "本页面每 15 秒自动检查新的销售单。",
 } satisfies typeof copy.en;
 
 const cashierActionText = {
@@ -230,9 +233,35 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
           return summary;
         },
         { total: 0, cash: 0, transfer: 0, other: 0 },
-      ),
+    ),
     [sales],
   );
+
+  useEffect(() => {
+    let active = true;
+
+    const refreshQuietly = async () => {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
+      const response = await fetch("/api/admin/pos/sales?status=waiting_cashier");
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; sales?: PosSaleRecord[] } | null;
+
+      if (active && response.ok && result?.ok) {
+        setSales(result.sales ?? []);
+      }
+    };
+
+    const timer = window.setInterval(() => {
+      void refreshQuietly();
+    }, 15000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   async function refresh() {
     setLoading(true);
@@ -340,6 +369,7 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
             <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">{t.flowTitle}</p>
             <p className="mt-2 text-sm font-bold text-emerald-900">{t.onlineOrdersLink}</p>
             <p className="mt-1 text-xs font-bold text-emerald-800">{t.transferReferenceHint}</p>
+            <p className="mt-1 text-xs font-bold text-emerald-700">{t.autoRefresh}</p>
           </div>
           <div className="grid gap-2 text-sm font-black text-emerald-900 sm:grid-cols-3">
             <span className="rounded-md bg-white px-3 py-2 ring-1 ring-emerald-100">{t.flowStep1}</span>

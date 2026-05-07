@@ -493,13 +493,22 @@ export function AdminProductsClient({
     }, 50);
   };
 
-  const refreshProducts = async (preferredProductId?: string) => {
+  const refreshProducts = async (preferredProductId?: string, options?: { revealSavedProduct?: boolean }) => {
     const response = await fetch("/api/admin/products", { cache: "no-store" });
     const result = (await response.json().catch(() => ({ ok: false, message: "Product list refresh failed." }))) as ProductsListResponse;
 
     if (!response.ok || !result.ok || !result.products) {
       setMessage(result.message ?? "Product list refresh failed.");
       return false;
+    }
+
+    if (preferredProductId && options?.revealSavedProduct) {
+      setSearch("");
+      setCategoryFilter("all");
+      setStockFilter("all");
+      setActiveFilter("all");
+      setAttentionFilter("all");
+      setPage(1);
     }
 
     setProducts(result.products);
@@ -960,7 +969,7 @@ function ProductEditor({
   categories: AdminCategoryOption[];
   mainCategories: AdminCategoryOption[];
   onMessage: (message: string) => void;
-  onSaved: (preferredProductId?: string) => Promise<boolean>;
+  onSaved: (preferredProductId?: string, options?: { revealSavedProduct?: boolean }) => Promise<boolean>;
   onClose: () => void;
 }) {
   const { t, language } = useAdminI18n();
@@ -1254,7 +1263,7 @@ function ProductEditor({
     }
 
     const successMessage = mode === "create" ? copy.productUploadSuccess : copy.productUpdateSuccess;
-    const refreshed = await onSaved(result.productId ?? draft.id);
+    const refreshed = await onSaved(result.productId ?? draft.id, { revealSavedProduct: mode === "create" });
     setSuccessDialog(refreshed ? successMessage : `${successMessage} Refresh the page if the product is not visible yet.`);
     onMessage(successMessage);
     } finally {

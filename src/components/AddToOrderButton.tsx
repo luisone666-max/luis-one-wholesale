@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { addProductToCart } from "@/lib/customer-cart";
+import { notifyCustomerCartUpdated } from "@/lib/customer-cart-events";
 
 export function AddToOrderButton({
   productId,
@@ -25,6 +26,9 @@ export function AddToOrderButton({
     setLoading(false);
     setSuccess(result.ok);
     setMessage(result.message);
+    if (result.ok) {
+      notifyCustomerCartUpdated();
+    }
   };
 
   return (

@@ -39,6 +39,17 @@ type PosSaleItemRow = {
   notes: string | null;
 };
 
+type PosSaleAuditLogRow = {
+  id: string;
+  sale_id: string;
+  action: string;
+  previous_status: string | null;
+  new_status: string | null;
+  reason: string | null;
+  created_by_name_snapshot: string | null;
+  created_at: string | null;
+};
+
 export type PosSaleItemRecord = {
   id: string;
   productId: string;
@@ -49,6 +60,16 @@ export type PosSaleItemRecord = {
   unitPrice: number;
   subtotal: number;
   notes: string;
+};
+
+export type PosSaleAuditLogRecord = {
+  id: string;
+  action: string;
+  previousStatus: string;
+  newStatus: string;
+  reason: string;
+  createdByName: string;
+  createdAt: string;
 };
 
 export type PosSaleRecord = {
@@ -72,6 +93,7 @@ export type PosSaleRecord = {
   cashierConfirmedAt: string;
   createdAt: string;
   items: PosSaleItemRecord[];
+  auditLogs: PosSaleAuditLogRecord[];
 };
 
 export type PosSalesResult = {
@@ -119,7 +141,7 @@ function isWithinDateRange(value: string | null, start: string, end: string) {
   return Number.isFinite(time) && time >= startTime && time <= endTime;
 }
 
-function mapSale(row: PosSaleRow, items: PosSaleItemRow[]): PosSaleRecord {
+function mapSale(row: PosSaleRow, items: PosSaleItemRow[], auditLogs: PosSaleAuditLogRow[]): PosSaleRecord {
   return {
     id: row.id,
     saleNo: row.sale_no,
@@ -150,6 +172,15 @@ function mapSale(row: PosSaleRow, items: PosSaleItemRow[]): PosSaleRecord {
       unitPrice: toNumber(item.unit_price),
       subtotal: toNumber(item.subtotal),
       notes: item.notes ?? "",
+    })),
+    auditLogs: auditLogs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      previousStatus: log.previous_status ?? "",
+      newStatus: log.new_status ?? "",
+      reason: log.reason ?? "",
+      createdByName: log.created_by_name_snapshot ?? "",
+      createdAt: log.created_at ?? "",
     })),
   };
 }
@@ -194,18 +225,34 @@ export async function getPosSales(
         .select("id,sale_id,product_id,variant_id,item_name_snapshot,sku_snapshot,quantity,unit_price,subtotal,notes")
         .in("sale_id", saleIds)
     : { data: [], error: null };
+  const { data: auditRows, error: auditError } = saleIds.length
+    ? await supabase
+        .from("pos_sale_audit_logs")
+        .select("id,sale_id,action,previous_status,new_status,reason,created_by_name_snapshot,created_at")
+        .in("sale_id", saleIds)
+        .order("created_at", { ascending: false })
+    : { data: [], error: null };
 
   if (itemsError) {
     return { sales: [], error: itemsError.message };
   }
 
+  if (auditError) {
+    return { sales: [], error: auditError.message };
+  }
+
   const itemsBySaleId = new Map<string, PosSaleItemRow[]>();
+  const auditLogsBySaleId = new Map<string, PosSaleAuditLogRow[]>();
 
   for (const item of (itemRows ?? []) as PosSaleItemRow[]) {
     itemsBySaleId.set(item.sale_id, [...(itemsBySaleId.get(item.sale_id) ?? []), item]);
   }
 
-  return { sales: sales.map((sale) => mapSale(sale, itemsBySaleId.get(sale.id) ?? [])) };
+  for (const log of (auditRows ?? []) as PosSaleAuditLogRow[]) {
+    auditLogsBySaleId.set(log.sale_id, [...(auditLogsBySaleId.get(log.sale_id) ?? []), log]);
+  }
+
+  return { sales: sales.map((sale) => mapSale(sale, itemsBySaleId.get(sale.id) ?? [], auditLogsBySaleId.get(sale.id) ?? [])) };
 }
 
 export async function getPosSalesSummary(salespersonAdminUserId?: string): Promise<{ summary: PosSalesSummary; error?: string }> {

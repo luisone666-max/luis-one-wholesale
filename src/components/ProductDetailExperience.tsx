@@ -5,6 +5,7 @@ import { messengerUrl, ProductImage, StockStatusBadge } from "@/components/Custo
 import { trackMetaEvent } from "@/components/MetaPixel";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import { addProductToCart } from "@/lib/customer-cart";
+import { notifyCustomerCartUpdated } from "@/lib/customer-cart-events";
 import { metaCatalogItemId } from "@/lib/meta-catalog";
 import {
   formatMoney,
@@ -77,6 +78,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
     setMessage(result.message);
 
     if (result.ok) {
+      notifyCustomerCartUpdated();
       trackMetaEvent("AddToCart", {
         content_ids: [metaCatalogItemId(product, selectedVariant)],
         content_name: displayProduct.name,

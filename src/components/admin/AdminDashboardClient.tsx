@@ -14,6 +14,28 @@ const copy = {
     addProduct: "Add Product",
     onlineOrders: "Online Orders",
     offlineCashier: "Cashier",
+    reports: "Reports",
+    bossFocus: "Boss Focus",
+    todayCollected: "Today Collected",
+    todaySales: "Today Submitted Sales",
+    monthCollected: "Month Collected",
+    monthSales: "Month Submitted Sales",
+    actionQueue: "Action Queue",
+    needCashier: "Offline slips waiting cashier",
+    needOnlineFollowUp: "Online orders need follow-up",
+    employeeRanking: "Employee Monthly Ranking",
+    salesperson: "Salesperson",
+    paidTotal: "Paid Total",
+    submittedTotal: "Submitted Total",
+    slips: "Slips",
+    cashDrawer: "Cash Drawer",
+    gcashToday: "GCash Today",
+    bankToday: "Bank Today",
+    otherToday: "Other Payment Today",
+    viewOrders: "View Orders",
+    viewCashier: "Open Cashier",
+    viewReports: "View Reports",
+    noEmployees: "No employee sales records yet.",
     todayOnlineOrders: "Today Online Orders",
     todayOfflineSales: "Today Offline Sales",
     cashReceived: "Cash Received",
@@ -66,6 +88,28 @@ const readableDashboardZh = {
   addProduct: "\u6dfb\u52a0\u5546\u54c1",
   onlineOrders: "\u7ebf\u4e0a\u8ba2\u5355",
   offlineCashier: "\u6536\u94f6\u4e2d\u5fc3",
+  reports: "\u62a5\u8868",
+  bossFocus: "\u8001\u677f\u91cd\u70b9",
+  todayCollected: "\u4eca\u65e5\u5df2\u6536\u6b3e",
+  todaySales: "\u4eca\u65e5\u63d0\u4ea4\u9500\u552e",
+  monthCollected: "\u672c\u6708\u5df2\u6536\u6b3e",
+  monthSales: "\u672c\u6708\u63d0\u4ea4\u9500\u552e",
+  actionQueue: "\u5f85\u5904\u7406",
+  needCashier: "\u7ebf\u4e0b\u5f85\u6536\u94f6\u5355",
+  needOnlineFollowUp: "\u7ebf\u4e0a\u5f85\u8ddf\u8fdb\u8ba2\u5355",
+  employeeRanking: "\u5458\u5de5\u672c\u6708\u9500\u552e\u6392\u884c",
+  salesperson: "\u9500\u552e\u5458",
+  paidTotal: "\u5df2\u6536\u6b3e",
+  submittedTotal: "\u63d0\u4ea4\u9500\u552e",
+  slips: "\u5f20\u5355",
+  cashDrawer: "\u94b1\u7bb1\u73b0\u91d1",
+  gcashToday: "\u4eca\u65e5 GCash",
+  bankToday: "\u4eca\u65e5\u94f6\u884c\u8f6c\u8d26",
+  otherToday: "\u4eca\u65e5\u5176\u4ed6\u6536\u6b3e",
+  viewOrders: "\u67e5\u770b\u8ba2\u5355",
+  viewCashier: "\u6253\u5f00\u6536\u94f6",
+  viewReports: "\u67e5\u770b\u62a5\u8868",
+  noEmployees: "\u6682\u65e0\u5458\u5de5\u9500\u552e\u8bb0\u5f55\u3002",
   todayOnlineOrders: "\u4eca\u65e5\u7ebf\u4e0a\u8ba2\u5355\u91d1\u989d",
   todayOfflineSales: "\u4eca\u65e5\u7ebf\u4e0b\u5df2\u6536\u6b3e",
   cashReceived: "\u73b0\u91d1\u6536\u5165",
@@ -155,8 +199,66 @@ export function AdminDashboardClient({ data }: { data: AdminDashboardData }) {
           <Link href="/admin/cashier" className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-black text-zinc-700">
             {text.offlineCashier}
           </Link>
+          <Link href="/admin/reports" className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-black text-zinc-700">
+            {text.reports}
+          </Link>
         </div>
       </div>
+
+      <section className="mb-5 rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">{text.bossFocus}</p>
+            <h2 className="mt-1 text-xl font-black text-zinc-950">{text.todayCollected}</h2>
+          </div>
+          <Link href="/admin/reports" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-black text-white">
+            {text.viewReports}
+          </Link>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard label={text.todayCollected} value={formatPhp(data.todayPaidTotal)} tone="green" />
+          <StatCard label={text.todaySales} value={formatPhp(data.todaySalesTotal)} tone="orange" />
+          <StatCard label={text.monthCollected} value={formatPhp(data.monthPaidTotal)} tone="green" />
+          <StatCard label={text.monthSales} value={formatPhp(data.monthSalesTotal)} />
+        </div>
+      </section>
+
+      <section className="mb-5 grid gap-4 xl:grid-cols-[1fr_1fr]">
+        <div className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-black text-zinc-950">{text.actionQueue}</h2>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/admin/orders" className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-black text-orange-700">
+                {text.viewOrders}
+              </Link>
+              <Link href="/admin/cashier" className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
+                {text.viewCashier}
+              </Link>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <StatCard label={text.needOnlineFollowUp} value={formatPhp(data.todayPendingOnlineTotal)} tone="orange" />
+            <StatCard label={text.needCashier} value={formatPhp(data.todayWaitingCashierTotal)} tone="orange" />
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-md bg-orange-50 px-4 py-3 text-sm font-black text-orange-800">
+              {text.pendingOnlineOrders}: {data.pendingOnlineOrders}
+            </div>
+            <div className="rounded-md bg-orange-50 px-4 py-3 text-sm font-black text-orange-800">
+              {text.waitingCashier}: {data.waitingCashierCount}
+            </div>
+          </div>
+        </div>
+        <div className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-4 text-lg font-black text-zinc-950">{text.cashDrawer}</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <StatCard label={text.cashReceived} value={formatPhp(data.offlineCashTodayTotal)} tone="green" />
+            <StatCard label={text.gcashToday} value={formatPhp(data.todayGcashTotal)} />
+            <StatCard label={text.bankToday} value={formatPhp(data.todayBankTransferTotal)} />
+            <StatCard label={text.otherToday} value={formatPhp(data.todayOtherPaymentTotal)} />
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label={text.todayOnlineOrders} value={formatPhp(data.onlineOrdersTodayTotal)} tone="orange" />
@@ -172,6 +274,45 @@ export function AdminDashboardClient({ data }: { data: AdminDashboardData }) {
         <StatCard label={text.lowStockProducts} value={data.lowStockProducts} tone="orange" />
       </section>
       <p className="mt-3 rounded-md border border-orange-100 bg-orange-50 px-4 py-3 text-xs font-bold text-orange-800">{text.dataNote}</p>
+
+      <section className="mt-6 rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-black text-zinc-950">{text.employeeRanking}</h2>
+          <StatusPill tone="green">{data.topEmployees.length}</StatusPill>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
+              <tr>
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">{text.salesperson}</th>
+                <th className="px-4 py-3">{text.slips}</th>
+                <th className="px-4 py-3">{text.submittedTotal}</th>
+                <th className="px-4 py-3">{text.paidTotal}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {data.topEmployees.length ? (
+                data.topEmployees.map((employee, index) => (
+                  <tr key={`${employee.salesName}-${index}`}>
+                    <td className="px-4 py-4 font-black text-zinc-900">{index + 1}</td>
+                    <td className="px-4 py-4 font-black text-zinc-900">{employee.salesName}</td>
+                    <td className="px-4 py-4 text-zinc-600">{employee.orderCount}</td>
+                    <td className="px-4 py-4 font-black text-orange-700">{formatPhp(employee.productTotal)}</td>
+                    <td className="px-4 py-4 font-black text-emerald-700">{formatPhp(employee.paidTotal)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-4 py-6 text-center text-sm font-bold text-zinc-500" colSpan={5}>
+                    {text.noEmployees}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="mt-6 rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">

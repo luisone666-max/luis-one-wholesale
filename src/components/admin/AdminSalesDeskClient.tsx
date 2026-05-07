@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPosSalePrintTemplate } from "@/components/admin/AdminPosSalePrintTemplate";
@@ -84,6 +84,15 @@ const copy = {
     orderBreakdown: "Order Breakdown",
     productTotal: "Product Total",
     cashierReceives: "Cashier Receives",
+    details: "Details",
+    hideDetails: "Hide Details",
+    itemDetails: "Item Details",
+    auditTrail: "Audit Trail",
+    noAudit: "No audit records yet.",
+    by: "By",
+    reason: "Reason",
+    statusChange: "Status Change",
+    cashier: "Cashier",
   },
   zh: {
     caption: "这里只做门店线下销售。销售员先开销售单，保存后交给收银员确认收款。",
@@ -142,6 +151,15 @@ const copy = {
     memberBadge: "会员",
     walkInBadge: "散客",
     employeeLocked: "工号已锁定，用于销售归属和审计记录。",
+    details: "详情",
+    hideDetails: "收起详情",
+    itemDetails: "商品明细",
+    auditTrail: "操作记录",
+    noAudit: "暂无操作记录。",
+    by: "操作人",
+    reason: "原因",
+    statusChange: "状态变化",
+    cashier: "收银员",
   },
 };
 
@@ -208,6 +226,15 @@ const zhCopy = {
   orderBreakdown: "订单拆分",
   productTotal: "商品小计",
   cashierReceives: "收银员应收",
+  details: "详情",
+  hideDetails: "收起详情",
+  itemDetails: "商品明细",
+  auditTrail: "操作记录",
+  noAudit: "暂无操作记录。",
+  by: "操作人",
+  reason: "原因",
+  statusChange: "状态变化",
+  cashier: "收银员",
 } satisfies typeof copy.en;
 
 const salesDeskFlowText = {
@@ -420,6 +447,7 @@ export function AdminSalesDeskClient({
   const [printSale, setPrintSale] = useState<PosSaleRecord | null>(null);
   const [editingSaleId, setEditingSaleId] = useState("");
   const [editingSaleNo, setEditingSaleNo] = useState("");
+  const [expandedSaleId, setExpandedSaleId] = useState("");
   const [message, setMessage] = useState(initialError ?? "");
   const [loading, setLoading] = useState(false);
   const selectedCustomer = useMemo(() => customers.find((item) => item.id === customerId), [customerId, customers]);
@@ -443,6 +471,33 @@ export function AdminSalesDeskClient({
 
     return products.filter((product) => productMatchesSearch(product, needle)).slice(0, 80);
   }, [productSearch, products]);
+
+  useEffect(() => {
+    let active = true;
+
+    const refreshQuietly = async () => {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
+      const url = summaryScope === "mine" ? "/api/admin/pos/sales?scope=mine" : "/api/admin/pos/sales";
+      const response = await fetch(url);
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; sales?: PosSaleRecord[] } | null;
+
+      if (active && response.ok && result?.ok) {
+        setSales(result.sales ?? []);
+      }
+    };
+
+    const timer = window.setInterval(() => {
+      void refreshQuietly();
+    }, 20000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [summaryScope]);
 
   function selectCustomer(id: string) {
     setCustomerId(id);
@@ -527,6 +582,19 @@ export function AdminSalesDeskClient({
     }
 
     return status;
+  }
+
+  function auditActionLabel(action: string) {
+    const labels: Record<string, string> = {
+      created: language === "zh" ? "创建销售单" : "Created",
+      updated: language === "zh" ? "修改销售单" : "Updated",
+      returned_to_sales: language === "zh" ? "退回销售修改" : "Returned to Sales",
+      cancelled: language === "zh" ? "取消销售单" : "Cancelled",
+      payment_confirmed: language === "zh" ? "收银确认收款" : "Payment Confirmed",
+      voided_paid_sale: language === "zh" ? "作废已收款" : "Voided Paid Sale",
+    };
+
+    return labels[action] ?? action.replace(/_/g, " ");
   }
 
   function resetForm() {
@@ -938,52 +1006,139 @@ export function AdminSalesDeskClient({
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {sales.length ? (
-                sales.map((sale) => (
-                  <tr key={sale.id}>
-                    <td className="px-4 py-3 font-black text-zinc-950">{sale.saleNo}</td>
-                    <td className="px-4 py-3 text-zinc-600">{sale.customerName}</td>
-                    <td className="px-4 py-3 text-zinc-600">{paymentMethodLabel(sale.paymentMethod, language)}</td>
-                    <td className="px-4 py-3 font-black text-orange-700">{formatPhp(sale.totalAmount)}</td>
-                    <td className="px-4 py-3">
-                      <StatusPill tone={sale.status === "paid" ? "green" : "orange"}>{statusLabel(sale.status)}</StatusPill>
-                    </td>
-                    <td className="px-4 py-3 text-zinc-600">{shortDate(sale.createdAt)}</td>
-                    <td className="px-4 py-3">
-                      <button type="button" onClick={() => printPosSale(sale)} className="rounded-md border border-zinc-200 px-3 py-2 text-xs font-black text-zinc-700">
-                        {t.printA6}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        {sale.status === "waiting_cashier" || sale.status === "returned_to_sales" ? (
-                          <>
-                            <button type="button" onClick={() => loadSaleForEdit(sale)} className="rounded-md border border-zinc-200 px-3 py-2 text-xs font-black text-zinc-700">
-                              {actionText.editSale}
-                            </button>
+                sales.map((sale) => {
+                  const expanded = expandedSaleId === sale.id;
+
+                  return (
+                    <Fragment key={sale.id}>
+                      <tr>
+                        <td className="px-4 py-3 font-black text-zinc-950">{sale.saleNo}</td>
+                        <td className="px-4 py-3 text-zinc-600">{sale.customerName}</td>
+                        <td className="px-4 py-3 text-zinc-600">{paymentMethodLabel(sale.paymentMethod, language)}</td>
+                        <td className="px-4 py-3 font-black text-orange-700">{formatPhp(sale.totalAmount)}</td>
+                        <td className="px-4 py-3">
+                          <StatusPill tone={sale.status === "paid" ? "green" : "orange"}>{statusLabel(sale.status)}</StatusPill>
+                        </td>
+                        <td className="px-4 py-3 text-zinc-600">{shortDate(sale.createdAt)}</td>
+                        <td className="px-4 py-3">
+                          <button type="button" onClick={() => printPosSale(sale)} className="rounded-md border border-zinc-200 px-3 py-2 text-xs font-black text-zinc-700">
+                            {t.printA6}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-2">
                             <button
                               type="button"
-                              disabled={loading}
-                              onClick={() => void runSaleAction(sale, "cancel", actionText.cancelReasonPrompt, actionText.cancelDone)}
-                              className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-60"
+                              onClick={() => setExpandedSaleId(expanded ? "" : sale.id)}
+                              className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs font-black text-zinc-700"
                             >
-                              {actionText.cancelSale}
+                              {expanded ? t.hideDetails : t.details}
                             </button>
-                          </>
-                        ) : null}
-                        {canChangeEmployeeNo && sale.status === "paid" ? (
-                          <button
-                            type="button"
-                            disabled={loading}
-                            onClick={() => void runSaleAction(sale, "void_paid", actionText.voidReasonPrompt, actionText.voidDone)}
-                            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-60"
-                          >
-                            {actionText.voidPaidSale}
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                            {sale.status === "waiting_cashier" || sale.status === "returned_to_sales" ? (
+                              <>
+                                <button type="button" onClick={() => loadSaleForEdit(sale)} className="rounded-md border border-zinc-200 px-3 py-2 text-xs font-black text-zinc-700">
+                                  {actionText.editSale}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={loading}
+                                  onClick={() => void runSaleAction(sale, "cancel", actionText.cancelReasonPrompt, actionText.cancelDone)}
+                                  className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-60"
+                                >
+                                  {actionText.cancelSale}
+                                </button>
+                              </>
+                            ) : null}
+                            {canChangeEmployeeNo && sale.status === "paid" ? (
+                              <button
+                                type="button"
+                                disabled={loading}
+                                onClick={() => void runSaleAction(sale, "void_paid", actionText.voidReasonPrompt, actionText.voidDone)}
+                                className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-60"
+                              >
+                                {actionText.voidPaidSale}
+                              </button>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                      {expanded ? (
+                        <tr>
+                          <td className="bg-zinc-50 px-4 py-4" colSpan={8}>
+                            <div className="grid gap-4 xl:grid-cols-2">
+                              <div className="rounded-md border border-zinc-200 bg-white p-4">
+                                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                  <h3 className="font-black text-zinc-950">{t.itemDetails}</h3>
+                                  <div className="text-xs font-bold text-zinc-500">
+                                    {t.productTotal}: {formatPhp(sale.productTotal)} | {t.discount}: {formatPhp(sale.discountAmount)}
+                                  </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full min-w-[520px] text-left text-xs">
+                                    <thead className="bg-zinc-50 uppercase tracking-[0.12em] text-zinc-500">
+                                      <tr>
+                                        <th className="px-3 py-2">{t.product}</th>
+                                        <th className="px-3 py-2">SKU</th>
+                                        <th className="px-3 py-2">{t.qty}</th>
+                                        <th className="px-3 py-2">{t.unitPrice}</th>
+                                        <th className="px-3 py-2">{t.subtotal}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-zinc-100">
+                                      {sale.items.map((item) => (
+                                        <tr key={item.id}>
+                                          <td className="px-3 py-2 font-black text-zinc-900">{item.name}</td>
+                                          <td className="px-3 py-2 text-zinc-600">{item.sku || "-"}</td>
+                                          <td className="px-3 py-2 text-zinc-600">{item.quantity}</td>
+                                          <td className="px-3 py-2 text-zinc-600">{formatPhp(item.unitPrice)}</td>
+                                          <td className="px-3 py-2 font-black text-zinc-900">{formatPhp(item.subtotal)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                <div className="mt-3 grid gap-2 text-xs font-bold text-zinc-600 sm:grid-cols-2">
+                                  <p>
+                                    {t.cashier}: {sale.cashierName || "-"}
+                                  </p>
+                                  <p>
+                                    {t.saleNotes}: {sale.saleNotes || "-"}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="rounded-md border border-zinc-200 bg-white p-4">
+                                <h3 className="mb-3 font-black text-zinc-950">{t.auditTrail}</h3>
+                                {sale.auditLogs.length ? (
+                                  <div className="space-y-2">
+                                    {sale.auditLogs.map((log) => (
+                                      <div key={log.id} className="rounded-md border border-zinc-100 bg-zinc-50 p-3 text-xs font-bold text-zinc-600">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <span className="font-black text-zinc-950">{auditActionLabel(log.action)}</span>
+                                          <span>{shortDate(log.createdAt)}</span>
+                                        </div>
+                                        <p className="mt-1">
+                                          {t.by}: {log.createdByName || "-"}
+                                        </p>
+                                        <p className="mt-1">
+                                          {t.statusChange}: {log.previousStatus || "-"} {"->"} {log.newStatus || "-"}
+                                        </p>
+                                        <p className="mt-1">
+                                          {t.reason}: {log.reason || "-"}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm font-bold text-zinc-500">{t.noAudit}</p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })
               ) : (
                 <tr>
                   <td className="px-4 py-6 text-center text-sm font-bold text-zinc-500" colSpan={8}>

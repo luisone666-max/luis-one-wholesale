@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getEmployeeSalesReport } from "@/lib/employee-sales-report-data";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export type AdminDashboardOrder = {
@@ -9,18 +10,35 @@ export type AdminDashboardOrder = {
   productTotal: number;
 };
 
+export type AdminDashboardEmployee = {
+  salesName: string;
+  orderCount: number;
+  productTotal: number;
+  paidTotal: number;
+};
+
 export type AdminDashboardData = {
   activeProducts: number;
   hiddenProducts: number;
   lowStockProducts: number;
   pendingOnlineOrders: number;
+  todaySalesTotal: number;
+  todayPaidTotal: number;
+  todayPendingOnlineTotal: number;
+  todayWaitingCashierTotal: number;
+  monthSalesTotal: number;
+  monthPaidTotal: number;
   onlineOrdersTodayTotal: number;
   offlineSalesTodayTotal: number;
   offlineCashTodayTotal: number;
   offlineTransferTodayTotal: number;
+  todayGcashTotal: number;
+  todayBankTransferTotal: number;
+  todayOtherPaymentTotal: number;
   waitingCashierCount: number;
   customerCount: number;
   activeCustomerCount: number;
+  topEmployees: AdminDashboardEmployee[];
   recentOrders: AdminDashboardOrder[];
   error?: string;
 };
@@ -50,13 +68,23 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     hiddenProducts: 0,
     lowStockProducts: 0,
     pendingOnlineOrders: 0,
+    todaySalesTotal: 0,
+    todayPaidTotal: 0,
+    todayPendingOnlineTotal: 0,
+    todayWaitingCashierTotal: 0,
+    monthSalesTotal: 0,
+    monthPaidTotal: 0,
     onlineOrdersTodayTotal: 0,
     offlineSalesTodayTotal: 0,
     offlineCashTodayTotal: 0,
     offlineTransferTodayTotal: 0,
+    todayGcashTotal: 0,
+    todayBankTransferTotal: 0,
+    todayOtherPaymentTotal: 0,
     waitingCashierCount: 0,
     customerCount: 0,
     activeCustomerCount: 0,
+    topEmployees: [],
     recentOrders: [],
   };
 
@@ -76,6 +104,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     onlineOrdersResult,
     posPaymentsResult,
     recentOrdersResult,
+    reportResult,
   ] = await Promise.all([
     supabase.from("products").select("id", { count: "exact", head: true }).eq("active", true),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("active", false),
@@ -91,6 +120,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       .select("order_no,receiver_name,product_total,order_status,created_at")
       .order("created_at", { ascending: false })
       .limit(5),
+    getEmployeeSalesReport(),
   ]);
 
   const errors = [
@@ -104,6 +134,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     onlineOrdersResult.error?.message,
     posPaymentsResult.error?.message,
     recentOrdersResult.error?.message,
+    reportResult.error,
   ].filter(Boolean);
 
   const onlineOrdersTodayTotal = ((onlineOrdersResult.data ?? []) as Array<{ product_total: number | string | null }>).reduce(
@@ -119,25 +150,53 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     const amount = toNumber(payment.amount);
     offlineSalesTodayTotal += amount;
 
-    if ((payment.payment_method ?? "").toLowerCase() === "cash") {
+    const paymentMethod = (payment.payment_method ?? "").toLowerCase();
+
+    if (paymentMethod === "cash") {
       offlineCashTodayTotal += amount;
+    } else if (paymentMethod === "gcash") {
+      offlineTransferTodayTotal += amount;
+    } else if (paymentMethod === "bank_transfer") {
+      offlineTransferTodayTotal += amount;
     } else {
       offlineTransferTodayTotal += amount;
     }
   }
+
+  const currentMonth = reportResult.monthOptions[0] ?? "";
+  const topEmployees = reportResult.rows
+    .filter((row) => !currentMonth || row.month === currentMonth)
+    .sort((a, b) => b.paidTotal - a.paidTotal || b.productTotal - a.productTotal)
+    .slice(0, 5)
+    .map((row) => ({
+      salesName: row.salesName,
+      orderCount: row.orderCount,
+      productTotal: row.productTotal,
+      paidTotal: row.paidTotal,
+    }));
 
   return {
     activeProducts: activeProducts.count ?? 0,
     hiddenProducts: hiddenProducts.count ?? 0,
     lowStockProducts: lowStockProducts.count ?? 0,
     pendingOnlineOrders: pendingOnlineOrders.count ?? 0,
+    todaySalesTotal: reportResult.overview.todaySalesTotal,
+    todayPaidTotal: reportResult.overview.todayPaidTotal,
+    todayPendingOnlineTotal: reportResult.overview.todayPendingOnlineTotal,
+    todayWaitingCashierTotal: reportResult.overview.todayWaitingCashierTotal,
+    monthSalesTotal: reportResult.overview.monthSalesTotal,
+    monthPaidTotal: reportResult.overview.monthPaidTotal,
     onlineOrdersTodayTotal,
     offlineSalesTodayTotal,
     offlineCashTodayTotal,
     offlineTransferTodayTotal,
+    todayGcashTotal: reportResult.overview.todayGcashTotal,
+    todayBankTransferTotal: reportResult.overview.todayBankTransferTotal,
+    todayOtherPaymentTotal: reportResult.overview.todayOtherPaymentTotal,
     waitingCashierCount: waitingCashierCount.count ?? 0,
     customerCount: customerCount.count ?? 0,
     activeCustomerCount: activeCustomerCount.count ?? 0,
+    topEmployees,
     recentOrders: ((recentOrdersResult.data ?? []) as Array<{
       order_no: string | null;
       receiver_name: string | null;
