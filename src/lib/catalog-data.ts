@@ -80,6 +80,10 @@ function getFallbackCatalog(): CatalogSnapshot {
   };
 }
 
+function getFallbackCatalogSource(): CatalogResult<CatalogSnapshot>["source"] {
+  return process.env.NODE_ENV === "production" ? "supabase" : "mock";
+}
+
 function formatCatalogError(error: unknown) {
   if (error instanceof Error) {
     return error.message;
@@ -367,13 +371,13 @@ export async function getCatalogSnapshot(): Promise<CatalogResult<CatalogSnapsho
 
     return {
       data: getFallbackCatalog(),
-      source: "mock",
+      source: getFallbackCatalogSource(),
       message: fallbackMessage,
     };
   } catch (error) {
     return {
       data: getFallbackCatalog(),
-      source: "mock",
+      source: getFallbackCatalogSource(),
       message: process.env.NODE_ENV === "production" ? fallbackMessage : `${fallbackMessage} ${formatCatalogError(error)}`,
     };
   }
