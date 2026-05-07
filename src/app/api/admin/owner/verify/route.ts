@@ -13,6 +13,10 @@ export async function POST(request: Request) {
     return guard.response;
   }
 
+  if (guard.admin.role !== "owner" && guard.admin.role !== "admin") {
+    return jsonError("Only owner or admin can access owner center.", 403);
+  }
+
   const payload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const result = await verifyOwnerActionPassword(payload.ownerPassword, guard.admin.id);
 
