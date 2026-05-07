@@ -338,6 +338,50 @@ function paymentMethodLabel(method: string, language: "en" | "zh") {
   return labels[language][method as keyof typeof labels.en] ?? method;
 }
 
+function isToday(value: string) {
+  if (!value) {
+    return false;
+  }
+
+  const date = new Date(value);
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+}
+
+function isThisMonth(value: string) {
+  if (!value) {
+    return false;
+  }
+
+  const date = new Date(value);
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}
+
+function subtractSaleFromSummary(summary: PosSalesSummary, sale: PosSaleRecord) {
+  const next = { ...summary };
+
+  if (sale.status === "waiting_cashier") {
+    next.waitingCount = Math.max(0, next.waitingCount - 1);
+    next.waitingTotal = Math.max(0, next.waitingTotal - sale.totalAmount);
+  }
+
+  if (sale.status === "paid") {
+    next.paidCount = Math.max(0, next.paidCount - 1);
+    next.paidTotal = Math.max(0, next.paidTotal - sale.totalAmount);
+
+    if (isThisMonth(sale.createdAt)) {
+      next.monthTotal = Math.max(0, next.monthTotal - sale.totalAmount);
+    }
+
+    if (isToday(sale.createdAt)) {
+      next.todayTotal = Math.max(0, next.todayTotal - sale.totalAmount);
+    }
+  }
+
+  return next;
+}
+
 export function AdminSalesDeskClient({
   customers,
   products,
@@ -361,6 +405,7 @@ export function AdminSalesDeskClient({
   const t = language === "zh" ? zhCopy : copy.en;
   const ui = salesDeskFlowText[language];
   const actionText = saleActionsText[language];
+  const [summaryState, setSummaryState] = useState(summary);
   const [employeeNo, setEmployeeNo] = useState(defaultEmployeeNo);
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -567,6 +612,7 @@ export function AdminSalesDeskClient({
         return;
       }
 
+      setSummaryState((current) => subtractSaleFromSummary(current, sale));
       setMessage(successText);
       await refreshRecent();
     } finally {
@@ -584,6 +630,7 @@ export function AdminSalesDeskClient({
     setMessage("");
 
     try {
+      const wasEditingSale = editingSaleId ? sales.find((sale) => sale.id === editingSaleId) : undefined;
       const response = await fetch(editingSaleId ? `/api/admin/pos/sales/${editingSaleId}` : "/api/admin/pos/sales", {
         method: editingSaleId ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
@@ -607,6 +654,14 @@ export function AdminSalesDeskClient({
         return;
       }
 
+      setSummaryState((current) => {
+        const base = wasEditingSale ? subtractSaleFromSummary(current, wasEditingSale) : { ...current };
+        return {
+          ...base,
+          waitingCount: base.waitingCount + 1,
+          waitingTotal: base.waitingTotal + total,
+        };
+      });
       setMessage(`${editingSaleId ? actionText.updateSale : t.saved} ${result.saleNo ?? ""}`);
       resetForm();
       await refreshRecent();
@@ -651,24 +706,24 @@ export function AdminSalesDeskClient({
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-md bg-zinc-50 p-4">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-400">{t.todaySales}</p>
-            <p className="mt-2 text-2xl font-black text-zinc-950">{formatPhp(summary.todayTotal)}</p>
+            <p className="mt-2 text-2xl font-black text-zinc-950">{formatPhp(summaryState.todayTotal)}</p>
           </div>
           <div className="rounded-md bg-orange-50 p-4">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-orange-500">{t.monthSales}</p>
-            <p className="mt-2 text-2xl font-black text-orange-700">{formatPhp(summary.monthTotal)}</p>
+            <p className="mt-2 text-2xl font-black text-orange-700">{formatPhp(summaryState.monthTotal)}</p>
           </div>
           <div className="rounded-md bg-zinc-50 p-4">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-400">{t.waitingCashier}</p>
-            <p className="mt-2 text-2xl font-black text-zinc-950">{formatPhp(summary.waitingTotal)}</p>
+            <p className="mt-2 text-2xl font-black text-zinc-950">{formatPhp(summaryState.waitingTotal)}</p>
             <p className="mt-1 text-xs font-bold text-zinc-500">
-              {summary.waitingCount} {t.slips}
+              {summaryState.waitingCount} {t.slips}
             </p>
           </div>
           <div className="rounded-md bg-emerald-50 p-4">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-600">{t.paidSales}</p>
-            <p className="mt-2 text-2xl font-black text-emerald-700">{formatPhp(summary.paidTotal)}</p>
+            <p className="mt-2 text-2xl font-black text-emerald-700">{formatPhp(summaryState.paidTotal)}</p>
             <p className="mt-1 text-xs font-bold text-emerald-700">
-              {summary.paidCount} {t.slips}
+              {summaryState.paidCount} {t.slips}
             </p>
           </div>
         </div>
