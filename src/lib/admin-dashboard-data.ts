@@ -113,7 +113,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     supabase.from("pos_sales").select("id", { count: "exact", head: true }).eq("status", "waiting_cashier"),
     supabase.from("customers").select("id", { count: "exact", head: true }),
     supabase.from("customers").select("id", { count: "exact", head: true }).eq("status", "active"),
-    supabase.from("orders").select("product_total,created_at").gte("created_at", start).lte("created_at", end),
+    supabase.from("orders").select("product_total,order_status,created_at").gte("created_at", start).lte("created_at", end),
     supabase.from("pos_payment_confirmations").select("payment_method,amount,confirmed_at").gte("confirmed_at", start).lte("confirmed_at", end),
     supabase
       .from("orders")
@@ -137,8 +137,11 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     reportResult.error,
   ].filter(Boolean);
 
-  const onlineOrdersTodayTotal = ((onlineOrdersResult.data ?? []) as Array<{ product_total: number | string | null }>).reduce(
-    (total, order) => total + toNumber(order.product_total),
+  const onlineOrdersTodayTotal = ((onlineOrdersResult.data ?? []) as Array<{ product_total: number | string | null; order_status: string | null }>).reduce(
+    (total, order) =>
+      order.order_status === "cancelled" || order.order_status === "voided" || order.order_status === "unavailable_refund"
+        ? total
+        : total + toNumber(order.product_total),
     0,
   );
 

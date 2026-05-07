@@ -78,6 +78,18 @@ export type BusinessReportOverview = {
   monthWaitingCashierTotal: number;
   monthPendingOnlineCount: number;
   monthPendingOnlineTotal: number;
+  todayCancelledCount: number;
+  todayCancelledTotal: number;
+  todayVoidedCount: number;
+  todayVoidedTotal: number;
+  todayRefundCount: number;
+  todayRefundTotal: number;
+  monthCancelledCount: number;
+  monthCancelledTotal: number;
+  monthVoidedCount: number;
+  monthVoidedTotal: number;
+  monthRefundCount: number;
+  monthRefundTotal: number;
 };
 
 export type EmployeeSalesReportResult = {
@@ -117,6 +129,18 @@ function emptyOverview(): BusinessReportOverview {
     monthWaitingCashierTotal: 0,
     monthPendingOnlineCount: 0,
     monthPendingOnlineTotal: 0,
+    todayCancelledCount: 0,
+    todayCancelledTotal: 0,
+    todayVoidedCount: 0,
+    todayVoidedTotal: 0,
+    todayRefundCount: 0,
+    todayRefundTotal: 0,
+    monthCancelledCount: 0,
+    monthCancelledTotal: 0,
+    monthVoidedCount: 0,
+    monthVoidedTotal: 0,
+    monthRefundCount: 0,
+    monthRefundTotal: 0,
   };
 }
 
@@ -157,6 +181,47 @@ function isToday(value: string | null, dayStart: string, dayEnd: string) {
 
 function isCancelled(status: string | null) {
   return status === "cancelled" || status === "voided" || status === "unavailable_refund";
+}
+
+function addExceptionTotal(
+  overview: BusinessReportOverview,
+  kind: "cancelled" | "voided" | "refund",
+  amount: number,
+  createdAt: string | null,
+  dayStart: string,
+  dayEnd: string,
+) {
+  if (kind === "cancelled") {
+    overview.monthCancelledCount += 1;
+    overview.monthCancelledTotal += amount;
+
+    if (isToday(createdAt, dayStart, dayEnd)) {
+      overview.todayCancelledCount += 1;
+      overview.todayCancelledTotal += amount;
+    }
+
+    return;
+  }
+
+  if (kind === "voided") {
+    overview.monthVoidedCount += 1;
+    overview.monthVoidedTotal += amount;
+
+    if (isToday(createdAt, dayStart, dayEnd)) {
+      overview.todayVoidedCount += 1;
+      overview.todayVoidedTotal += amount;
+    }
+
+    return;
+  }
+
+  overview.monthRefundCount += 1;
+  overview.monthRefundTotal += amount;
+
+  if (isToday(createdAt, dayStart, dayEnd)) {
+    overview.todayRefundCount += 1;
+    overview.todayRefundTotal += amount;
+  }
 }
 
 function isPendingOnline(status: string | null) {
@@ -286,11 +351,20 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
   const months = new Set<string>();
 
   for (const order of (ordersResult.data ?? []) as OrderSalesRow[]) {
+    const amount = toNumber(order.product_total);
+
     if (isCancelled(order.order_status)) {
+      addExceptionTotal(
+        overview,
+        order.order_status === "unavailable_refund" ? "refund" : order.order_status === "voided" ? "voided" : "cancelled",
+        amount,
+        order.created_at,
+        dayStart,
+        dayEnd,
+      );
       continue;
     }
 
-    const amount = toNumber(order.product_total);
     const month = monthKey(order.created_at);
     const salesAdminUserId = order.sales_admin_user_id ?? "";
     const salesName = order.sales_name_snapshot || "Unassigned / Online order";
@@ -333,11 +407,13 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
   }
 
   for (const sale of (posSalesResult.data ?? []) as PosSalesRow[]) {
-    if (sale.status === "cancelled") {
+    const amount = toNumber(sale.total_amount);
+
+    if (sale.status === "cancelled" || sale.status === "voided") {
+      addExceptionTotal(overview, sale.status === "voided" ? "voided" : "cancelled", amount, sale.created_at, dayStart, dayEnd);
       continue;
     }
 
-    const amount = toNumber(sale.total_amount);
     const month = monthKey(sale.created_at);
     const employeeKey = sale.salesperson_admin_user_id || sale.salesperson_employee_no || "unassigned-pos";
     const salesAdminUserId = sale.salesperson_admin_user_id || (sale.salesperson_employee_no ? `employee:${sale.salesperson_employee_no}` : "");

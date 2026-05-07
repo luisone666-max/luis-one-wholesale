@@ -51,6 +51,11 @@ const copy = {
     waitingAmount: "Waiting",
     paidRate: "Paid Rate",
     collectedCashflow: "Collected Cashflow",
+    exceptions: "Exceptions / Corrections",
+    exceptionNote: "Cancelled, voided, and unavailable/refund records are excluded from valid sales totals but kept here for owner review.",
+    cancelledTotal: "Cancelled",
+    voidedTotal: "Voided Paid Sales",
+    refundTotal: "Unavailable / Refund",
   },
   zh: {
     caption: "老板报表：线上订单、线下 POS、收银确认、收款方式、员工销售额统一查看。",
@@ -96,6 +101,11 @@ const copy = {
     waitingAmount: "待收款",
     paidRate: "收款率",
     collectedCashflow: "已收款流向",
+    exceptions: "异常 / 更正",
+    exceptionNote: "已取消、已作废、缺货退款不会计入有效销售额，只在这里给老板复盘。",
+    cancelledTotal: "已取消",
+    voidedTotal: "已作废已收款单",
+    refundTotal: "缺货 / 退款",
   },
 };
 
@@ -143,6 +153,11 @@ const zhCopy = {
   waitingAmount: "待收款",
   paidRate: "收款率",
   collectedCashflow: "已收款流向",
+  exceptions: "异常 / 更正",
+  exceptionNote: "已取消、已作废、缺货退款不会计入有效销售额，只在这里给老板复盘。",
+  cancelledTotal: "已取消",
+  voidedTotal: "已作废已收款单",
+  refundTotal: "缺货 / 退款",
 } satisfies typeof copy.en;
 
 function SummaryCard({ label, value, tone = "neutral", detail }: { label: string; value: string; tone?: "orange" | "green" | "neutral"; detail?: string }) {
@@ -260,6 +275,21 @@ export function AdminReportsClient({
             </table>
           </div>
         </TableShell>
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <SectionTitle title={t.exceptions} />
+          <p className="mt-1 text-sm font-bold text-zinc-500">{t.exceptionNote}</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <SummaryCard label={`${t.cancelledTotal} / ${t.todayOverview}`} value={formatPhp(overview.todayCancelledTotal)} detail={`${overview.todayCancelledCount}`} />
+          <SummaryCard label={`${t.cancelledTotal} / ${t.monthOverview}`} value={formatPhp(overview.monthCancelledTotal)} detail={`${overview.monthCancelledCount}`} />
+          <SummaryCard label={`${t.voidedTotal} / ${t.todayOverview}`} value={formatPhp(overview.todayVoidedTotal)} tone="orange" detail={`${overview.todayVoidedCount}`} />
+          <SummaryCard label={`${t.voidedTotal} / ${t.monthOverview}`} value={formatPhp(overview.monthVoidedTotal)} tone="orange" detail={`${overview.monthVoidedCount}`} />
+          <SummaryCard label={`${t.refundTotal} / ${t.todayOverview}`} value={formatPhp(overview.todayRefundTotal)} detail={`${overview.todayRefundCount}`} />
+          <SummaryCard label={`${t.refundTotal} / ${t.monthOverview}`} value={formatPhp(overview.monthRefundTotal)} detail={`${overview.monthRefundCount}`} />
+        </div>
       </section>
 
       <section className="space-y-3">

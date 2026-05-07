@@ -260,6 +260,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   </button>
                 </div>
                 <div className="hidden rounded-md bg-zinc-950 px-4 py-2 text-sm font-black text-white xl:block">
+                  {adminProfile?.role ? (
+                    <span className="mr-2 rounded bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-orange-200">
+                      {adminProfile.role}
+                    </span>
+                  ) : null}
                   <span>{adminProfile?.name ?? value.t("adminName")}</span>
                   {adminProfile?.email ? <span className="ml-2 text-xs font-bold text-zinc-300">{adminProfile.email}</span> : null}
                 </div>
