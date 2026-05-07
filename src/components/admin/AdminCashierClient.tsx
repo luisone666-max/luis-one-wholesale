@@ -54,6 +54,7 @@ const copy = {
     cashierAction: "Cashier Action",
     cashConfirmHint: "Count the cash, then confirm payment.",
     transferConfirmHint: "Check the transfer receipt and enter the reference number before confirming.",
+    referenceRequired: "Enter the GCash / bank reference number before confirming.",
   },
   zh: {
     caption: "这里只做线下收银确认。收银员核对销售单、收款方式和金额后，再确认收款。",
@@ -84,6 +85,7 @@ const copy = {
     cashierAction: "收银操作",
     cashConfirmHint: "现金单：点清现金后再确认收款。",
     transferConfirmHint: "转账单：核对到账记录，并填写参考号后再确认。",
+    referenceRequired: "请先填写 GCash / 银行参考号，再确认收款。",
   },
 };
 
@@ -116,6 +118,7 @@ const zhCopy = {
   cashierAction: "收银操作",
   cashConfirmHint: "现金单：点清现金后再确认收款。",
   transferConfirmHint: "转账单：核对到账记录，并填写参考号后再确认。",
+  referenceRequired: "请先填写 GCash / 银行参考号，再确认收款。",
 } satisfies typeof copy.en;
 
 const cashierActionText = {
@@ -251,6 +254,11 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
   }
 
   async function confirm(sale: PosSaleRecord) {
+    if (isTransferPayment(sale.paymentMethod) && !(referenceNoBySale[sale.id] ?? "").trim()) {
+      setMessage(t.referenceRequired);
+      return;
+    }
+
     setLoading(true);
     setMessage("");
 
@@ -357,8 +365,13 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
 
       <div className="grid gap-4 print:hidden">
         {sales.length ? (
-          sales.map((sale) => (
-            <section key={sale.id} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+          sales.map((sale) => {
+            const transferReference = referenceNoBySale[sale.id] ?? "";
+            const needsReference = isTransferPayment(sale.paymentMethod);
+            const canConfirm = !needsReference || transferReference.trim().length > 0;
+
+            return (
+              <section key={sale.id} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -418,8 +431,8 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
                 <input
                   className={inputClass()}
                   placeholder={isTransferPayment(sale.paymentMethod) ? t.referenceNo : `${t.referenceNo} (${paymentMethodLabel(sale.paymentMethod, language)})`}
-                  value={referenceNoBySale[sale.id] ?? ""}
-                  disabled={!isTransferPayment(sale.paymentMethod)}
+                  value={transferReference}
+                  disabled={!needsReference}
                   onChange={(event) => setReferenceNoBySale((current) => ({ ...current, [sale.id]: event.target.value }))}
                 />
                 <input className={inputClass()} placeholder={t.notes} value={notesBySale[sale.id] ?? ""} onChange={(event) => setNotesBySale((current) => ({ ...current, [sale.id]: event.target.value }))} />
@@ -429,12 +442,14 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
                 <button type="button" disabled={loading} onClick={() => void returnToSales(sale)} className="rounded-md border border-amber-200 bg-amber-50 px-5 py-2 text-sm font-black text-amber-800 disabled:opacity-60">
                   {actionText.returnToSales}
                 </button>
-                <button type="button" disabled={loading} onClick={() => void confirm(sale)} className="rounded-md bg-[#f65f18] px-5 py-2 text-sm font-black text-white disabled:opacity-60">
+                <button type="button" disabled={loading || !canConfirm} onClick={() => void confirm(sale)} className="rounded-md bg-[#f65f18] px-5 py-2 text-sm font-black text-white disabled:opacity-60">
                   {t.confirmPayment}
                 </button>
               </div>
+              {needsReference && !canConfirm ? <p className="mt-2 text-sm font-black text-red-700">{t.referenceRequired}</p> : null}
             </section>
-          ))
+            );
+          })
         ) : (
           <section className="rounded-lg border border-zinc-200 bg-white p-8 text-center text-sm font-bold text-zinc-500 shadow-sm">{t.noSales}</section>
         )}
