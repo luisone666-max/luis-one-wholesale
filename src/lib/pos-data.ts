@@ -92,6 +92,33 @@ function toNumber(value: unknown) {
   return Number(value ?? 0);
 }
 
+function manilaCalendar() {
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const month = today.slice(0, 7);
+
+  return {
+    dayStart: `${today}T00:00:00+08:00`,
+    dayEnd: `${today}T23:59:59+08:00`,
+    monthStart: `${month}-01T00:00:00+08:00`,
+  };
+}
+
+function isWithinDateRange(value: string | null, start: string, end: string) {
+  if (!value) {
+    return false;
+  }
+
+  const time = Date.parse(value);
+  const startTime = Date.parse(start);
+  const endTime = Date.parse(end);
+  return Number.isFinite(time) && time >= startTime && time <= endTime;
+}
+
 function mapSale(row: PosSaleRow, items: PosSaleItemRow[]): PosSaleRecord {
   return {
     id: row.id,
@@ -189,40 +216,69 @@ export async function getPosSalesSummary(salespersonAdminUserId?: string): Promi
     return { summary: emptySummary, error: "Supabase admin client is not configured." };
   }
 
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  let query = supabase.from("pos_sales").select("total_amount,status,created_at").gte("created_at", monthStart);
+  const { dayStart, dayEnd, monthStart } = manilaCalendar();
+  let waitingQuery = supabase.from("pos_sales").select("total_amount,status").eq("status", "waiting_cashier");
+  let paidQuery = supabase
+    .from("pos_sales")
+    .select("total_amount,status,cashier_confirmed_at")
+    .eq("status", "paid")
+    .gte("cashier_confirmed_at", monthStart);
+  let legacyPaidQuery = supabase
+    .from("pos_sales")
+    .select("total_amount,status,created_at")
+    .eq("status", "paid")
+    .is("cashier_confirmed_at", null)
+    .gte("created_at", monthStart);
 
   if (salespersonAdminUserId) {
-    query = query.eq("salesperson_admin_user_id", salespersonAdminUserId);
+    waitingQuery = waitingQuery.eq("salesperson_admin_user_id", salespersonAdminUserId);
+    paidQuery = paidQuery.eq("salesperson_admin_user_id", salespersonAdminUserId);
+    legacyPaidQuery = legacyPaidQuery.eq("salesperson_admin_user_id", salespersonAdminUserId);
   }
 
-  const { data, error } = await query;
+  const [waitingResult, paidResult, legacyPaidResult] = await Promise.all([waitingQuery, paidQuery, legacyPaidQuery]);
 
-  if (error) {
-    return { summary: emptySummary, error: error.message };
+  if (waitingResult.error) {
+    return { summary: emptySummary, error: waitingResult.error.message };
+  }
+
+  if (paidResult.error) {
+    return { summary: emptySummary, error: paidResult.error.message };
+  }
+
+  if (legacyPaidResult.error) {
+    return { summary: emptySummary, error: legacyPaidResult.error.message };
   }
 
   const summary = { ...emptySummary };
 
-  for (const sale of (data ?? []) as Array<{ total_amount: number | string | null; status: string | null; created_at: string | null }>) {
+  for (const sale of (waitingResult.data ?? []) as Array<{ total_amount: number | string | null }>) {
+    const amount = Number(sale.total_amount ?? 0);
+    summary.waitingCount += 1;
+    summary.waitingTotal += amount;
+  }
+
+  for (const sale of (paidResult.data ?? []) as Array<{ total_amount: number | string | null; cashier_confirmed_at: string | null }>) {
+    const amount = Number(sale.total_amount ?? 0);
+    const confirmedAt = sale.cashier_confirmed_at ?? "";
+    summary.paidCount += 1;
+    summary.paidTotal += amount;
+    summary.monthTotal += amount;
+
+    if (isWithinDateRange(confirmedAt, dayStart, dayEnd)) {
+      summary.todayTotal += amount;
+    }
+  }
+
+  for (const sale of (legacyPaidResult.data ?? []) as Array<{ total_amount: number | string | null; created_at: string | null }>) {
     const amount = Number(sale.total_amount ?? 0);
     const createdAt = sale.created_at ?? "";
+    summary.paidCount += 1;
+    summary.paidTotal += amount;
+    summary.monthTotal += amount;
 
-    if (sale.status === "waiting_cashier") {
-      summary.waitingCount += 1;
-      summary.waitingTotal += amount;
-    }
-
-    if (sale.status === "paid") {
-      summary.paidCount += 1;
-      summary.paidTotal += amount;
-      summary.monthTotal += amount;
-
-      if (createdAt >= todayStart) {
-        summary.todayTotal += amount;
-      }
+    if (isWithinDateRange(createdAt, dayStart, dayEnd)) {
+      summary.todayTotal += amount;
     }
   }
 
