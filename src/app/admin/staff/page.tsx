@@ -9,7 +9,7 @@ export default async function AdminStaffPage() {
   const result = canManageStaff(admin.role) ? await getAdminStaffUsers() : { users: [], error: "Only owner or admin can manage staff access." };
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminStaffClient initialUsers={result.users} initialError={result.error} />
     </AdminShell>
   );

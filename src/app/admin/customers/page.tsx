@@ -15,7 +15,7 @@ export default async function AdminCustomersPage() {
   const result = await getAdminCustomers();
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminCustomersClient initialCustomers={result.customers} initialError={result.error} pointsReady={result.pointsReady} />
     </AdminShell>
   );

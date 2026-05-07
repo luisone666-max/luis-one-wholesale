@@ -11,7 +11,7 @@ export default async function AdminProductBulkUploadPage() {
   }
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminProductBulkUploadClient />
     </AdminShell>
   );

@@ -22,7 +22,7 @@ export default async function AdminDashboardPage() {
   const data = await getAdminDashboardData();
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminDashboardClient data={data} />
     </AdminShell>
   );

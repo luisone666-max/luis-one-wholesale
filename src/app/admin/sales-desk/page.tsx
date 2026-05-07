@@ -9,7 +9,7 @@ export default async function AdminSalesDeskPage() {
 
   if (!canUseSalesDesk(admin.role)) {
     return (
-      <AdminShell>
+      <AdminShell initialAdmin={admin}>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm font-bold text-amber-800">
           Only sales, staff, admin, or owner can access Sales Desk.
         </div>
@@ -26,7 +26,7 @@ export default async function AdminSalesDeskPage() {
   const defaultEmployeeNo = admin.employeeNo || data.staffUsers.find((user) => user.id === admin.id)?.employeeNo || data.staffUsers[0]?.employeeNo || "";
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminSalesDeskClient
         customers={data.customers}
         products={data.products}

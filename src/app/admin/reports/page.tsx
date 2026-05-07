@@ -15,7 +15,7 @@ export default async function AdminReportsPage() {
   const result = await getEmployeeSalesReport();
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminReportsClient rows={result.rows} monthOptions={result.monthOptions} overview={result.overview} initialError={result.error} />
     </AdminShell>
   );

@@ -14,7 +14,7 @@ export default async function AdminPaymentsPage() {
   const result = await getAdminPayments();
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminPaymentsClient initialPayments={result.payments} initialError={result.error} />
     </AdminShell>
   );

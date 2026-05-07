@@ -19,7 +19,7 @@ export default async function AdminProductsPage() {
   }
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       {priceLookupOnly ? (
         <AdminProductPriceLookupClient products={toAdminProductLookupRecords(result.products)} initialError={result.error} />
       ) : (

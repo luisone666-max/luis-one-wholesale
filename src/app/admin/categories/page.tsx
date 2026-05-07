@@ -14,7 +14,7 @@ export default async function AdminCategoriesPage() {
   const result = await getAdminCategories();
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminCategoriesClient initialCategories={result.categories} initialError={result.error} />
     </AdminShell>
   );

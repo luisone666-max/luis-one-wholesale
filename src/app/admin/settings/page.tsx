@@ -11,7 +11,7 @@ export default async function AdminSettingsPage() {
   }
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminSettingsClient />
     </AdminShell>
   );

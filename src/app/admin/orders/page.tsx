@@ -14,7 +14,7 @@ export default async function AdminOrdersPage() {
   const result = await getAdminOrders();
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminOrdersClient initialOrders={result.orders} initialStaffUsers={result.staffUsers} initialError={result.error} />
     </AdminShell>
   );

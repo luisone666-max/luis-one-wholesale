@@ -11,7 +11,7 @@ export default async function AdminOwnerPage() {
   }
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminOwnerClient />
     </AdminShell>
   );

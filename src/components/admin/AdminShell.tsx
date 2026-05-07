@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { ActiveAdminUser } from "@/lib/admin-auth";
 import { translate, type AdminLanguage, type TranslationKey } from "@/lib/admin-i18n";
 
 type AdminRole = "owner" | "admin" | "staff" | "sales" | "cashier" | "warehouse";
@@ -163,9 +164,21 @@ export function useAdminI18n() {
   return value;
 }
 
-export function AdminShell({ children }: { children: ReactNode }) {
+function toAdminProfile(admin: ActiveAdminUser | null | undefined) {
+  if (!admin) {
+    return null;
+  }
+
+  return {
+    name: admin.name || admin.email || "Admin",
+    email: admin.email,
+    role: admin.role,
+  };
+}
+
+export function AdminShell({ children, initialAdmin = null }: { children: ReactNode; initialAdmin?: ActiveAdminUser | null }) {
   const pathname = usePathname();
-  const [adminProfile, setAdminProfile] = useState<{ name: string; email: string; role: AdminRole } | null>(null);
+  const [adminProfile, setAdminProfile] = useState<{ name: string; email: string; role: AdminRole } | null>(() => toAdminProfile(initialAdmin));
   const [language, setLanguageState] = useState<AdminLanguage>("en");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

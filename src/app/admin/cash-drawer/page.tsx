@@ -10,7 +10,7 @@ export default async function AdminCashDrawerPage() {
 
   if (!canUseCashierCenter(admin.role)) {
     return (
-      <AdminShell>
+      <AdminShell initialAdmin={admin}>
         <AdminAccessDeniedPanel
           title="Cash Drawer is for cashier and owner control"
           message="Only cashier, admin, or owner accounts can review cash drawer totals. Sales staff should use Sales Desk to create slips and view their own sales summary."
@@ -22,7 +22,7 @@ export default async function AdminCashDrawerPage() {
   const initialData = await getCashDrawerData();
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminCashDrawerClient initialData={initialData} />
     </AdminShell>
   );

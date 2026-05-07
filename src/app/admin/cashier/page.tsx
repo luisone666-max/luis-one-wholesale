@@ -10,7 +10,7 @@ export default async function AdminCashierPage() {
 
   if (!canUseCashierCenter(admin.role)) {
     return (
-      <AdminShell>
+      <AdminShell initialAdmin={admin}>
         <AdminAccessDeniedPanel
           title="Cashier Center is for payment confirmation only"
           message="Only cashier, admin, or owner accounts can confirm POS payments and update cashier records. Sales staff should create sales slips in Sales Desk, then wait for cashier confirmation."
@@ -22,7 +22,7 @@ export default async function AdminCashierPage() {
   const result = await getPosSales("waiting_cashier");
 
   return (
-    <AdminShell>
+    <AdminShell initialAdmin={admin}>
       <AdminCashierClient initialSales={result.sales} initialError={result.error} />
     </AdminShell>
   );
