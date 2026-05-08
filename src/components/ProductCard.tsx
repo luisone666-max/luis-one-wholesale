@@ -32,10 +32,10 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   };
 
   return (
-    <article className="group overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md">
+    <article className="group overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md [contain-intrinsic-size:220px_360px] [content-visibility:auto]">
       <Link href={productHref} className="block">
         <div className="relative aspect-square bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-0 sm:p-4">
-          <ProductImage src={product.image} alt={product.name} priority={priority} className="transition duration-200 group-hover:scale-[1.03]" />
+          <ProductImage src={product.image} alt={product.name} priority={priority} quality={62} className="transition duration-200 group-hover:scale-[1.03]" />
           <div className="absolute left-1 top-1 [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-[8px] sm:left-2 sm:top-2 sm:[&>span]:px-2 sm:[&>span]:py-1 sm:[&>span]:text-[11px]">
             <StockStatusBadge status={product.stockStatus} />
           </div>

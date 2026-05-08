@@ -198,12 +198,14 @@ export function ProductImage({
   alt,
   className = "",
   priority = false,
+  quality = 75,
   sizes = "(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw",
 }: {
   src?: string;
   alt: string;
   className?: string;
   priority?: boolean;
+  quality?: number;
   sizes?: string;
 }) {
   return (
@@ -214,6 +216,7 @@ export function ProductImage({
       height={520}
       sizes={sizes}
       priority={priority}
+      quality={quality}
       className={`h-full w-full object-contain ${className}`}
     />
   );
