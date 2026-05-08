@@ -242,8 +242,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
     sales_name_snapshot: string | null;
   };
   let loyalty = null;
+  const nextOrderStatus = typeof update.order_status === "string" ? update.order_status : existingOrder.order_status;
+  const nextPaymentStatus = typeof update.payment_status === "string" ? update.payment_status : existingOrder.payment_status;
+  const isCancelledOrRefund = nextOrderStatus === "cancelled" || nextOrderStatus === "unavailable_refund";
 
-  if (update.payment_status === "fully_paid") {
+  if (nextPaymentStatus === "fully_paid" && !isCancelledOrRefund) {
     loyalty = await awardCustomerLoyaltyPoints({
       supabase: admin,
       customerId: row.customer_id,
@@ -257,9 +260,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
 
   const shouldReverseLoyalty =
     existingOrder.payment_status === "fully_paid" &&
-    ((typeof update.payment_status === "string" && update.payment_status !== "fully_paid") ||
-      update.order_status === "cancelled" ||
-      update.order_status === "unavailable_refund");
+    (nextPaymentStatus !== "fully_paid" || isCancelledOrRefund);
 
   if (shouldReverseLoyalty) {
     loyalty = await reverseOnlineOrderLoyaltyPoints({

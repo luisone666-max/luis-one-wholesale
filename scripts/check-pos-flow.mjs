@@ -58,7 +58,7 @@ async function sumPayments(supabase, date, method) {
   return (data ?? []).reduce((total, row) => total + money(row.amount), 0);
 }
 
-async function cleanupTestArtifacts(supabase, saleId, customerId) {
+async function cleanupTestArtifacts(supabase, saleId, customerId, deleteCustomer = false) {
   if (saleId) {
     await supabase.from("customer_loyalty_point_transactions").delete().eq("source_id", saleId);
     await supabase.from("pos_payment_confirmations").delete().eq("sale_id", saleId);
@@ -67,6 +67,11 @@ async function cleanupTestArtifacts(supabase, saleId, customerId) {
   }
 
   await supabase.from("customer_loyalty_point_transactions").delete().eq("note", TEST_NOTE);
+
+  if (deleteCustomer && customerId) {
+    await supabase.from("customers").delete().eq("id", customerId);
+    return;
+  }
 
   if (customerId) {
     const { data, error } = await supabase
@@ -99,6 +104,7 @@ async function main() {
   const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
   let saleId = "";
   let customerId = "";
+  let deleteCustomer = false;
 
   try {
     const { data: salesperson, error: salespersonError } = await supabase
@@ -129,16 +135,22 @@ async function main() {
 
     const { data: customer, error: customerError } = await supabase
       .from("customers")
+      .insert({
+        name: `Maintenance POS Check ${Date.now()}`,
+        phone: "0000000000",
+        location: "Maintenance Check",
+        business_type: "Test",
+        status: "active",
+      })
       .select("id,name,phone,points_balance,lifetime_points")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .single();
 
     if (customerError || !customer) {
-      throw new Error(customerError?.message ?? "No customer found for member points check.");
+      throw new Error(customerError?.message ?? "Temporary customer insert failed.");
     }
 
     customerId = customer.id;
+    deleteCustomer = true;
 
     const { data: product, error: productError } = await supabase
       .from("products")
@@ -287,7 +299,7 @@ async function main() {
     console.log(`- member points awarded: ${points}`);
     console.log("- cash drawer source totals changed correctly");
   } finally {
-    await cleanupTestArtifacts(supabase, saleId, customerId);
+    await cleanupTestArtifacts(supabase, saleId, customerId, deleteCustomer);
     console.log("Temporary POS test data cleaned.");
   }
 }
