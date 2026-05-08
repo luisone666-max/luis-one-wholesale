@@ -287,6 +287,8 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
 
   const products = ((productsResult.data ?? []) as ProductRow[]).map((product) => {
     const tiers = tiersByProductId.get(product.id) ?? [];
+    const variants = variantsByProductId.get(product.id) ?? [];
+    const allPriceTiers = [...tiers, ...variants.flatMap((variant) => variant.tiers)];
 
     return {
       id: product.id,
@@ -311,9 +313,9 @@ export async function getAdminProducts(): Promise<AdminProductsResult> {
       internalCostNotes: product.internal_cost_notes ?? "",
       adminNotes: product.admin_notes ?? "",
       active: Boolean(product.active),
-      priceRange: getPriceRange(tiers),
+      priceRange: getPriceRange(allPriceTiers),
       tiers,
-      variants: variantsByProductId.get(product.id) ?? [],
+      variants,
       hasOrderItems: productIdsWithOrders.has(product.id),
     };
   });

@@ -452,3 +452,11 @@ Meta catalog feed smoke follow-up:
 - Production smoke checks now verify catalog item IDs are unique inside the feed.
 - Verification:
   - `npm.cmd run check:production` passed.
+
+Admin product price range follow-up:
+
+- Admin product records now calculate price range from product tiers and variant tiers together.
+- Sales price lookup and product management no longer show `-` or incomplete ranges for variant-priced products.
+- Verification:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
