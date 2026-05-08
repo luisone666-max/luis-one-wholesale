@@ -4,9 +4,20 @@ const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || defaultBaseUrl).replace(/\/
 const publicChecks = [
   { path: "/", name: "home page", minLength: 1000 },
   { path: "/category/all", name: "product listing", minLength: 1000 },
+  { path: "/product/1", name: "product detail", minLength: 1000 },
   { path: "/admin/login", name: "admin login page", minLength: 500 },
   { path: "/meta/catalog-feed.csv", name: "Meta catalog feed", minLength: 100 },
   { path: "/share/product/1", name: "Facebook product share page", minLength: 500 },
+];
+
+const customerPageChecks = new Set(["/", "/category/all", "/product/1"]);
+const adminOnlyLeakTerms = [
+  "supplier_notes",
+  "internal_cost_notes",
+  "admin_notes",
+  "supplier notes snapshot",
+  "internal cost notes",
+  "admin notes",
 ];
 
 const protectedApiChecks = [
@@ -75,12 +86,25 @@ function checkCatalogFeed(csv) {
   console.log("ok Meta catalog feed required columns found");
 }
 
+function checkCustomerPageSafety(path, html) {
+  const lower = html.toLowerCase();
+  const leaked = adminOnlyLeakTerms.find((term) => lower.includes(term));
+
+  requireStatus(!leaked, `${path} appears to expose admin-only text: ${leaked}`);
+  console.log(`ok customer safety ${path}`);
+}
+
 async function main() {
   console.log(`Production smoke check: ${baseUrl}`);
   const pageResults = new Map();
 
   for (const check of publicChecks) {
-    pageResults.set(check.path, await checkPublicPage(check));
+    const html = await checkPublicPage(check);
+    pageResults.set(check.path, html);
+
+    if (customerPageChecks.has(check.path)) {
+      checkCustomerPageSafety(check.path, html);
+    }
   }
 
   for (const path of protectedApiChecks) {
