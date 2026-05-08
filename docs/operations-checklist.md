@@ -5,6 +5,7 @@ This checklist is the final run record for ongoing maintenance and feature work.
 ## Always Run Before Shipping
 
 - `npm.cmd run lint`
+- `npm.cmd run check:customer-safety`
 - `npm.cmd run check:pos`
 - `npm.cmd run check:loyalty`
 - `npm.cmd run check:production`
