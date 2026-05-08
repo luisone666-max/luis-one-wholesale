@@ -4,7 +4,7 @@ import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import { formatMoney, getPriceRange, isUnavailableStockStatus, type Product } from "@/lib/mock-data";
 
 function formatMobileMoney(value: number) {
-  return `₱${value.toLocaleString("en-US", { minimumFractionDigits: value % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
+  return `PHP ${value.toLocaleString("en-US", { minimumFractionDigits: value % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
 
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
