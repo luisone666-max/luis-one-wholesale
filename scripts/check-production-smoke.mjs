@@ -53,6 +53,22 @@ const searchChecks = [
     path: "/category/all?q=ignition",
     term: "ignition",
   },
+  {
+    path: "/category/all?q=n%20max",
+    term: "n max",
+  },
+  {
+    path: "/category/all?q=top%20box",
+    term: "top box",
+  },
+  {
+    path: "/category/all?q=helmet",
+    term: "helmet",
+  },
+  {
+    path: "/category/all?q=brake",
+    term: "brake",
+  },
 ];
 
 function absolute(path) {
