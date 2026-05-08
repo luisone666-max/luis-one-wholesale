@@ -31,8 +31,46 @@ function walk(directory) {
   return files;
 }
 
+function findMatchingBrace(contents, openBraceIndex) {
+  let depth = 0;
+
+  for (let index = openBraceIndex; index < contents.length; index += 1) {
+    const char = contents[index];
+
+    if (char === "{") {
+      depth += 1;
+    }
+
+    if (char === "}") {
+      depth -= 1;
+
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+}
+
 function exportedMethods(contents) {
-  return [...contents.matchAll(/export\s+async\s+function\s+(GET|POST|PATCH|PUT|DELETE)\b/g)].map((match) => match[1]);
+  const pattern = /export\s+async\s+function\s+(GET|POST|PATCH|PUT|DELETE)\s*\([^)]*\)\s*\{/g;
+  const methods = [];
+  let match = pattern.exec(contents);
+
+  while (match) {
+    const openBraceIndex = pattern.lastIndex - 1;
+    const closeBraceIndex = findMatchingBrace(contents, openBraceIndex);
+
+    methods.push({
+      name: match[1],
+      body: closeBraceIndex === -1 ? "" : contents.slice(openBraceIndex, closeBraceIndex + 1),
+    });
+
+    match = pattern.exec(contents);
+  }
+
+  return methods;
 }
 
 function main() {
@@ -53,12 +91,14 @@ function main() {
       continue;
     }
 
-    if (!contents.includes("requireActiveAdminApi")) {
-      failures.push(`${relativePath} is missing requireActiveAdminApi.`);
-    }
+    for (const method of methods) {
+      if (!method.body.includes("requireActiveAdminApi")) {
+        failures.push(`${relativePath} ${method.name} is missing requireActiveAdminApi.`);
+      }
 
-    if (!contents.includes("guard.response")) {
-      failures.push(`${relativePath} does not return the admin guard response.`);
+      if (!method.body.includes("guard.response")) {
+        failures.push(`${relativePath} ${method.name} does not return the admin guard response.`);
+      }
     }
   }
 
@@ -72,7 +112,7 @@ function main() {
 
   console.log("Admin API protection check passed:");
   console.log(`- checked ${files.length} admin route files`);
-  console.log("- every non-public admin API uses requireActiveAdminApi");
+  console.log("- every non-public admin API method uses requireActiveAdminApi");
 }
 
 main();

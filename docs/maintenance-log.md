@@ -518,3 +518,11 @@ Customer navigation link follow-up:
 - Missing customer routes now fail maintenance checks before deployment, reducing broken buttons and 404s.
 - Verification:
   - `npm.cmd run check:customer-links` passed.
+
+Admin API method protection follow-up:
+
+- Tightened `npm.cmd run check:admin-api`.
+- The check now verifies each exported admin API HTTP method has its own active-admin guard and guard response.
+- This catches partial protection mistakes when a route file has multiple methods such as GET and POST.
+- Verification:
+  - `npm.cmd run check:admin-api` passed.
