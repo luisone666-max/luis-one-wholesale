@@ -21,6 +21,11 @@ const sourceExtensions = new Set([
 const secretPatterns = [
   { label: "Supabase secret key", pattern: /\bsb_secret_[A-Za-z0-9_-]{12,}\b/g },
   { label: "Supabase personal access token", pattern: /\bsbp_[A-Za-z0-9_-]{20,}\b/g },
+  { label: "Lalamove production API key", pattern: /\bpk_prod_[A-Za-z0-9_-]{20,}\b/g },
+  { label: "Lalamove production API secret", pattern: /\bsk_prod_[A-Za-z0-9+/=_-]{20,}\b/g },
+  { label: "Google API key", pattern: /\bAIza[0-9A-Za-z_-]{30,}\b/g },
+  { label: "GitHub token", pattern: /\bgh[pousr]_[A-Za-z0-9_]{30,}\b/g },
+  { label: "private key block", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/g },
   {
     label: "JWT-looking Supabase key",
     pattern: /\beyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/g,
@@ -212,7 +217,7 @@ function main() {
   console.log("Secret safety check passed:");
   console.log("- .env.local is ignored and not tracked");
   console.log("- .env.example contains variable names only");
-  console.log("- no real Supabase secret tokens or JWT keys are committed");
+  console.log("- no real Supabase, Lalamove, Google, GitHub, JWT, or private key secrets are committed");
   console.log("- service role env access is limited to server-only/script/docs paths");
 }
 

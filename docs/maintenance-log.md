@@ -543,3 +543,11 @@ Customer product card payload follow-up:
 - Verification:
   - `npm.cmd run lint` passed.
   - `npm.cmd run build` passed.
+
+Expanded secret scan follow-up:
+
+- Tightened `npm.cmd run check:secrets`.
+- The scan now blocks committed Supabase, Lalamove, Google API, GitHub, JWT-looking, and private-key secrets.
+- This reduces risk when adding delivery, maps, Meta, or deployment integrations.
+- Verification:
+  - `npm.cmd run check:secrets` passed.
