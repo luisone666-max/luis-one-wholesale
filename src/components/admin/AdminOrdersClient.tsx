@@ -202,6 +202,8 @@ export function AdminOrdersClient({
     setOrders((current) => current.map((order) => (order.orderNo === orderNo ? { ...order, ...result.order } : order)));
     const loyaltyMessage = result.loyalty?.awarded
       ? ` ${formatLoyaltyPoints(result.loyalty.points)} awarded to member.`
+      : result.loyalty?.ok && Number(result.loyalty.points ?? 0) < 0
+        ? ` ${formatLoyaltyPoints(Math.abs(Number(result.loyalty.points)))} reversed from member.`
       : result.loyalty && !result.loyalty.ok
         ? ` Points need manual check: ${result.loyalty.message ?? "unknown error"}`
         : "";

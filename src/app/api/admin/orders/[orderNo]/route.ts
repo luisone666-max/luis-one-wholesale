@@ -40,6 +40,80 @@ function normalizeOrderStatus(value: string | null) {
   return value ?? "pending_confirmation";
 }
 
+async function reverseOnlineOrderLoyaltyPoints({
+  supabase,
+  orderId,
+  orderNo,
+  customerId,
+  amount,
+  adminUserId,
+  reason,
+}: {
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
+  orderId: string;
+  orderNo: string;
+  customerId: string | null;
+  amount: number;
+  adminUserId: string;
+  reason: string;
+}) {
+  if (!customerId) {
+    return null;
+  }
+
+  const { data: pointsRow, error: pointsError } = await supabase
+    .from("customer_loyalty_point_transactions")
+    .select("points")
+    .eq("source_type", "online_order")
+    .eq("source_id", orderId)
+    .maybeSingle();
+
+  if (pointsError) {
+    return { ok: false, awarded: false, points: 0, message: pointsError.message };
+  }
+
+  const points = Number(pointsRow?.points ?? 0);
+
+  if (points <= 0) {
+    return null;
+  }
+
+  const { data: adjustment, error: adjustmentError } = await supabase
+    .from("customer_loyalty_point_transactions")
+    .upsert(
+      {
+        customer_id: customerId,
+        source_type: "manual_adjustment",
+        source_id: orderId,
+        points: -points,
+        amount: -Math.abs(amount),
+        note: `Reverse online order ${orderNo}: ${reason}`,
+        created_by_admin_user_id: adminUserId,
+      },
+      { onConflict: "source_type,source_id", ignoreDuplicates: true },
+    )
+    .select("id")
+    .maybeSingle();
+
+  if (adjustmentError) {
+    return { ok: false, awarded: false, points: 0, message: adjustmentError.message };
+  }
+
+  if (!adjustment) {
+    return { ok: true, awarded: false, points: -points, message: "Loyalty reversal already exists." };
+  }
+
+  const { data: customer } = await supabase.from("customers").select("points_balance").eq("id", customerId).maybeSingle();
+  const nextBalance = Math.max(0, Number(customer?.points_balance ?? 0) - points);
+  const { error: customerError } = await supabase.from("customers").update({ points_balance: nextBalance }).eq("id", customerId);
+
+  if (customerError) {
+    return { ok: false, awarded: false, points: -points, message: customerError.message };
+  }
+
+  return { ok: true, awarded: false, points: -points, message: "Loyalty points reversed." };
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ orderNo: string }> }) {
   const guard = await requireActiveAdminApi(request);
 
@@ -132,10 +206,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
     return jsonError("No valid update fields were provided.");
   }
 
+  const { data: existingOrder, error: existingOrderError } = await admin
+    .from("orders")
+    .select("id,order_no,customer_id,product_total,order_status,payment_status")
+    .eq("order_no", orderNo)
+    .maybeSingle();
+
+  if (existingOrderError || !existingOrder) {
+    return jsonError(existingOrderError?.message ?? "Order was not found.", 404);
+  }
+
   const { data, error } = await admin
     .from("orders")
     .update(update)
-    .eq("order_no", orderNo)
+    .eq("id", existingOrder.id)
     .select("id,order_no,customer_id,product_total,order_status,payment_status,shipping_fee_payment_method,shipping_fee_amount,shipping_fee_status,admin_notes,sales_admin_user_id,sales_name_snapshot")
     .single();
 
@@ -157,18 +241,37 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
     sales_admin_user_id: string | null;
     sales_name_snapshot: string | null;
   };
-  const loyalty =
-    update.payment_status === "fully_paid"
-      ? await awardCustomerLoyaltyPoints({
-          supabase: admin,
-          customerId: row.customer_id,
-          sourceType: "online_order",
-          sourceId: row.id,
-          amount: Number(row.product_total ?? 0),
-          createdByAdminUserId: guard.admin.id,
-          note: `Online order ${row.order_no} marked fully paid.`,
-        })
-      : null;
+  let loyalty = null;
+
+  if (update.payment_status === "fully_paid") {
+    loyalty = await awardCustomerLoyaltyPoints({
+      supabase: admin,
+      customerId: row.customer_id,
+      sourceType: "online_order",
+      sourceId: row.id,
+      amount: Number(row.product_total ?? 0),
+      createdByAdminUserId: guard.admin.id,
+      note: `Online order ${row.order_no} marked fully paid.`,
+    });
+  }
+
+  const shouldReverseLoyalty =
+    existingOrder.payment_status === "fully_paid" &&
+    ((typeof update.payment_status === "string" && update.payment_status !== "fully_paid") ||
+      update.order_status === "cancelled" ||
+      update.order_status === "unavailable_refund");
+
+  if (shouldReverseLoyalty) {
+    loyalty = await reverseOnlineOrderLoyaltyPoints({
+      supabase: admin,
+      orderId: row.id,
+      orderNo: row.order_no,
+      customerId: row.customer_id,
+      amount: Number(row.product_total ?? 0),
+      adminUserId: guard.admin.id,
+      reason: typeof update.order_status === "string" ? update.order_status : String(update.payment_status),
+    });
+  }
 
   return NextResponse.json({
     ok: true,
