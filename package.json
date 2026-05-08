@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "check:schema": "node scripts/check-database-schema.mjs",
+    "check:secrets": "node scripts/check-secret-safety.mjs",
     "check:customer-safety": "node scripts/check-customer-frontend-safety.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",
     "check:loyalty": "node scripts/check-online-order-loyalty.mjs",

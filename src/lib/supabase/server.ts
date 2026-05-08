@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
-import { getSupabaseAdminConfig, getSupabaseServerConfig } from "@/lib/supabase/config";
+import { getSupabaseAdminConfig, getSupabaseServerConfig } from "@/lib/supabase/server-config";
 
 type ServerSupabaseClientOptions = {
   cache?: RequestCache;

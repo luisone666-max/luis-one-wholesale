@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import { requireActiveAdminPage } from "@/lib/admin-auth";
-import { getSupabaseAdminConfig, getSupabasePublicConfig } from "@/lib/supabase/config";
+import { getSupabasePublicConfig } from "@/lib/supabase/config";
+import { getSupabaseAdminConfig } from "@/lib/supabase/server-config";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";

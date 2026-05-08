@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 
 const suites = {
   maintenance: [
+    ["check:secrets", "Secret safety"],
     ["check:customer-safety", "Customer frontend safety"],
     ["lint", "ESLint"],
     ["check:pos", "Offline POS flow"],

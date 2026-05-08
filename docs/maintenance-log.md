@@ -468,3 +468,16 @@ Variant pricing fallback follow-up:
 - If a variant has no dedicated wholesale tiers yet, ordering falls back to the main product wholesale tiers instead of incorrectly blocking checkout.
 - Verification:
   - `npm.cmd run check:maintenance` passed.
+
+Secret safety follow-up:
+
+- Supabase public config and server-only admin config are now split.
+- `SUPABASE_SERVICE_ROLE_KEY` is read only through `src/lib/supabase/server-config.ts`, which imports `server-only`.
+- Added `npm.cmd run check:secrets` to verify:
+  - `.env.local` is ignored and not tracked.
+  - `.env.example` contains variable names only.
+  - no real Supabase secret tokens or JWT keys are committed.
+  - service role env access stays limited to server-only/script/docs paths.
+- `check:secrets` now runs first inside `npm.cmd run check:maintenance`.
+- Verification:
+  - `npm.cmd run check:maintenance` passed.
