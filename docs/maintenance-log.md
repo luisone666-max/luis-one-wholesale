@@ -460,3 +460,11 @@ Admin product price range follow-up:
 - Verification:
   - `npm.cmd run lint` passed.
   - `npm.cmd run build` passed.
+
+Variant pricing fallback follow-up:
+
+- Cart pricing and checkout submission now match the product detail display rule for variants.
+- If a variant has its own wholesale tiers, ordering uses the variant tiers.
+- If a variant has no dedicated wholesale tiers yet, ordering falls back to the main product wholesale tiers instead of incorrectly blocking checkout.
+- Verification:
+  - `npm.cmd run check:maintenance` passed.

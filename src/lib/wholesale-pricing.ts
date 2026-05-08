@@ -92,25 +92,32 @@ export async function getWholesalePriceForQuantity(
     return { ok: false, error: `Minimum order quantity is ${moq} pc${moq === 1 ? "" : "s"}.` };
   }
 
-  const tierQuery = variantId
-    ? supabase
+  const { data: variantTierRows, error: variantTierError } = variantId
+    ? await supabase
         .from("product_variant_price_tiers")
         .select("min_qty,max_qty,unit_price")
         .eq("variant_id", variantId)
         .order("min_qty", { ascending: true })
-    : supabase
+    : { data: [], error: null };
+
+  if (variantTierError) {
+    return { ok: false, error: variantTierError.message };
+  }
+
+  const shouldUseProductTiers = !variantId || !(variantTierRows ?? []).length;
+  const { data: productTierRows, error: productTierError } = shouldUseProductTiers
+    ? await supabase
         .from("product_price_tiers")
         .select("min_qty,max_qty,unit_price")
         .eq("product_id", productId)
-        .order("min_qty", { ascending: true });
+        .order("min_qty", { ascending: true })
+    : { data: [], error: null };
 
-  const { data: tierRows, error } = await tierQuery;
-
-  if (error) {
-    return { ok: false, error: error.message };
+  if (productTierError) {
+    return { ok: false, error: productTierError.message };
   }
 
-  const tiers = (tierRows ?? []) as PriceTierRow[];
+  const tiers = ((variantTierRows ?? []).length ? variantTierRows : productTierRows ?? []) as PriceTierRow[];
   const tier = tiers.find(
     (item) => normalizedQuantity >= item.min_qty && (item.max_qty === null || normalizedQuantity <= item.max_qty),
   );

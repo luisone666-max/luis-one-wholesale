@@ -311,7 +311,10 @@ export async function POST(request: Request) {
       return jsonError(`${product.name} minimum order quantity is ${moq} pc${moq === 1 ? "" : "s"}.`);
     }
 
-    const tier = variant ? findVariantTier(variantTiers, variant.id, cartItem.quantity) : findTier(tiers, product.id, cartItem.quantity);
+    const variantTierRows = variant ? variantTiers.filter((tierRow) => tierRow.variant_id === variant.id) : [];
+    const tier = variant && variantTierRows.length
+      ? findVariantTier(variantTierRows, variant.id, cartItem.quantity)
+      : findTier(tiers, product.id, cartItem.quantity);
 
     if (!tier) {
       return jsonError(`${variant ? `${product.name} / ${variant.variant_name}` : product.name}: Contact us for quotation.`);
