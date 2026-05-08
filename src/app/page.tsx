@@ -6,13 +6,14 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { businessInfo } from "@/lib/business-info";
 import { getCatalogSnapshot } from "@/lib/catalog-data";
+import { compareRecommendedProducts } from "@/lib/product-sort";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 
 export const revalidate = 60;
 
 export default async function Home() {
   const catalog = await getCatalogSnapshot();
-  const products = [...catalog.data.products].sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0));
+  const products = [...catalog.data.products].sort(compareRecommendedProducts);
   const visibleProducts = products.slice(0, 48);
 
   return (
@@ -44,7 +45,7 @@ export default async function Home() {
           <div className="mb-3 flex items-center justify-between rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:mb-4 sm:p-4">
             <div className="flex gap-1.5 overflow-x-auto text-xs font-black sm:flex-wrap sm:gap-2 sm:text-sm">
               <Link href="/category/all" className="shrink-0 rounded-sm bg-[#f65f18] px-2.5 py-1.5 text-white sm:px-3 sm:py-2">
-                Popular
+                Recommended
               </Link>
               <Link href="/category/all?sort=latest" className="shrink-0 rounded-sm bg-zinc-100 px-2.5 py-1.5 text-zinc-700 hover:bg-orange-50 hover:text-orange-700 sm:px-3 sm:py-2">
                 Latest

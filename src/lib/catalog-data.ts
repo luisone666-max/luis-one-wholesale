@@ -187,7 +187,7 @@ function mapSupabaseSnapshot(
     (product) => product.active && product.category_id && activePathIsVisible(product, activeCategoryIds),
   );
 
-  const products = visibleProductRows.map((product, index): Product => {
+  const products = visibleProductRows.map((product): Product => {
     const category = product.category_id ? categoriesById.get(product.category_id) : undefined;
     const categoryPathSlugs = [product.category_id, product.subcategory_id, product.child_category_id]
       .map((id) => (id ? categoriesById.get(id)?.slug : undefined))
@@ -248,8 +248,8 @@ function mapSupabaseSnapshot(
       retailPrice: product.retail_price === null ? null : Number(product.retail_price),
       stockStatus: toStockStatus(product.stock_status),
       stockCount: 0,
-      sold: 900 - index * 37,
-      rating: 4.6,
+      sold: 0,
+      rating: 0,
       createdAt: product.created_at,
       description: product.description ?? "Wholesale product details will be maintained by admin.",
       details,

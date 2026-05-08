@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { getCatalogCategoryPage, getCatalogCategoryParams } from "@/lib/catalog-data";
 import { getProductPriceTiers, type Product } from "@/lib/mock-data";
+import { compareRecommendedProducts, getProductCreatedTime } from "@/lib/product-sort";
 import { absoluteUrl, categoryDescription, getSiteUrl, siteName } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -82,7 +83,7 @@ export async function generateMetadata({
 
 const pageSize = 48;
 const sortOptions = [
-  { label: "Popular", shortLabel: "Popular", value: "popular" },
+  { label: "Recommended", shortLabel: "Recommended", value: "popular" },
   { label: "Latest", shortLabel: "Latest", value: "latest" },
   { label: "Price Low to High", shortLabel: "Low Price", value: "price-low" },
   { label: "Price High to Low", shortLabel: "High Price", value: "price-high" },
@@ -96,15 +97,6 @@ function getLowestPrice(product: Product) {
 function getHighestPrice(product: Product) {
   const prices = getProductPriceTiers(product).map((tier) => tier.price);
   return prices.length ? Math.max(...prices) : 0;
-}
-
-function getProductCreatedTime(product: { createdAt?: string | null; slug: string }) {
-  if (!product.createdAt) {
-    return 0;
-  }
-
-  const time = Date.parse(product.createdAt);
-  return Number.isFinite(time) ? time : 0;
 }
 
 function getPaginationItems(currentPage: number, totalPages: number) {
@@ -380,7 +372,7 @@ export default async function CategoryPage({
         return getHighestPrice(b) - getHighestPrice(a);
       }
 
-      return (b.sold ?? 0) - (a.sold ?? 0);
+      return compareRecommendedProducts(a, b);
   };
   const visibleProducts = searchText
     ? categoryProducts
