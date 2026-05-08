@@ -27,6 +27,13 @@ const protectedApiChecks = [
   "/api/admin/pos/sales",
 ];
 
+const searchChecks = [
+  {
+    path: "/category/all?q=ignition",
+    term: "ignition",
+  },
+];
+
 function absolute(path) {
   return `${baseUrl}${path}`;
 }
@@ -94,6 +101,17 @@ function checkCustomerPageSafety(path, html) {
   console.log(`ok customer safety ${path}`);
 }
 
+async function checkSearchPage(check) {
+  const { response, text } = await fetchText(check.path);
+  const lower = text.toLowerCase();
+
+  requireStatus(response.status === 200, `${check.path} expected 200, got ${response.status}`);
+  requireStatus(lower.includes(check.term), `${check.path} does not include expected search term "${check.term}"`);
+  requireStatus(!lower.includes("no products found"), `${check.path} unexpectedly returned no products`);
+  checkCustomerPageSafety(check.path, text);
+  console.log(`ok search ${check.path}`);
+}
+
 async function main() {
   console.log(`Production smoke check: ${baseUrl}`);
   const pageResults = new Map();
@@ -109,6 +127,10 @@ async function main() {
 
   for (const path of protectedApiChecks) {
     await checkProtectedApi(path);
+  }
+
+  for (const check of searchChecks) {
+    await checkSearchPage(check);
   }
 
   checkShareTags(pageResults.get("/share/product/1") ?? "");
