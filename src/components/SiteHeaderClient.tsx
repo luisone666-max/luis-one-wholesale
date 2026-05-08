@@ -64,8 +64,8 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
             <span className="hidden sm:inline">Wholesale Account</span>
           </div>
           <div className="flex items-center gap-4 font-bold">
-            <span className="hidden sm:inline">Help</span>
-            <span className="hidden sm:inline">Contact</span>
+            <Link href="/wholesale-guides/how-to-place-wholesale-orders-online" className="hidden hover:underline sm:inline">Help</Link>
+            <Link href="/#contact" className="hidden hover:underline sm:inline">Contact</Link>
             <a href={messengerUrl} target="_blank" rel="noreferrer" className="hover:underline">Chat on Messenger</a>
           </div>
         </div>
@@ -142,6 +142,9 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
             </Link>
             <Link href="/member" onClick={() => setMobileMenuOpen(false)} className="rounded-sm bg-zinc-50 px-4 py-3">
               Member Card
+            </Link>
+            <Link href="/wholesale-guides/how-to-place-wholesale-orders-online" onClick={() => setMobileMenuOpen(false)} className="rounded-sm bg-zinc-50 px-4 py-3">
+              How to Order
             </Link>
             <Link href="/admin/login" onClick={() => setMobileMenuOpen(false)} className="rounded-sm bg-zinc-950 px-4 py-3 text-white">
               Seller Centre

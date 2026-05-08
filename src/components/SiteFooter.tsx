@@ -1,11 +1,54 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { messengerUrl } from "@/components/CustomerUi";
 import { businessInfo } from "@/lib/business-info";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+
+type FooterCategory = {
+  slug: string;
+  name: string;
+};
 
 export function SiteFooter() {
+  const [categories, setCategories] = useState<FooterCategory[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabaseClient();
+
+    if (!supabase) {
+      return;
+    }
+
+    queueMicrotask(() => {
+      void (async () => {
+        const { data, error } = await supabase
+          .from("categories")
+          .select("slug,name_en,active,show_in_navigation,sort_order")
+          .eq("active", true)
+          .eq("show_in_navigation", true)
+          .eq("level", 1)
+          .order("sort_order", { ascending: true })
+          .limit(6);
+
+        if (!active || error || !data?.length) {
+          return;
+        }
+
+        setCategories(data.map((category) => ({ slug: category.slug, name: category.name_en })));
+      })();
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
-    <footer className="border-t border-zinc-200 bg-white">
+    <footer id="contact" className="border-t border-zinc-200 bg-white">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 text-sm text-zinc-600 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8">
         <div>
           <div className="flex items-center gap-3">
@@ -20,9 +63,11 @@ export function SiteFooter() {
           <p className="font-black text-zinc-950">Categories</p>
           <div className="mt-3 space-y-2">
             <Link href="/category/all" className="block hover:text-orange-700">All Products</Link>
-            <Link href="/category/automotive" className="block hover:text-orange-700">Automotive</Link>
-            <Link href="/category/motorcycle-parts" className="block hover:text-orange-700">Motorcycle Parts</Link>
-            <Link href="/category/electronics" className="block hover:text-orange-700">Electronics</Link>
+            {categories.slice(0, 6).map((category) => (
+              <Link key={category.slug} href={`/category/${category.slug}`} className="block hover:text-orange-700">
+                {category.name}
+              </Link>
+            ))}
           </div>
         </div>
         <div>
