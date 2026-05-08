@@ -253,7 +253,7 @@ function mapSupabaseSnapshot(
       createdAt: product.created_at,
       description: product.description ?? "Wholesale product details will be maintained by admin.",
       details,
-      tiers: tiers.length ? tiers : [{ label: "1+ pcs", min: 1, max: null, price: 0 }],
+      tiers,
       variants,
       searchText: [
         product.sku,
