@@ -110,7 +110,7 @@ const copy = {
 };
 
 const zhCopy = {
-  caption: "老板报表：线上订单、线下 POS、收银确认、收款方式、员工销售额统一查看。",
+  caption: "老板报表：统一查看线上订单、线下 POS、收银确认、收款方式和员工销售额。",
   todayOverview: "今日总览",
   monthOverview: "本月总览",
   paymentBreakdown: "收款方式",
@@ -152,7 +152,7 @@ const zhCopy = {
   offlineSales: "线下 POS",
   waitingAmount: "待收款",
   paidRate: "收款率",
-  collectedCashflow: "已收款流向",
+  collectedCashflow: "已收款现金流",
   exceptions: "异常 / 更正",
   exceptionNote: "已取消、已作废、缺货退款不会计入有效销售额，只在这里给老板复盘。",
   cancelledTotal: "已取消",

@@ -181,18 +181,7 @@ function Card({ title, value, tone = "neutral" }: { title: string; value: string
 }
 
 function paymentMethodLabel(method: string, language: "en" | "zh") {
-  if (language === "zh") {
-    const zhLabels: Record<string, string> = {
-      cash: "现金",
-      gcash: "GCash",
-      bank_transfer: "银行转账",
-      other: "其他",
-    };
-
-    return zhLabels[method] ?? method;
-  }
-
-  const labels = {
+  const labels: Record<"en" | "zh", Record<string, string>> = {
     en: {
       cash: "Cash",
       gcash: "GCash",
@@ -200,14 +189,14 @@ function paymentMethodLabel(method: string, language: "en" | "zh") {
       other: "Other",
     },
     zh: {
-      cash: "现金",
+      cash: "\u73b0\u91d1",
       gcash: "GCash",
-      bank_transfer: "银行转账",
-      other: "其他",
+      bank_transfer: "\u94f6\u884c\u8f6c\u8d26",
+      other: "\u5176\u4ed6",
     },
   };
 
-  return labels[language][method as keyof typeof labels.en] ?? method;
+  return labels[language][method] ?? method;
 }
 
 export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawerData }) {

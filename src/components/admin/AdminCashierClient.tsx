@@ -131,27 +131,14 @@ const cashierActionText = {
     returned: "Sale returned to Sales Desk for correction.",
   },
   zh: {
-    returnToSales: "退回销售修改",
-    returnReasonPrompt: "请输入退回销售修改的原因：",
-    returned: "已退回销售开单页面修改。",
+    returnToSales: "\u9000\u56de\u9500\u552e\u4fee\u6539",
+    returnReasonPrompt: "\u8bf7\u8f93\u5165\u9000\u56de\u9500\u552e\u4fee\u6539\u7684\u539f\u56e0\uff1a",
+    returned: "\u5df2\u9000\u56de\u9500\u552e\u5f00\u5355\u9875\u9762\u4fee\u6539\u3002",
   },
 };
 
 function paymentMethodLabel(method: string, language: "en" | "zh") {
-  if (language === "zh") {
-    const zhLabels: Record<string, string> = {
-      cash: "现金",
-      gcash: "GCash",
-      bank_transfer: "银行转账",
-      other: "其他",
-    };
-
-    return (
-      zhLabels[method] ?? method
-    );
-  }
-
-  const labels = {
+  const labels: Record<"en" | "zh", Record<string, string>> = {
     en: {
       cash: "Cash",
       gcash: "GCash",
@@ -159,14 +146,14 @@ function paymentMethodLabel(method: string, language: "en" | "zh") {
       other: "Other",
     },
     zh: {
-      cash: "现金",
+      cash: "\u73b0\u91d1",
       gcash: "GCash",
-      bank_transfer: "银行转账",
-      other: "其他",
+      bank_transfer: "\u94f6\u884c\u8f6c\u8d26",
+      other: "\u5176\u4ed6",
     },
   };
 
-  return labels[language][method as keyof typeof labels.en] ?? method;
+  return labels[language][method] ?? method;
 }
 
 function inputClass() {
@@ -185,7 +172,7 @@ function cashDrawerSummaryMessage(summary: CashDrawerConfirmSummary | undefined,
   const transferTotal = summary.gcashSalesTotal + summary.bankTransferSalesTotal;
 
   if (language === "zh") {
-    return ` 今日钱箱：现金 ${formatPhp(summary.cashSalesTotal)}，GCash/银行 ${formatPhp(transferTotal)}，应有现金 ${formatPhp(summary.expectedCash)}。`;
+    return ` \u4eca\u65e5\u94b1\u7bb1\uff1a\u73b0\u91d1 ${formatPhp(summary.cashSalesTotal)}\uff0cGCash/\u94f6\u884c ${formatPhp(transferTotal)}\uff0c\u5e94\u6709\u73b0\u91d1 ${formatPhp(summary.expectedCash)}\u3002`;
   }
 
   return ` Today drawer: cash ${formatPhp(summary.cashSalesTotal)}, GCash/bank ${formatPhp(transferTotal)}, expected cash ${formatPhp(summary.expectedCash)}.`;
