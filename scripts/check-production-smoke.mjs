@@ -8,6 +8,7 @@ const publicChecks = [
   { path: "/admin/login", name: "admin login page", minLength: 500 },
   { path: "/meta/catalog-feed.csv", name: "Meta catalog feed", minLength: 100 },
   { path: "/share/product/1", name: "Facebook product share page", minLength: 500 },
+  { path: "/robots.txt", name: "robots.txt", minLength: 50 },
 ];
 
 const customerPageChecks = new Set(["/", "/category/all", "/product/1"]);
@@ -117,6 +118,13 @@ function checkCatalogFeed(csv) {
   console.log("ok Meta catalog feed required columns found");
 }
 
+function checkRobotsTxt(text) {
+  requireStatus(text.includes("Sitemap:"), "robots.txt is missing Sitemap");
+  requireStatus(text.includes("facebookexternalhit"), "robots.txt is missing facebookexternalhit allow rule");
+  requireStatus(text.includes("Disallow: /admin"), "robots.txt should disallow admin pages");
+  console.log("ok robots.txt rules found");
+}
+
 function checkCustomerPageSafety(path, html) {
   const lower = html.toLowerCase();
   const leaked = adminOnlyLeakTerms.find((term) => lower.includes(term));
@@ -163,6 +171,7 @@ async function main() {
 
   checkShareTags(pageResults.get("/share/product/1") ?? "");
   checkCatalogFeed(pageResults.get("/meta/catalog-feed.csv") ?? "");
+  checkRobotsTxt(pageResults.get("/robots.txt") ?? "");
   console.log("Production smoke check passed.");
 }
 

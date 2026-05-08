@@ -4,7 +4,13 @@ Allow: /
 User-agent: Facebot
 Allow: /
 
+User-agent: Googlebot
+Allow: /
+
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/admin
+Disallow: /dev
 
 Sitemap: https://luisonesupplyhub.com/sitemap.xml
