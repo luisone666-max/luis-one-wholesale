@@ -17,6 +17,10 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    if (initialCategories.length) {
+      return;
+    }
+
     let active = true;
     const supabase = createBrowserSupabaseClient();
 
@@ -53,7 +57,7 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialCategories.length]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-orange-100 bg-white shadow-sm">

@@ -551,3 +551,11 @@ Expanded secret scan follow-up:
 - This reduces risk when adding delivery, maps, Meta, or deployment integrations.
 - Verification:
   - `npm.cmd run check:secrets` passed.
+
+Customer header request reduction follow-up:
+
+- Site header no longer repeats a browser-side Supabase category query when server-rendered navigation categories are already available.
+- This reduces unnecessary mobile network work on customer pages while keeping the fallback browser fetch for unusual no-data cases.
+- Verification:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
