@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canManageStaff } from "@/lib/admin-role-access";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { getAdminStaffUsers } from "@/lib/admin-users-data";
 import { verifyOwnerActionPassword } from "@/lib/owner-action-password";
@@ -8,10 +9,6 @@ const roles = new Set(["owner", "admin", "staff", "sales", "cashier", "warehouse
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
-}
-
-function canManageStaff(role: string) {
-  return role === "owner" || role === "admin";
 }
 
 function cleanText(value: unknown) {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canManageStaff } from "@/lib/admin-role-access";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { verifyOwnerActionPassword } from "@/lib/owner-action-password";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
@@ -7,10 +8,6 @@ const roles = new Set(["owner", "admin", "staff", "sales", "cashier", "warehouse
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
-}
-
-function canManageStaff(role: string) {
-  return role === "owner" || role === "admin";
 }
 
 function cleanText(value: unknown) {
