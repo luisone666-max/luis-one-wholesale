@@ -510,3 +510,11 @@ Admin navigation link follow-up:
 - Any link to a missing `/admin/...` page will now fail maintenance checks before deployment.
 - Verification:
   - `npm.cmd run check:maintenance` passed.
+
+Customer navigation link follow-up:
+
+- Added `npm.cmd run check:customer-links`.
+- The check scans customer-facing static links, redirects, and router navigation in app/components.
+- Missing customer routes now fail maintenance checks before deployment, reducing broken buttons and 404s.
+- Verification:
+  - `npm.cmd run check:customer-links` passed.

@@ -11,6 +11,7 @@
     "check:admin-api": "node scripts/check-admin-api-protection.mjs",
     "check:admin-pages": "node scripts/check-admin-page-protection.mjs",
     "check:admin-links": "node scripts/check-admin-links.mjs",
+    "check:customer-links": "node scripts/check-customer-links.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",
     "check:loyalty": "node scripts/check-online-order-loyalty.mjs",
     "check:pos": "node scripts/check-pos-flow.mjs",
