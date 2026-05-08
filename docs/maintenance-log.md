@@ -1,5 +1,35 @@
 # Maintenance Log
 
+## 2026-05-08
+
+- Added POS correction maintenance coverage:
+  - `npm.cmd run check:pos:corrections` creates temporary POS slips and verifies return-to-sales, correction, unpaid cancellation, paid voiding, negative payment adjustment, point reversal, and audit trail.
+  - The check now clearly reports that `supabase/migrations/20260507001000_pos_sale_audit_logs.sql` must be run before audit verification can pass.
+- Added database schema readiness check:
+  - `npm.cmd run check:schema` verifies core production tables and columns for customers, staff, owner password settings, products, variants, POS, loyalty, and cash drawer.
+  - Current production blocker: `pos_sale_audit_logs` table is still missing.
+- Improved production safety checks:
+  - Production smoke check now verifies `/dev/supabase-test` returns 404 in production.
+  - Production smoke check now verifies `/admin/help` is protected for logged-out users.
+- Improved customer storefront safety checks:
+  - Added `npm.cmd run check:customer-safety`.
+  - The check blocks customer-facing source files from exposing supplier/internal/admin note fields.
+  - The check blocks Chinese customer-facing copy outside the explicitly allowed shared header code.
+- Improved customer navigation:
+  - Footer category links now read real active navigation categories instead of using hardcoded category slugs.
+  - Header Help and Contact links now point to real help/contact destinations.
+- Added admin operations guide:
+  - `/admin/help` explains daily workflows for sales staff, cashier, owner/admin, and warehouse/product lookup roles.
+  - The page is role-accessible to all active admin staff roles and protected from logged-out users.
+- POS resilience:
+  - Sales/cashier pages remain usable even if the audit-log migration has not been run yet.
+  - POS correction audit history will appear once the missing audit table is created.
+- Verification:
+  - `npm.cmd run check:customer-safety` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:production` passed after deployment.
+
 ## 2026-05-06
 
 - Added final operations checklist in `docs/operations-checklist.md`.
