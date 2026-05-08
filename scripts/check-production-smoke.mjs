@@ -41,6 +41,7 @@ const protectedPageChecks = [
   "/admin/products",
   "/admin/orders",
   "/admin/cashier",
+  "/admin/help",
 ];
 
 const notFoundChecks = [

@@ -70,6 +70,10 @@ function canAccessAdminPage(path: string, role: AdminRole) {
     return hasRole(role, ["owner", "admin", "sales", "staff"]);
   }
 
+  if (path.startsWith("/admin/help")) {
+    return hasRole(role, ["owner", "admin", "sales", "staff", "cashier", "warehouse"]);
+  }
+
   if (path.startsWith("/admin/cashier") || path.startsWith("/admin/cash-drawer")) {
     return hasRole(role, ["owner", "admin", "cashier"]);
   }

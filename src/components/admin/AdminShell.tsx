@@ -16,7 +16,7 @@ type AdminI18nContextValue = {
 
 type NavItem = {
   href: string;
-  label: TranslationKey;
+  label: TranslationKey | { en: string; zh: string };
   icon: string;
   hint: { en: string; zh: string };
   roles?: AdminRole[];
@@ -144,6 +144,18 @@ const navSections: Array<{
       },
     ],
   },
+  {
+    title: { en: "Guide", zh: "\u6307\u5357" },
+    items: [
+      {
+        href: "/admin/help",
+        label: { en: "Operations Guide", zh: "\u64cd\u4f5c\u6307\u5357" },
+        icon: "?",
+        hint: { en: "Role-based daily workflow", zh: "\u6309\u89d2\u8272\u770b\u6bcf\u65e5\u6d41\u7a0b" },
+        roles: ["owner", "admin", "staff", "sales", "cashier", "warehouse"],
+      },
+    ],
+  },
 ];
 
 function adminSectionTitle(section: (typeof navSections)[number], language: AdminLanguage) {
@@ -152,6 +164,10 @@ function adminSectionTitle(section: (typeof navSections)[number], language: Admi
 
 function adminNavHint(item: NavItem, language: AdminLanguage) {
   return language === "zh" ? item.hint.zh : item.hint.en;
+}
+
+function adminNavLabel(item: NavItem, language: AdminLanguage, t: (key: TranslationKey) => string) {
+  return typeof item.label === "string" ? t(item.label) : language === "zh" ? item.label.zh : item.label.en;
 }
 
 export function useAdminI18n() {
@@ -281,7 +297,7 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
                         key={item.href}
                         href={item.href}
                         onClick={closeMobileMenu}
-                        title={value.t(item.label)}
+                        title={adminNavLabel(item, language, value.t)}
                         className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
                           active ? "bg-orange-50 text-[#f65f18] shadow-sm ring-1 ring-orange-100" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950"
                         } ${sidebarCollapsed ? "justify-center" : ""}`}
@@ -290,7 +306,7 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
                           {item.icon}
                         </span>
                         <span className={sidebarCollapsed ? "hidden" : "min-w-0"}>
-                          <span className="block truncate">{value.t(item.label)}</span>
+                          <span className="block truncate">{adminNavLabel(item, language, value.t)}</span>
                           <span className="block truncate text-[11px] font-bold text-zinc-400">{adminNavHint(item, language)}</span>
                         </span>
                       </Link>
@@ -314,7 +330,7 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
                 </button>
                 <div>
                   <p className="text-xs font-bold text-zinc-500">WholesaleHub</p>
-                  <p className="text-lg font-black text-zinc-950">{value.t(activeItem.label)}</p>
+                  <p className="text-lg font-black text-zinc-950">{adminNavLabel(activeItem, language, value.t)}</p>
                 </div>
               </div>
 
@@ -353,7 +369,7 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
             <nav className="flex gap-2 overflow-x-auto border-t border-zinc-100 px-4 py-2 lg:hidden">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href} className={`shrink-0 rounded-full px-3 py-2 text-xs font-bold ${isActive(item.href) ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700"}`}>
-                  {value.t(item.label)}
+                  {adminNavLabel(item, language, value.t)}
                 </Link>
               ))}
             </nav>
