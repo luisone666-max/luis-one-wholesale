@@ -107,6 +107,96 @@ function inputClass() {
   return "h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-orange-500";
 }
 
+function tableInputClass() {
+  return "h-10 w-full rounded-md border border-zinc-200 bg-white px-2 text-xs font-bold text-zinc-900 outline-none focus:border-orange-500";
+}
+
+function StaffUserRow({
+  user,
+  t,
+  loading,
+  onSave,
+  onToggleActive,
+}: {
+  user: AdminStaffUser;
+  t: (typeof copy)["en"];
+  loading: boolean;
+  onSave: (id: string, patch: Record<string, unknown>) => void;
+  onToggleActive: (id: string, active: boolean) => void;
+}) {
+  const [draft, setDraft] = useState({
+    name: user.name,
+    employeeNo: user.employeeNo,
+    role: user.role,
+    notes: user.notes,
+  });
+
+  const dirty =
+    draft.name !== user.name ||
+    draft.employeeNo !== user.employeeNo ||
+    draft.role !== user.role ||
+    draft.notes !== user.notes;
+
+  return (
+    <tr>
+      <td className="px-4 py-4">
+        <input
+          className={tableInputClass()}
+          value={draft.name}
+          onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+        />
+      </td>
+      <td className="px-4 py-4 text-zinc-600">{user.email}</td>
+      <td className="px-4 py-4">
+        <input
+          className={tableInputClass()}
+          value={draft.employeeNo}
+          onChange={(event) => setDraft((current) => ({ ...current, employeeNo: event.target.value }))}
+        />
+      </td>
+      <td className="px-4 py-4">
+        <select className={tableInputClass()} value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value }))}>
+          {roleOptions.map((role) => (
+            <option key={role} value={role}>
+              {role}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className="px-4 py-4">
+        <StatusPill tone={user.active ? "green" : "neutral"}>{user.active ? t.active : t.inactive}</StatusPill>
+      </td>
+      <td className="px-4 py-4">
+        <input
+          className={tableInputClass()}
+          value={draft.notes}
+          onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
+        />
+      </td>
+      <td className="px-4 py-4">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={loading || !dirty}
+            onClick={() => onSave(user.id, draft)}
+            className="rounded-md bg-zinc-950 px-3 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {t.save}
+          </button>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => onToggleActive(user.id, !user.active)}
+            className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700 disabled:opacity-60"
+          >
+            {user.active ? t.deactivate : t.activate}
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export function AdminStaffClient({ initialUsers, initialError }: { initialUsers: AdminStaffUser[]; initialError?: string }) {
   const { language } = useAdminI18n();
   const t = copy[language];
@@ -252,7 +342,7 @@ export function AdminStaffClient({ initialUsers, initialError }: { initialUsers:
 
       <TableShell>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-left text-sm">
+          <table className="w-full min-w-[1120px] text-left text-sm">
             <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
               <tr>
                 <th className="px-4 py-3">{t.name}</th>
@@ -267,34 +357,14 @@ export function AdminStaffClient({ initialUsers, initialError }: { initialUsers:
             <tbody className="divide-y divide-zinc-100 bg-white">
               {users.length ? (
                 users.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-4 py-4 font-black text-zinc-950">{user.name}</td>
-                    <td className="px-4 py-4 text-zinc-600">{user.email}</td>
-                    <td className="px-4 py-4 text-zinc-600">{user.employeeNo || "-"}</td>
-                    <td className="px-4 py-4">
-                      <select className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs font-black" value={user.role} onChange={(event) => void updateStaff(user.id, { role: event.target.value })}>
-                        {roleOptions.map((role) => (
-                          <option key={role} value={role}>
-                            {role}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-4">
-                      <StatusPill tone={user.active ? "green" : "neutral"}>{user.active ? t.active : t.inactive}</StatusPill>
-                    </td>
-                    <td className="px-4 py-4 text-zinc-600">{user.notes || "-"}</td>
-                    <td className="px-4 py-4">
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => void updateStaff(user.id, { active: !user.active })}
-                        className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700 disabled:opacity-60"
-                      >
-                        {user.active ? t.deactivate : t.activate}
-                      </button>
-                    </td>
-                  </tr>
+                  <StaffUserRow
+                    key={`${user.id}:${user.name}:${user.employeeNo}:${user.role}:${user.notes}`}
+                    user={user}
+                    t={t}
+                    loading={loading}
+                    onSave={(id, patch) => void updateStaff(id, patch)}
+                    onToggleActive={(id, active) => void updateStaff(id, { active })}
+                  />
                 ))
               ) : (
                 <tr>
