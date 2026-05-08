@@ -6,7 +6,6 @@ This checklist is the final run record for ongoing maintenance and feature work.
 
 - `npm.cmd run lint`
 - `npm.cmd run check:pos`
-- `npm.cmd run check:pos:corrections`
 - `npm.cmd run check:loyalty`
 - `npm.cmd run check:production`
 - `npm.cmd run build`
@@ -30,6 +29,12 @@ This checklist is the final run record for ongoing maintenance and feature work.
   - No real keys are committed.
   - `.env.local` stays ignored.
   - Customer frontend never exposes admin-only fields.
+
+## Run After Production Migrations
+
+- `npm.cmd run check:schema`
+- `npm.cmd run check:pos:corrections`
+- Current known blocker: run `supabase/migrations/20260507001000_pos_sale_audit_logs.sql` in Supabase SQL Editor so POS correction audit history can be fully verified.
 
 ## Business Flow To Keep Improving
 
