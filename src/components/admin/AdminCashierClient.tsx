@@ -56,6 +56,17 @@ const copy = {
     transferConfirmHint: "Check the transfer receipt and enter the reference number before confirming.",
     referenceRequired: "Enter the GCash / bank reference number before confirming.",
     autoRefresh: "This page checks for new sales every 15 seconds.",
+    saleReview: "Sale Review",
+    productTotal: "Product Total",
+    discount: "Discount",
+    amountDue: "Amount Due",
+    priceNotes: "Price / discount notes",
+    saleNotes: "Sale notes",
+    auditTrail: "Audit Trail",
+    noAudit: "No audit records yet.",
+    by: "By",
+    reason: "Reason",
+    statusChange: "Status Change",
   },
   zh: {
     caption: "这里只做线下收银确认。收银员核对销售单、收款方式和金额后，再确认收款。",
@@ -122,6 +133,17 @@ const zhCopy = {
   transferConfirmHint: "转账单：核对到账记录，并填写参考号后再确认。",
   referenceRequired: "请先填写 GCash / 银行参考号，再确认收款。",
   autoRefresh: "本页面每 15 秒自动检查新的销售单。",
+  saleReview: "\u9500\u552e\u5355\u6838\u5bf9",
+  productTotal: "\u5546\u54c1\u5c0f\u8ba1",
+  discount: "\u6298\u6263",
+  amountDue: "\u5e94\u6536\u91d1\u989d",
+  priceNotes: "\u6539\u4ef7 / \u6298\u6263\u5907\u6ce8",
+  saleNotes: "\u9500\u552e\u5907\u6ce8",
+  auditTrail: "\u64cd\u4f5c\u8bb0\u5f55",
+  noAudit: "\u6682\u65e0\u64cd\u4f5c\u8bb0\u5f55\u3002",
+  by: "\u64cd\u4f5c\u4eba",
+  reason: "\u539f\u56e0",
+  statusChange: "\u72b6\u6001\u53d8\u5316",
 } satisfies typeof copy.en;
 
 const cashierActionText = {
@@ -176,6 +198,32 @@ function cashDrawerSummaryMessage(summary: CashDrawerConfirmSummary | undefined,
   }
 
   return ` Today drawer: cash ${formatPhp(summary.cashSalesTotal)}, GCash/bank ${formatPhp(transferTotal)}, expected cash ${formatPhp(summary.expectedCash)}.`;
+}
+
+function shortDate(value: string) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function auditActionLabel(action: string, language: "en" | "zh") {
+  const labels: Record<string, string> = {
+    created: language === "zh" ? "\u521b\u5efa\u9500\u552e\u5355" : "Created",
+    updated: language === "zh" ? "\u4fee\u6539\u9500\u552e\u5355" : "Updated",
+    returned_to_sales: language === "zh" ? "\u9000\u56de\u9500\u552e\u4fee\u6539" : "Returned to Sales",
+    cancelled: language === "zh" ? "\u53d6\u6d88\u9500\u552e\u5355" : "Cancelled",
+    payment_confirmed: language === "zh" ? "\u6536\u94f6\u786e\u8ba4\u6536\u6b3e" : "Payment Confirmed",
+    voided_paid_sale: language === "zh" ? "\u4f5c\u5e9f\u5df2\u6536\u6b3e" : "Voided Paid Sale",
+  };
+
+  return labels[action] ?? action.replace(/_/g, " ");
 }
 
 function SummaryCard({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "orange" | "green" | "neutral" }) {
@@ -435,6 +483,60 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
                     </table>
                   </div>
                 </TableShell>
+              </div>
+
+              <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
+                <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-400">{t.saleReview}</p>
+                  <div className="mt-3 grid gap-2 text-sm font-bold text-zinc-700 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-400">{t.productTotal}</p>
+                      <p className="mt-1 text-zinc-950">{formatPhp(sale.productTotal)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-400">{t.discount}</p>
+                      <p className="mt-1 text-zinc-950">{formatPhp(sale.discountAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-400">{t.amountDue}</p>
+                      <p className="mt-1 text-[#f65f18]">{formatPhp(sale.totalAmount)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-2 text-sm font-bold text-zinc-600 sm:grid-cols-2">
+                    <p>
+                      {t.priceNotes}: {sale.priceChangeNotes || "-"}
+                    </p>
+                    <p>
+                      {t.saleNotes}: {sale.saleNotes || "-"}
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-400">{t.auditTrail}</p>
+                  {sale.auditLogs.length ? (
+                    <div className="mt-3 space-y-2">
+                      {sale.auditLogs.map((log) => (
+                        <div key={log.id} className="rounded-md border border-zinc-200 bg-white p-3 text-xs font-bold text-zinc-600">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="font-black text-zinc-950">{auditActionLabel(log.action, language)}</span>
+                            <span>{shortDate(log.createdAt)}</span>
+                          </div>
+                          <p className="mt-1">
+                            {t.by}: {log.createdByName || "-"}
+                          </p>
+                          <p className="mt-1">
+                            {t.statusChange}: {log.previousStatus || "-"} {"->"} {log.newStatus || "-"}
+                          </p>
+                          <p className="mt-1">
+                            {t.reason}: {log.reason || "-"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm font-bold text-zinc-500">{t.noAudit}</p>
+                  )}
+                </div>
               </div>
 
               <div className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
