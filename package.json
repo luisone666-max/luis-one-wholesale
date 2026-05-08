@@ -11,6 +11,8 @@
     "check:loyalty": "node scripts/check-online-order-loyalty.mjs",
     "check:pos": "node scripts/check-pos-flow.mjs",
     "check:pos:corrections": "node scripts/check-pos-corrections.mjs",
+    "check:maintenance": "node scripts/run-checks.mjs maintenance",
+    "check:readiness": "node scripts/run-checks.mjs readiness",
     "start": "next start",
     "lint": "eslint"
   },

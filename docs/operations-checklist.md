@@ -4,6 +4,10 @@ This checklist is the final run record for ongoing maintenance and feature work.
 
 ## Always Run Before Shipping
 
+- `npm.cmd run check:maintenance`
+
+This runs:
+
 - `npm.cmd run lint`
 - `npm.cmd run check:customer-safety`
 - `npm.cmd run check:pos`
@@ -33,6 +37,10 @@ This checklist is the final run record for ongoing maintenance and feature work.
 
 ## Run After Production Migrations
 
+- `npm.cmd run check:readiness`
+
+This runs:
+
 - `npm.cmd run check:schema`
 - `npm.cmd run check:pos:corrections`
 - Current known blocker: run `supabase/migrations/20260507001000_pos_sale_audit_logs.sql` in Supabase SQL Editor so POS correction audit history can be fully verified.
@@ -60,12 +68,6 @@ This checklist is the final run record for ongoing maintenance and feature work.
 
 ## Next Improvement Backlog
 
-- Run the remaining Supabase migrations in production before relying on loyalty, staff, POS, and cash drawer data.
-- Add a simple staff training page explaining:
-  - Sales Desk creates the sale.
-  - Cashier Center confirms the money.
-  - Cash Drawer summarizes physical cash, GCash, and bank transfer.
-  - Reports show monthly staff performance.
-- Add clearer owner/admin monthly report filters after real staff data is stable.
-- Add a customer-facing "How to order" page focused on pickup, Messenger confirmation, GCash/bank transfer, Lalamove/courier, and no online payment.
+- Run `supabase/migrations/20260507001000_pos_sale_audit_logs.sql` in production so POS correction audit history is fully active.
+- Add clearer owner/admin monthly report filters after more real staff data is collected.
 - Keep improving mobile catalog density without making buttons overlap product names or prices.
