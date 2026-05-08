@@ -423,3 +423,17 @@ Owner report history follow-up:
 - Verification:
   - `npm.cmd run lint` passed.
   - `npm.cmd run build` passed.
+
+Admin protection smoke coverage follow-up:
+
+- Production smoke checks now cover more protected admin pages:
+  - reports
+  - staff
+  - sales desk
+  - cashier
+  - cash drawer
+  - owner center
+  - settings
+- Production smoke checks now also verify logged-out 403 protection for cash drawer and staff APIs.
+- Verification:
+  - `npm.cmd run check:production` passed.

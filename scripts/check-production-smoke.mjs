@@ -34,13 +34,21 @@ const protectedApiChecks = [
   "/api/admin/orders",
   "/api/admin/categories",
   "/api/admin/pos/sales",
+  "/api/admin/cash-drawer",
+  "/api/admin/staff",
 ];
 
 const protectedPageChecks = [
   "/admin",
   "/admin/products",
   "/admin/orders",
+  "/admin/reports",
+  "/admin/staff",
+  "/admin/sales-desk",
   "/admin/cashier",
+  "/admin/cash-drawer",
+  "/admin/owner",
+  "/admin/settings",
   "/admin/help",
 ];
 
