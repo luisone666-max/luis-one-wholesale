@@ -159,20 +159,81 @@ function checkProductOgTags(html, label) {
   console.log(`ok ${label} OG image=${image}`);
 }
 
-function checkCatalogFeed(csv) {
-  const header = csv.split(/\r?\n/, 1)[0] ?? "";
-  for (const column of ["id", "title", "price", "link", "image_link"]) {
-    requireStatus(header.includes(column), `Meta catalog feed is missing ${column} column`);
+function parseCsvLine(line) {
+  const cells = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const next = line[index + 1];
+
+    if (char === '"' && inQuotes && next === '"') {
+      current += '"';
+      index += 1;
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      cells.push(current);
+      current = "";
+      continue;
+    }
+
+    current += char;
   }
 
-  const rows = csv.trim().split(/\r?\n/).slice(1).filter(Boolean);
-  const ids = rows.map((row) => (row.match(/^"((?:[^"]|"")*)"/)?.[1] ?? "").replace(/""/g, '"'));
+  cells.push(current);
+  return cells;
+}
+
+function checkCatalogFeed(csv) {
+  const lines = csv.trim().split(/\r?\n/).filter(Boolean);
+  const headers = parseCsvLine(lines[0] ?? "");
+  const requiredColumns = ["id", "title", "description", "availability", "condition", "price", "link", "image_link", "brand", "mpn"];
+
+  for (const column of requiredColumns) {
+    requireStatus(headers.includes(column), `Meta catalog feed is missing ${column} column`);
+  }
+
+  const columnIndex = new Map(headers.map((column, index) => [column, index]));
+  const rows = lines.slice(1);
+  const ids = rows.map((row) => parseCsvLine(row)[columnIndex.get("id") ?? -1] ?? "");
   const duplicateIds = ids.filter((id, index) => id && ids.indexOf(id) !== index);
+  const validAvailability = new Set(["in stock", "out of stock", "preorder", "available for order", "discontinued"]);
 
   requireStatus(rows.length >= 5, `Meta catalog feed should contain at least 5 products, got ${rows.length}`);
   requireStatus(!duplicateIds.length, `Meta catalog feed has duplicate ids: ${Array.from(new Set(duplicateIds)).join(", ")}`);
 
+  rows.forEach((row, rowIndex) => {
+    const cells = parseCsvLine(row);
+    const lineNumber = rowIndex + 2;
+
+    for (const column of requiredColumns) {
+      const value = cells[columnIndex.get(column) ?? -1] ?? "";
+      requireStatus(value.trim().length > 0, `Meta catalog feed line ${lineNumber} is missing ${column}`);
+    }
+
+    const availability = cells[columnIndex.get("availability") ?? -1] ?? "";
+    const price = cells[columnIndex.get("price") ?? -1] ?? "";
+    const link = cells[columnIndex.get("link") ?? -1] ?? "";
+    const imageLink = cells[columnIndex.get("image_link") ?? -1] ?? "";
+    const numericPrice = Number(price.replace(/\s*PHP$/i, ""));
+
+    requireStatus(validAvailability.has(availability), `Meta catalog feed line ${lineNumber} has invalid availability "${availability}"`);
+    requireStatus(/^\d+(?:\.\d{2})\sPHP$/.test(price), `Meta catalog feed line ${lineNumber} has invalid PHP price "${price}"`);
+    requireStatus(Number.isFinite(numericPrice) && numericPrice > 0, `Meta catalog feed line ${lineNumber} has non-positive price "${price}"`);
+    requireStatus(/^https:\/\//.test(link), `Meta catalog feed line ${lineNumber} has non-HTTPS link "${link}"`);
+    requireStatus(/^https:\/\//.test(imageLink), `Meta catalog feed line ${lineNumber} has non-HTTPS image link "${imageLink}"`);
+  });
+
   console.log("ok Meta catalog feed required columns found");
+  console.log("ok Meta catalog feed rows have valid ids, prices, links, images, and availability");
   console.log(`ok Meta catalog feed rows=${rows.length}`);
 }
 

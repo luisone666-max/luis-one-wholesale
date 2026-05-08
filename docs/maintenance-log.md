@@ -526,3 +526,11 @@ Admin API method protection follow-up:
 - This catches partial protection mistakes when a route file has multiple methods such as GET and POST.
 - Verification:
   - `npm.cmd run check:admin-api` passed.
+
+Meta catalog feed health follow-up:
+
+- Tightened production smoke checks for `/meta/catalog-feed.csv`.
+- The check now validates every feed row has required Meta catalog fields, positive PHP price, HTTPS product link, HTTPS image link, and valid availability.
+- Duplicate catalog item IDs remain blocked before deployment.
+- Verification:
+  - `npm.cmd run check:production` passed.
