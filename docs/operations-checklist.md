@@ -17,7 +17,9 @@ This runs:
 - Check customer storefront:
   - Home page loads real products.
   - Search works with partial words, SKU, model, and spaced keywords.
+  - Price sorting uses product and variant wholesale tiers.
   - Unavailable products cannot be ordered and point customers to Messenger.
+  - Product and share page Open Graph tags include product name, PHP pricing text, and absolute HTTPS image.
   - Product pages do not show supplier notes, internal cost notes, or admin notes.
   - Cart, checkout, My Orders, and order detail still work.
 - Check admin protection:
@@ -28,12 +30,13 @@ This runs:
   - Sales Desk can create an offline sale.
   - Cashier Center can confirm payment.
   - Cash Drawer reflects cash and transfer totals.
-  - Employee monthly sales report loads.
+  - Employee monthly sales report loads current month and recent history.
   - Wrong sales slips can be corrected through the approved correction flow.
 - Check data safety:
   - No real keys are committed.
   - `.env.local` stays ignored.
   - Customer frontend never exposes admin-only fields.
+  - Meta catalog feed has at least 5 products and no duplicate item IDs.
 
 ## Run After Production Migrations
 
