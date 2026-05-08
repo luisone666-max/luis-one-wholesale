@@ -12,9 +12,12 @@ NEXT_PUBLIC_MESSENGER_URL=
 NEXT_PUBLIC_SITE_URL=
 NEXT_PUBLIC_PRODUCT_SHARE_URL=
 NEXT_PUBLIC_META_PIXEL_ID=
+OWNER_ACTION_PASSWORD=
+OWNER_MASTER_PASSWORD=
 ```
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are safe for browser use when Row Level Security policies are enabled. `SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be exposed in client components, browser code, logs, screenshots, or GitHub.
+`OWNER_ACTION_PASSWORD` and `OWNER_MASTER_PASSWORD` are server-only owner/admin control passwords. Keep them in Vercel Environment Variables only and never place them in client components or public screenshots.
 
 ## Required Supabase Migrations
 
