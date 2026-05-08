@@ -78,7 +78,9 @@ function clean(value: unknown) {
 }
 
 function isUnavailableStockStatus(status: string | null | undefined) {
-  return status === "Unavailable" || status === "unavailable";
+  const normalized = (status ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+  return ["unavailable", "outofstock", "soldout", "notavailable"].includes(normalized);
 }
 
 function validateCheckoutPayload(payload: CheckoutPayload): { value: ValidCheckoutPayload } | { error: string } {
@@ -301,7 +303,7 @@ export async function POST(request: Request) {
       return jsonError(`${product.name}: selected variant is no longer available.`);
     }
 
-    if (isUnavailableStockStatus(variant?.stock_status)) {
+    if (variant && isUnavailableStockStatus(variant.stock_status)) {
       return jsonError(`${product.name} / ${variant.variant_name} is currently unavailable for direct checkout. Please contact us on Messenger so we can check stock or arrange a special order.`);
     }
 

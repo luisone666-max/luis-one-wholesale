@@ -261,6 +261,8 @@ export function getTierForQuantity(product: Product, quantity: number) {
 }
 
 export function isUnavailableStockStatus(status: string | null | undefined) {
-  return status === "Unavailable" || status === "unavailable";
+  const normalized = (status ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+  return ["unavailable", "outofstock", "soldout", "notavailable"].includes(normalized);
 }
 
