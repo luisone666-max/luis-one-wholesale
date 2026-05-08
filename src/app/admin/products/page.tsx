@@ -11,8 +11,8 @@ export const revalidate = 0;
 
 export default async function AdminProductsPage() {
   const admin = await requireActiveAdminPage();
-  const result = await getAdminProducts();
   const priceLookupOnly = admin.role === "sales" || admin.role === "staff";
+  const result = await getAdminProducts({ page: 1, pageSize: priceLookupOnly ? 200 : 24 });
 
   if (!priceLookupOnly && !canManageProducts(admin.role)) {
     redirect("/admin");
@@ -23,7 +23,14 @@ export default async function AdminProductsPage() {
       {priceLookupOnly ? (
         <AdminProductPriceLookupClient products={toAdminProductLookupRecords(result.products)} initialError={result.error} />
       ) : (
-        <AdminProductsClient initialProducts={result.products} categories={result.categories} initialError={result.error} />
+        <AdminProductsClient
+          initialProducts={result.products}
+          categories={result.categories}
+          initialError={result.error}
+          initialTotalProducts={result.totalProducts}
+          initialSummary={result.summary}
+          initialCategoryProductCounts={result.categoryProductCounts}
+        />
       )}
     </AdminShell>
   );

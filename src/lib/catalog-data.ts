@@ -52,6 +52,30 @@ type CatalogSnapshot = {
   allCategoryRows: CategoryRow[];
 };
 
+export type CatalogListingSort = "popular" | "latest" | "price-low" | "price-high";
+
+export type CatalogCategoryListing = {
+  categories: Category[];
+  products: Product[];
+  category: Category | null;
+  totalProducts: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+};
+
+type CatalogListingOptions = {
+  page?: number;
+  pageSize?: number;
+  query?: string;
+  sort?: CatalogListingSort;
+};
+
+type ProductVariantSearchRow = Pick<
+  Database["public"]["Tables"]["product_variants"]["Row"],
+  "id" | "product_id" | "variant_name" | "variant_sku" | "model" | "fits" | "image_url" | "stock_status" | "active"
+>;
+
 export const CATALOG_CACHE_SECONDS = 60;
 export const CATALOG_CACHE_TAG = "customer-catalog";
 
@@ -137,6 +161,238 @@ function activePathIsVisible(product: ProductRow, activeCategoryIds: Set<string>
   return [product.category_id, product.subcategory_id, product.child_category_id]
     .filter((id): id is string => Boolean(id))
     .every((id) => activeCategoryIds.has(id));
+}
+
+function normalizeCatalogSearch(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\bbreaks?\b/g, "brake")
+    .replace(/\btop\s*box\b/g, "topbox")
+    .replace(/\bkey\s*set\b/g, "keyset")
+    .replace(/\bn\s*max\b/g, "nmax")
+    .replace(/\baerox\s*155\b/g, "aerox155")
+    .replace(/\bhonda\s*click\b/g, "click")
+    .replace(/&/g, " and ")
+    .replace(/\+/g, " plus ")
+    .replace(/([a-z])([0-9])/g, "$1 $2")
+    .replace(/([0-9])([a-z])/g, "$1 $2")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function compactCatalogSearch(value: string) {
+  return normalizeCatalogSearch(value).replace(/\s+/g, "");
+}
+
+const catalogSearchAliases: Record<string, string[]> = {
+  accessory: ["accessories"],
+  accessories: ["accessory"],
+  absorber: ["shock", "suspension"],
+  aerox: ["yamaha"],
+  automotive: ["car", "vehicle"],
+  box: ["topbox", "motobox"],
+  beat: ["honda"],
+  bracket: ["mount", "holder"],
+  brake: ["break", "lever"],
+  breaks: ["brake"],
+  cable: ["wire", "charger"],
+  cables: ["wire", "charger"],
+  cap: ["helmet"],
+  child: ["kids", "helmet"],
+  cleaner: ["cleaning", "spray"],
+  click: ["honda"],
+  coolant: ["fluid"],
+  full: ["helmet"],
+  gille: ["helmet"],
+  half: ["helmet"],
+  helmet: ["helmets", "half", "full", "modular", "visor"],
+  helmets: ["helmet"],
+  hnj: ["helmet"],
+  key: ["keyset", "ignition", "switch"],
+  keyset: ["key", "ignition", "switch"],
+  lock: ["security"],
+  locks: ["security"],
+  mio: ["yamaha"],
+  mob: ["helmet"],
+  modular: ["helmet"],
+  moto: ["motorcycle"],
+  motobox: ["topbox", "box"],
+  motorcycle: ["moto"],
+  nmax: ["yamaha"],
+  phone: ["accessory", "accessories"],
+  seat: ["saddle"],
+  shock: ["absorber", "suspension"],
+  shocks: ["shock", "absorber", "suspension"],
+  switch: ["ignition", "keyset"],
+  topbox: ["top", "box", "bracket", "mount"],
+  visor: ["helmet", "shield"],
+  zebra: ["helmet"],
+};
+
+const catalogSearchStopWords = new Set(["a", "an", "and", "for", "of", "the", "to", "with"]);
+
+function expandCatalogSearchWords(words: string[]) {
+  const expanded = new Set(words);
+
+  for (const word of words) {
+    const singular = word.endsWith("s") && word.length > 3 ? word.slice(0, -1) : "";
+    const aliases = catalogSearchAliases[word] ?? [];
+
+    if (singular) {
+      expanded.add(singular);
+    }
+
+    for (const alias of aliases) {
+      expanded.add(alias);
+    }
+  }
+
+  return Array.from(expanded);
+}
+
+function catalogWordDistance(a: string, b: string) {
+  if (a === b) {
+    return 0;
+  }
+
+  if (Math.abs(a.length - b.length) > 2) {
+    return 3;
+  }
+
+  let edits = 0;
+  const length = Math.min(a.length, b.length);
+
+  for (let index = 0; index < length; index += 1) {
+    if (a[index] !== b[index]) {
+      edits += 1;
+    }
+
+    if (edits > 2) {
+      return edits;
+    }
+  }
+
+  return edits + Math.abs(a.length - b.length);
+}
+
+function buildVariantSearchText(variants: ProductVariantSearchRow[]) {
+  return variants.map((variant) => [variant.variant_name, variant.variant_sku, variant.model, variant.fits].filter(Boolean).join(" ")).join(" ");
+}
+
+function catalogProductSearchScore(
+  product: ProductRow,
+  query: string,
+  categoryNames: string,
+  variantSearchText: string,
+) {
+  const originalWords = normalizeCatalogSearch(query)
+    .split(" ")
+    .filter((word) => word.length > 1 && !catalogSearchStopWords.has(word));
+  const words = expandCatalogSearchWords(originalWords);
+
+  if (!originalWords.length) {
+    return 1;
+  }
+
+  const fields = {
+    sku: normalizeCatalogSearch(product.sku ?? ""),
+    name: normalizeCatalogSearch(product.name),
+    category: normalizeCatalogSearch(categoryNames),
+    description: normalizeCatalogSearch(product.description ?? ""),
+    extra: normalizeCatalogSearch([product.slug, product.brand, product.model].filter(Boolean).join(" ")),
+    variants: normalizeCatalogSearch(variantSearchText),
+  };
+  const haystack = Object.values(fields).join(" ");
+  const haystackWordList = haystack.split(" ").filter(Boolean);
+  const haystackWords = new Set(haystackWordList);
+  const normalizedQuery = normalizeCatalogSearch(query);
+  const compactQuery = compactCatalogSearch(query);
+  const compactHaystack = compactCatalogSearch([product.name, product.sku ?? "", categoryNames, product.description ?? "", product.slug, product.brand, product.model, variantSearchText].join(" "));
+  let score = 0;
+  let matchedWords = 0;
+  let originalMatchedWords = 0;
+
+  if (compactQuery && compactHaystack.includes(compactQuery)) {
+    score += 90;
+    matchedWords = words.length;
+    originalMatchedWords = originalWords.length;
+  }
+
+  if (normalizedQuery && fields.name.includes(normalizedQuery)) {
+    score += 70;
+  }
+
+  if (compactQuery && compactCatalogSearch(fields.sku).includes(compactQuery)) {
+    score += 120;
+  }
+
+  for (const word of words) {
+    let matched = false;
+
+    if (haystackWords.has(word)) {
+      score += 16;
+      matched = true;
+    } else if (haystack.includes(word)) {
+      score += 8;
+      matched = true;
+    } else if (haystackWordList.some((item) => item.startsWith(word) || word.startsWith(item))) {
+      score += 6;
+      matched = true;
+    } else if (word.length > 4 && haystackWordList.some((item) => item.length > 4 && catalogWordDistance(word, item) <= 1)) {
+      score += 4;
+      matched = true;
+    }
+
+    if (fields.name.includes(word)) {
+      score += 10;
+    }
+
+    if (fields.sku.includes(word)) {
+      score += 14;
+    }
+
+    if (fields.variants.includes(word)) {
+      score += 8;
+    }
+
+    if (matched) {
+      matchedWords += 1;
+      if (originalWords.includes(word)) {
+        originalMatchedWords += 1;
+      }
+    }
+  }
+
+  if (originalWords.length > 1 && originalMatchedWords < Math.ceil(originalWords.length / 2)) {
+    return 0;
+  }
+
+  if (originalWords.length > 1 && originalMatchedWords === originalWords.length) {
+    score += 30 + originalWords.length * 5;
+  }
+
+  return matchedWords > 0 ? score + originalMatchedWords * 12 : 0;
+}
+
+function getListingStockRank(product: ProductRow) {
+  if (product.stock_status === "ready_stock") {
+    return 0;
+  }
+
+  if (product.stock_status === "low_stock") {
+    return 1;
+  }
+
+  if (product.stock_status === "for_order") {
+    return 2;
+  }
+
+  return 3;
+}
+
+function getProductCreatedTimestamp(product: ProductRow) {
+  const timestamp = product.created_at ? new Date(product.created_at).getTime() : 0;
+  return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
 function mapSupabaseSnapshot(
@@ -378,6 +634,342 @@ export async function getCatalogSnapshot(): Promise<CatalogResult<CatalogSnapsho
     return {
       data: getFallbackCatalog(),
       source: getFallbackCatalogSource(),
+      message: process.env.NODE_ENV === "production" ? fallbackMessage : `${fallbackMessage} ${formatCatalogError(error)}`,
+    };
+  }
+}
+
+function getProductListingLowestPrice(product: Product) {
+  const prices = [
+    ...(product.tiers ?? []).map((tier) => tier.price),
+    ...(product.variants ?? []).flatMap((variant) => (variant.tiers ?? []).map((tier) => tier.price)),
+  ];
+
+  return prices.length ? Math.min(...prices) : Number.POSITIVE_INFINITY;
+}
+
+function getProductListingHighestPrice(product: Product) {
+  const prices = [
+    ...(product.tiers ?? []).map((tier) => tier.price),
+    ...(product.variants ?? []).flatMap((variant) => (variant.tiers ?? []).map((tier) => tier.price)),
+  ];
+
+  return prices.length ? Math.max(...prices) : 0;
+}
+
+function compareCatalogProductsFallback(sort: CatalogListingSort) {
+  return (a: Product, b: Product) => {
+    if (sort === "latest") {
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      return bTime - aTime || b.slug.localeCompare(a.slug);
+    }
+
+    if (sort === "price-low") {
+      return getProductListingLowestPrice(a) - getProductListingLowestPrice(b);
+    }
+
+    if (sort === "price-high") {
+      return getProductListingHighestPrice(b) - getProductListingHighestPrice(a);
+    }
+
+    const stockRank = (product: Product) => (product.stockStatus === "In stock" ? 0 : product.stockStatus === "Low stock" ? 1 : product.stockStatus === "Preorder" ? 2 : 3);
+    const imageRank = (product: Product) => (product.image && !product.image.includes("phone-accessories.svg") ? 0 : 1);
+
+    return stockRank(a) - stockRank(b) || imageRank(a) - imageRank(b) || a.name.localeCompare(b.name);
+  };
+}
+
+function categorySearchNames(product: ProductRow, categoriesById: Map<string, CategoryRow>) {
+  return [product.category_id, product.subcategory_id, product.child_category_id]
+    .map((id) => (id ? categoriesById.get(id)?.name_en : undefined))
+    .filter(Boolean)
+    .join(" ");
+}
+
+async function getPriceSortMap(productIds: string[]) {
+  const supabase = createServerSupabaseClient();
+  const priceByProductId = new Map<string, number>();
+
+  if (!supabase || !productIds.length) {
+    return priceByProductId;
+  }
+
+  const tiersResult = await supabase
+    .from("product_price_tiers")
+    .select("product_id,unit_price")
+    .in("product_id", productIds);
+
+  if (!tiersResult.error) {
+    for (const tier of tiersResult.data ?? []) {
+      const price = Number(tier.unit_price);
+      if (Number.isFinite(price)) {
+        priceByProductId.set(tier.product_id, Math.min(priceByProductId.get(tier.product_id) ?? Number.POSITIVE_INFINITY, price));
+      }
+    }
+  }
+
+  const variantsResult = await supabase.from("product_variants").select("id,product_id").in("product_id", productIds).eq("active", true);
+  const variantsById = new Map((variantsResult.error ? [] : variantsResult.data ?? []).map((variant) => [variant.id, variant.product_id]));
+  const variantIds = Array.from(variantsById.keys());
+
+  if (variantIds.length) {
+    const variantTiersResult = await supabase.from("product_variant_price_tiers").select("variant_id,unit_price").in("variant_id", variantIds);
+
+    if (!variantTiersResult.error) {
+      for (const tier of variantTiersResult.data ?? []) {
+        const productId = variantsById.get(tier.variant_id);
+        const price = Number(tier.unit_price);
+        if (productId && Number.isFinite(price)) {
+          priceByProductId.set(productId, Math.min(priceByProductId.get(productId) ?? Number.POSITIVE_INFINITY, price));
+        }
+      }
+    }
+  }
+
+  return priceByProductId;
+}
+
+async function getCatalogCategoryListingFromFallback(
+  slug: string,
+  options: Required<CatalogListingOptions>,
+): Promise<CatalogResult<CatalogCategoryListing>> {
+  const catalog = await getCatalogCategoryPage(slug);
+  const searchText = options.query.trim().toLowerCase();
+  const products = searchText
+    ? catalog.data.products
+        .map((product) => ({ product, score: catalogProductSearchScore(
+          {
+            id: product.id ?? product.slug,
+            sku: product.sku ?? product.slug,
+            name: product.name,
+            slug: product.slug,
+            category_id: "",
+            subcategory_id: null,
+            child_category_id: null,
+            brand: null,
+            model: null,
+            moq: product.moq,
+            retail_price: product.retailPrice ?? null,
+            stock_status: product.stockStatus,
+            lead_time: null,
+            image_url: product.image,
+            description: product.description ?? "",
+            active: true,
+            created_at: product.createdAt ?? null,
+          },
+          searchText,
+          product.category,
+          product.variants?.map((variant) => [variant.name, variant.sku, variant.model, variant.fits].filter(Boolean).join(" ")).join(" ") ?? "",
+        ) }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score || compareCatalogProductsFallback(options.sort)(a.product, b.product))
+        .map((item) => item.product)
+    : catalog.data.products.slice().sort(compareCatalogProductsFallback(options.sort));
+  const totalPages = Math.max(1, Math.ceil(products.length / options.pageSize));
+  const currentPage = Math.min(Math.max(1, options.page), totalPages);
+  const paginatedProducts = products.slice((currentPage - 1) * options.pageSize, currentPage * options.pageSize);
+
+  return {
+    data: {
+      ...catalog.data,
+      products: paginatedProducts,
+      totalProducts: products.length,
+      totalPages,
+      currentPage,
+      pageSize: options.pageSize,
+    },
+    source: catalog.source,
+    message: catalog.message,
+  };
+}
+
+export async function getCatalogCategoryListingPage(
+  slug: string,
+  options: CatalogListingOptions = {},
+): Promise<CatalogResult<CatalogCategoryListing>> {
+  const pageSize = Math.min(Math.max(1, Math.floor(options.pageSize ?? 48)), 96);
+  const requestedPage = Math.max(1, Math.floor(options.page ?? 1));
+  const query = (options.query ?? "").trim();
+  const sort = options.sort ?? "popular";
+  const normalizedOptions = { page: requestedPage, pageSize, query, sort };
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) {
+    return getCatalogCategoryListingFromFallback(slug, normalizedOptions);
+  }
+
+  try {
+    const categoriesResult = await supabase
+      .from("categories")
+      .select(
+        "id,name_en,name_zh,slug,parent_id,level,icon_url,image_url,active,show_on_homepage,show_in_navigation,sort_order,template_type,description,created_at,updated_at",
+      )
+      .eq("active", true)
+      .order("sort_order", { ascending: true });
+
+    if (categoriesResult.error) {
+      throw categoriesResult.error;
+    }
+
+    const categoryRows = categoriesResult.data ?? [];
+    const activeCategoryIds = new Set(categoryRows.map((category) => category.id));
+    const categoriesById = new Map(categoryRows.map((category) => [category.id, category]));
+    const isAll = slug === "all";
+    const selectedCategory = isAll ? null : categoryRows.find((category) => category.slug === slug) ?? null;
+
+    if (!isAll && !selectedCategory) {
+      return {
+        data: { categories: [], products: [], category: null, totalProducts: 0, totalPages: 1, currentPage: 1, pageSize },
+        source: "supabase",
+      };
+    }
+
+    let productsQuery = supabase
+      .from("customer_products")
+      .select(
+        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,active,created_at",
+      )
+      .eq("active", true);
+
+    if (selectedCategory) {
+      productsQuery = productsQuery.or(
+        `category_id.eq.${selectedCategory.id},subcategory_id.eq.${selectedCategory.id},child_category_id.eq.${selectedCategory.id}`,
+      );
+    }
+
+    const productsResult = await productsQuery.order("name", { ascending: true });
+
+    if (productsResult.error) {
+      throw productsResult.error;
+    }
+
+    let productRows = (productsResult.data ?? []).filter(
+      (product) => product.active && product.category_id && activePathIsVisible(product, activeCategoryIds),
+    );
+    const categoryIdCounts = new Map<string, number>();
+
+    for (const product of productRows) {
+      for (const categoryId of [product.category_id, product.subcategory_id, product.child_category_id]) {
+        if (categoryId) {
+          categoryIdCounts.set(categoryId, (categoryIdCounts.get(categoryId) ?? 0) + 1);
+        }
+      }
+    }
+
+    const variantSearchByProductId = new Map<string, ProductVariantSearchRow[]>();
+
+    if (query) {
+      const productIds = productRows.map((product) => product.id);
+      if (productIds.length) {
+        const variantsResult = await supabase
+          .from("product_variants")
+          .select("id,product_id,variant_name,variant_sku,model,fits,image_url,stock_status,active")
+          .in("product_id", productIds)
+          .eq("active", true);
+
+        if (!variantsResult.error) {
+          for (const variant of variantsResult.data ?? []) {
+            variantSearchByProductId.set(variant.product_id, [...(variantSearchByProductId.get(variant.product_id) ?? []), variant]);
+          }
+        }
+      }
+
+      productRows = productRows
+        .map((product) => {
+          const score = catalogProductSearchScore(
+            product,
+            query,
+            categorySearchNames(product, categoriesById),
+            buildVariantSearchText(variantSearchByProductId.get(product.id) ?? []),
+          );
+          return { product, score };
+        })
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map((item) => item.product);
+    }
+
+    if (!query || sort !== "popular") {
+      if (sort === "latest") {
+        productRows = productRows.slice().sort((a, b) => getProductCreatedTimestamp(b) - getProductCreatedTimestamp(a) || b.slug.localeCompare(a.slug));
+      } else if (sort === "price-low" || sort === "price-high") {
+        const priceByProductId = await getPriceSortMap(productRows.map((product) => product.id));
+        productRows = productRows.slice().sort((a, b) => {
+          const aPrice = priceByProductId.get(a.id) ?? Number.POSITIVE_INFINITY;
+          const bPrice = priceByProductId.get(b.id) ?? Number.POSITIVE_INFINITY;
+          return sort === "price-low" ? aPrice - bPrice || a.name.localeCompare(b.name) : bPrice - aPrice || a.name.localeCompare(b.name);
+        });
+      } else {
+        productRows = productRows.slice().sort((a, b) => {
+          const imageRankA = a.image_url ? 0 : 1;
+          const imageRankB = b.image_url ? 0 : 1;
+          return getListingStockRank(a) - getListingStockRank(b) || imageRankA - imageRankB || a.name.localeCompare(b.name);
+        });
+      }
+    }
+
+    const totalProducts = productRows.length;
+    const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
+    const currentPage = Math.min(requestedPage, totalPages);
+    const pageRows = productRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const pageProductIds = pageRows.map((product) => product.id);
+    let tierRows: PriceTierRow[] = [];
+    let imageRows: ProductImageRow[] = [];
+    let variantRows: ProductVariantRow[] = [];
+    let variantTierRows: ProductVariantPriceTierRow[] = [];
+
+    if (pageProductIds.length) {
+      const [tiersResult, imagesResult, variantsResult] = await Promise.all([
+        supabase.from("product_price_tiers").select("product_id,min_qty,max_qty,unit_price").in("product_id", pageProductIds).order("min_qty", { ascending: true }),
+        supabase.from("product_images").select("product_id,image_url,sort_order").in("product_id", pageProductIds).order("sort_order", { ascending: true }),
+        supabase
+          .from("product_variants")
+          .select("id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order,created_at,updated_at")
+          .in("product_id", pageProductIds)
+          .eq("active", true)
+          .order("sort_order", { ascending: true }),
+      ]);
+
+      tierRows = tiersResult.error ? [] : tiersResult.data ?? [];
+      imageRows = imagesResult.error ? [] : imagesResult.data ?? [];
+      variantRows = variantsResult.error ? [] : variantsResult.data ?? [];
+
+      const variantIds = variantRows.map((variant) => variant.id);
+      if (variantIds.length) {
+        const variantTiersResult = await supabase
+          .from("product_variant_price_tiers")
+          .select("variant_id,min_qty,max_qty,unit_price")
+          .in("variant_id", variantIds)
+          .order("min_qty", { ascending: true });
+
+        variantTierRows = variantTiersResult.error ? [] : variantTiersResult.data ?? [];
+      }
+    }
+
+    const mapped = mapSupabaseSnapshot(categoryRows, pageRows, tierRows, imageRows, variantRows, variantTierRows);
+    const filterCategories = categoryRows
+      .slice()
+      .sort((a, b) => a.level - b.level || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name_en.localeCompare(b.name_en))
+      .map((item) => toCategory(item, categoryIdCounts.get(item.id) ?? 0));
+    const category = isAll ? null : selectedCategory ? toCategory(selectedCategory, totalProducts) : null;
+
+    return {
+      data: {
+        categories: filterCategories,
+        products: mapped.products,
+        category,
+        totalProducts,
+        totalPages,
+        currentPage,
+        pageSize,
+      },
+      source: "supabase",
+    };
+  } catch (error) {
+    const fallback = await getCatalogCategoryListingFromFallback(slug, normalizedOptions);
+    return {
+      ...fallback,
       message: process.env.NODE_ENV === "production" ? fallbackMessage : `${fallbackMessage} ${formatCatalogError(error)}`,
     };
   }

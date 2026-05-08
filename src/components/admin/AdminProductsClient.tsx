@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { formatImageBytes, prepareAdminUploadImage } from "@/lib/admin-image-compression";
 import type { TranslationKey } from "@/lib/admin-i18n";
-import type { AdminCategoryOption, AdminProductRecord, AdminProductTier, AdminProductVariant } from "@/lib/admin-products-data";
+import type { AdminCategoryOption, AdminProductRecord, AdminProductsSummary, AdminProductTier, AdminProductVariant } from "@/lib/admin-products-data";
 
 type EditorMode = "view" | "create" | "edit";
 type ProductDraft = {
@@ -38,6 +38,11 @@ type ProductsListResponse = {
   message?: string;
   products?: AdminProductRecord[];
   categories?: AdminCategoryOption[];
+  totalProducts?: number;
+  page?: number;
+  pageSize?: number;
+  summary?: AdminProductsSummary;
+  categoryProductCounts?: Record<string, number>;
 };
 
 const defaultPageSize = 24;
@@ -377,6 +382,28 @@ function productHasStockStatus(product: AdminProductRecord, status: string) {
   return product.stockStatus === status || product.variants.some((variant) => variant.stockStatus === status);
 }
 
+function getAdminPaginationItems(currentPage: number, totalPages: number) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
+  const sortedPages = Array.from(pages)
+    .filter((pageNumber) => pageNumber >= 1 && pageNumber <= totalPages)
+    .sort((a, b) => a - b);
+  const items: Array<number | "ellipsis"> = [];
+
+  sortedPages.forEach((pageNumber, index) => {
+    const previous = sortedPages[index - 1];
+    if (previous && pageNumber - previous > 1) {
+      items.push("ellipsis");
+    }
+    items.push(pageNumber);
+  });
+
+  return items;
+}
+
 function productToDraft(product: AdminProductRecord): ProductDraft {
   return {
     id: product.id,
@@ -445,47 +472,6 @@ function labelForStock(t: (key: TranslationKey) => string, value: string) {
   return t(stockStatusKeyByValue[value] ?? "forOrder");
 }
 
-function normalizeAdminProductSearch(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/([a-z])([0-9])/g, "$1 $2")
-    .replace(/([0-9])([a-z])/g, "$1 $2")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function productMatchesAdminSearch(product: AdminProductRecord, query: string) {
-  const words = normalizeAdminProductSearch(query)
-    .split(" ")
-    .filter((word) => word.length > 1);
-
-  if (!words.length) {
-    return true;
-  }
-
-  const searchable = normalizeAdminProductSearch(
-    [
-      product.sku,
-      product.name,
-      product.slug,
-      product.category,
-      product.subcategory,
-      product.childCategory,
-      product.brand,
-      product.model,
-      product.stockStatus,
-      product.leadTime,
-      product.description,
-      product.variants.map((variant) => [variant.sku, variant.name, variant.model, variant.fits, variant.stockStatus, variant.leadTime].join(" ")).join(" "),
-    ].join(" "),
-  );
-  const compactSearchable = searchable.replace(/\s+/g, "");
-  const compactQuery = words.join("");
-
-  return words.every((word) => searchable.includes(word) || compactSearchable.includes(word)) || compactSearchable.includes(compactQuery);
-}
-
 function escapeTemplateCsvCell(value: string) {
   if (/[",\n]/.test(value)) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -504,14 +490,31 @@ export function AdminProductsClient({
   initialProducts,
   categories,
   initialError,
+  initialTotalProducts = initialProducts.length,
+  initialSummary,
+  initialCategoryProductCounts = {},
 }: {
   initialProducts: AdminProductRecord[];
   categories: AdminCategoryOption[];
   initialError?: string;
+  initialTotalProducts?: number;
+  initialSummary?: AdminProductsSummary;
+  initialCategoryProductCounts?: Record<string, number>;
 }) {
   const { t, language } = useAdminI18n();
   const copy = language === "zh" ? productTextZh : text.en;
   const [products, setProducts] = useState(initialProducts);
+  const [totalProducts, setTotalProducts] = useState(initialTotalProducts);
+  const [summary, setSummary] = useState<AdminProductsSummary>(
+    initialSummary ?? {
+      all: initialTotalProducts,
+      unavailable: initialProducts.filter((product) => productHasStockStatus(product, "unavailable")).length,
+      lowStock: initialProducts.filter((product) => productHasStockStatus(product, "low_stock")).length,
+      missingImage: initialProducts.filter(productNeedsImage).length,
+      hidden: initialProducts.filter((product) => !product.active).length,
+    },
+  );
+  const [serverCategoryProductCounts, setServerCategoryProductCounts] = useState<Record<string, number>>(initialCategoryProductCounts);
   const [selectedProduct, setSelectedProduct] = useState<AdminProductRecord | null>(initialProducts[0] ?? null);
   const [editorMode, setEditorMode] = useState<EditorMode>("view");
   const [search, setSearch] = useState("");
@@ -527,6 +530,7 @@ export function AdminProductsClient({
   const [message, setMessage] = useState(initialError ?? "");
   const [editorOpen, setEditorOpen] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const didMountRef = useRef(false);
 
   const focusEditor = () => {
     window.setTimeout(() => {
@@ -534,8 +538,24 @@ export function AdminProductsClient({
     }, 50);
   };
 
-  const refreshProducts = async (preferredProductId?: string, options?: { revealSavedProduct?: boolean }) => {
-    const response = await fetch("/api/admin/products", { cache: "no-store" });
+  const refreshProducts = useCallback(async (preferredProductId?: string, options?: { revealSavedProduct?: boolean }) => {
+    const revealSavedProduct = Boolean(preferredProductId && options?.revealSavedProduct);
+    const requestSearch = revealSavedProduct ? "" : search;
+    const requestCategory = revealSavedProduct ? "all" : categoryFilter;
+    const requestStock = revealSavedProduct ? "all" : stockFilter;
+    const requestActive = revealSavedProduct ? "all" : activeFilter;
+    const requestAttention = revealSavedProduct ? "all" : attentionFilter;
+    const requestPage = revealSavedProduct ? 1 : page;
+    const params = new URLSearchParams({
+      page: String(requestPage),
+      pageSize: String(pageSize),
+      q: requestSearch,
+      categoryId: requestCategory,
+      stockStatus: requestStock,
+      activeStatus: requestActive,
+      attention: requestAttention,
+    });
+    const response = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" });
     const result = (await response.json().catch(() => ({ ok: false, message: "Product list refresh failed." }))) as ProductsListResponse;
 
     if (!response.ok || !result.ok || !result.products) {
@@ -553,6 +573,19 @@ export function AdminProductsClient({
     }
 
     setProducts(result.products);
+    setTotalProducts(result.totalProducts ?? result.products.length);
+    setSummary(
+      result.summary ?? {
+        all: result.totalProducts ?? result.products.length,
+        unavailable: result.products.filter((product) => productHasStockStatus(product, "unavailable")).length,
+        lowStock: result.products.filter((product) => productHasStockStatus(product, "low_stock")).length,
+        missingImage: result.products.filter(productNeedsImage).length,
+        hidden: result.products.filter((product) => !product.active).length,
+      },
+    );
+    setServerCategoryProductCounts(result.categoryProductCounts ?? {});
+    setPage(result.page ?? requestPage);
+    setPageSize(result.pageSize ?? pageSize);
     setSelectedProduct((current) => {
       const preferred = preferredProductId ? result.products?.find((item) => item.id === preferredProductId) : null;
 
@@ -568,54 +601,28 @@ export function AdminProductsClient({
     });
 
     return true;
-  };
+  }, [activeFilter, attentionFilter, categoryFilter, page, pageSize, search, stockFilter]);
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void refreshProducts();
+    }, search.trim() ? 250 : 0);
+
+    return () => window.clearTimeout(timer);
+  }, [refreshProducts, search]);
 
   const mainCategories = categories.filter((category) => category.level === 1);
   const categoryProductCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-
-    for (const product of products) {
-      for (const categoryId of [product.categoryId, product.subcategoryId, product.childCategoryId]) {
-        if (categoryId) {
-          counts.set(categoryId, (counts.get(categoryId) ?? 0) + 1);
-        }
-      }
-    }
-
-    return counts;
-  }, [products]);
-  const inventoryWatchCounts = useMemo(() => ({
-    all: products.length,
-    unavailable: products.filter((product) => productHasStockStatus(product, "unavailable")).length,
-    lowStock: products.filter((product) => productHasStockStatus(product, "low_stock")).length,
-    missingImage: products.filter(productNeedsImage).length,
-    hidden: products.filter((product) => !product.active).length,
-  }), [products]);
-  const filteredProducts = useMemo(() => {
-    const needle = search.trim();
-
-    return products.filter((product) => {
-      const searchMatch = productMatchesAdminSearch(product, needle);
-      const categoryMatch =
-        categoryFilter === "all" ||
-        product.categoryId === categoryFilter ||
-        product.subcategoryId === categoryFilter ||
-        product.childCategoryId === categoryFilter;
-      const stockMatch = stockFilter === "all" || product.stockStatus === stockFilter;
-      const activeMatch = activeFilter === "all" || (activeFilter === "active" ? product.active : !product.active);
-      const attentionMatch =
-        attentionFilter === "all" ||
-        (attentionFilter === "unavailable" && productHasStockStatus(product, "unavailable")) ||
-        (attentionFilter === "low_stock" && productHasStockStatus(product, "low_stock")) ||
-        (attentionFilter === "missing_image" && productNeedsImage(product)) ||
-        (attentionFilter === "hidden" && !product.active);
-
-      return searchMatch && categoryMatch && stockMatch && activeMatch && attentionMatch;
-    });
-  }, [activeFilter, attentionFilter, categoryFilter, products, search, stockFilter]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
-  const visibleProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
+    return new Map(Object.entries(serverCategoryProductCounts));
+  }, [serverCategoryProductCounts]);
+  const inventoryWatchCounts = summary;
+  const pageCount = Math.max(1, Math.ceil(totalProducts / pageSize));
+  const visibleProducts = products;
   const gridClassByImageSize = {
     compact: "grid gap-3 bg-zinc-50 p-4 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6",
     normal: "grid gap-4 bg-zinc-50 p-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
@@ -665,7 +672,7 @@ export function AdminProductsClient({
       return;
     }
 
-    setProducts((current) => current.map((item) => (item.id === product.id ? { ...item, active: !product.active } : item)));
+    await refreshProducts(product.id);
     setMessage(product.active ? copy.hiddenFromFrontend : "Product is active.");
   };
 
@@ -695,7 +702,7 @@ export function AdminProductsClient({
       return;
     }
 
-    setProducts((current) => current.filter((item) => item.id !== product.id));
+    await refreshProducts();
     setSelectedProduct(null);
     setMessage("Product deleted.");
   };
@@ -715,7 +722,7 @@ export function AdminProductsClient({
       "Image URL",
     ];
     const escapeCell = (value: string | number | boolean) => `"${String(value).replace(/"/g, '""')}"`;
-    const rows = filteredProducts.map((product) => [
+    const rows = visibleProducts.map((product) => [
       product.sku,
       product.name,
       product.category,
@@ -736,7 +743,7 @@ export function AdminProductsClient({
     link.download = `luis-one-products-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
-    setMessage(`Exported ${filteredProducts.length} products.`);
+    setMessage(`Exported ${visibleProducts.length} products on this page.`);
   };
 
   const downloadBulkUploadTemplate = () => {
@@ -883,7 +890,7 @@ export function AdminProductsClient({
             categories={categories}
             selectedCategoryId={categoryFilter}
             productCounts={categoryProductCounts}
-            allCount={products.length}
+            allCount={summary.all}
             labels={imageUploadText[language]}
             onSelect={(categoryId) => {
               setCategoryFilter(categoryId);
@@ -895,7 +902,7 @@ export function AdminProductsClient({
         <TableShell>
           <div className="flex flex-col gap-3 border-b border-zinc-100 bg-white px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <p className="font-bold text-zinc-600">
-              {filteredProducts.length} {t("products")}
+              {totalProducts} {t("products")}
             </p>
             <label className="flex items-center gap-2 font-bold text-zinc-600">
               {t("pageSize")}
@@ -979,16 +986,22 @@ export function AdminProductsClient({
             ) : null}
           </div>
           <div className="flex items-center justify-end gap-2 border-t border-zinc-100 bg-white px-4 py-3">
-            {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                onClick={() => setPage(pageNumber)}
-                className={`h-9 w-9 rounded-md text-sm font-black ${pageNumber === page ? "bg-[#f65f18] text-white" : "border border-zinc-200 text-zinc-700"}`}
-              >
-                {pageNumber}
-              </button>
-            ))}
+            {getAdminPaginationItems(page, pageCount).map((pageNumber, index) =>
+              pageNumber === "ellipsis" ? (
+                <span key={`ellipsis-${index}`} className="grid h-9 w-7 place-items-center text-sm font-black text-zinc-400">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() => setPage(pageNumber)}
+                  className={`h-9 w-9 rounded-md text-sm font-black ${pageNumber === page ? "bg-[#f65f18] text-white" : "border border-zinc-200 text-zinc-700"}`}
+                >
+                  {pageNumber}
+                </button>
+              ),
+            )}
           </div>
         </TableShell>
       </div>

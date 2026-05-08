@@ -6,9 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { SearchEventTracker } from "@/components/SearchEventTracker";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
-import { getCatalogCategoryPage, getCatalogCategoryParams } from "@/lib/catalog-data";
-import { getProductPriceTiers, type Product } from "@/lib/mock-data";
-import { compareRecommendedProducts, getProductCreatedTime } from "@/lib/product-sort";
+import { getCatalogCategoryListingPage, getCatalogCategoryPage, getCatalogCategoryParams, type CatalogListingSort } from "@/lib/catalog-data";
 import { absoluteUrl, categoryDescription, getSiteUrl, siteName } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -87,17 +85,7 @@ const sortOptions = [
   { label: "Latest", shortLabel: "Latest", value: "latest" },
   { label: "Price Low to High", shortLabel: "Low Price", value: "price-low" },
   { label: "Price High to Low", shortLabel: "High Price", value: "price-high" },
-];
-
-function getLowestPrice(product: Product) {
-  const prices = getProductPriceTiers(product).map((tier) => tier.price);
-  return prices.length ? Math.min(...prices) : Number.POSITIVE_INFINITY;
-}
-
-function getHighestPrice(product: Product) {
-  const prices = getProductPriceTiers(product).map((tier) => tier.price);
-  return prices.length ? Math.max(...prices) : 0;
-}
+] satisfies Array<{ label: string; shortLabel: string; value: CatalogListingSort }>;
 
 function getPaginationItems(currentPage: number, totalPages: number) {
   if (totalPages <= 7) {
@@ -121,229 +109,6 @@ function getPaginationItems(currentPage: number, totalPages: number) {
   return items;
 }
 
-function normalizeSearch(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/\bbreaks?\b/g, "brake")
-    .replace(/\btop\s*box\b/g, "topbox")
-    .replace(/\bkey\s*set\b/g, "keyset")
-    .replace(/\bn\s*max\b/g, "nmax")
-    .replace(/\baerox\s*155\b/g, "aerox155")
-    .replace(/\bhonda\s*click\b/g, "click")
-    .replace(/&/g, " and ")
-    .replace(/\+/g, " plus ")
-    .replace(/([a-z])([0-9])/g, "$1 $2")
-    .replace(/([0-9])([a-z])/g, "$1 $2")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function compactSearch(value: string) {
-  return normalizeSearch(value).replace(/\s+/g, "");
-}
-
-const searchAliases: Record<string, string[]> = {
-  accessory: ["accessories"],
-  accessories: ["accessory"],
-  absorber: ["shock", "suspension"],
-  aerox: ["yamaha"],
-  automotive: ["car", "vehicle"],
-  box: ["topbox", "motobox"],
-  beat: ["honda"],
-  bracket: ["mount", "holder"],
-  brake: ["break", "lever"],
-  breaks: ["brake"],
-  cable: ["wire", "charger"],
-  cables: ["wire", "charger"],
-  cap: ["helmet"],
-  child: ["kids", "helmet"],
-  cleaner: ["cleaning", "spray"],
-  click: ["honda"],
-  coolant: ["fluid"],
-  full: ["helmet"],
-  gille: ["helmet"],
-  half: ["helmet"],
-  helmet: ["helmets", "half", "full", "modular", "visor"],
-  helmets: ["helmet"],
-  hnj: ["helmet"],
-  key: ["keyset", "ignition", "switch"],
-  keyset: ["key", "ignition", "switch"],
-  lock: ["security"],
-  locks: ["security"],
-  mio: ["yamaha"],
-  mob: ["helmet"],
-  modular: ["helmet"],
-  moto: ["motorcycle"],
-  motobox: ["topbox", "box"],
-  motorcycle: ["moto"],
-  nmax: ["yamaha"],
-  phone: ["accessory", "accessories"],
-  seat: ["saddle"],
-  shock: ["absorber", "suspension"],
-  shocks: ["shock", "absorber", "suspension"],
-  switch: ["ignition", "keyset"],
-  topbox: ["top", "box", "bracket", "mount"],
-  visor: ["helmet", "shield"],
-  zebra: ["helmet"],
-};
-const searchStopWords = new Set(["a", "an", "and", "for", "of", "the", "to", "with"]);
-
-function expandSearchWords(words: string[]) {
-  const expanded = new Set(words);
-
-  for (const word of words) {
-    const singular = word.endsWith("s") && word.length > 3 ? word.slice(0, -1) : "";
-    const aliases = searchAliases[word] ?? [];
-
-    if (singular) {
-      expanded.add(singular);
-    }
-
-    for (const alias of aliases) {
-      expanded.add(alias);
-    }
-  }
-
-  return Array.from(expanded);
-}
-
-function wordDistance(a: string, b: string) {
-  if (a === b) {
-    return 0;
-  }
-
-  if (Math.abs(a.length - b.length) > 2) {
-    return 3;
-  }
-
-  let edits = 0;
-  const length = Math.min(a.length, b.length);
-
-  for (let index = 0; index < length; index += 1) {
-    if (a[index] !== b[index]) {
-      edits += 1;
-    }
-
-    if (edits > 2) {
-      return edits;
-    }
-  }
-
-  return edits + Math.abs(a.length - b.length);
-}
-
-type SearchableProduct = {
-  name: string;
-  sku?: string;
-  category: string;
-  description: string;
-  details: string[];
-  searchText?: string;
-  variants?: {
-    name: string;
-    sku?: string;
-    model?: string;
-    fits?: string;
-  }[];
-};
-
-function productSearchScore(product: SearchableProduct, query: string) {
-  const originalWords = normalizeSearch(query)
-    .split(" ")
-    .filter((word) => word.length > 1 && !searchStopWords.has(word));
-  const words = expandSearchWords(originalWords);
-
-  if (!originalWords.length) {
-    return 1;
-  }
-
-  const fields = {
-    sku: normalizeSearch(product.sku ?? ""),
-    name: normalizeSearch(product.name),
-    category: normalizeSearch(product.category),
-    description: normalizeSearch(product.description),
-    details: normalizeSearch(product.details.join(" ")),
-    extra: normalizeSearch(product.searchText ?? ""),
-    variants: normalizeSearch(
-      product.variants?.map((variant) => [variant.name, variant.sku, variant.model, variant.fits].filter(Boolean).join(" ")).join(" ") ?? "",
-    ),
-  };
-  const haystack = Object.values(fields).join(" ");
-  const haystackWordList = haystack.split(" ").filter(Boolean);
-  const haystackWords = new Set(haystackWordList);
-  const normalizedQuery = normalizeSearch(query);
-  const compactQuery = compactSearch(query);
-  const compactHaystack = compactSearch([
-    product.name,
-    product.sku ?? "",
-    product.category,
-    product.description,
-    product.details.join(" "),
-    product.searchText ?? "",
-    product.variants?.map((variant) => [variant.name, variant.sku, variant.model, variant.fits].filter(Boolean).join(" ")).join(" ") ?? "",
-  ].join(" "));
-  let score = 0;
-  let matchedWords = 0;
-  let originalMatchedWords = 0;
-
-  if (compactQuery && compactHaystack.includes(compactQuery)) {
-    score += 90;
-    matchedWords = words.length;
-    originalMatchedWords = originalWords.length;
-  }
-
-  if (normalizedQuery && fields.name.includes(normalizedQuery)) {
-    score += 70;
-  }
-
-  if (compactQuery && compactSearch(fields.sku).includes(compactQuery)) {
-    score += 120;
-  }
-
-  for (const word of words) {
-    let matched = false;
-
-    if (haystackWords.has(word)) {
-      score += 16;
-      matched = true;
-    } else if (haystack.includes(word)) {
-      score += 8;
-      matched = true;
-    } else if (haystackWordList.some((item) => item.startsWith(word) || word.startsWith(item))) {
-      score += 6;
-      matched = true;
-    } else if (word.length > 4 && haystackWordList.some((item) => item.length > 4 && wordDistance(word, item) <= 1)) {
-      score += 4;
-      matched = true;
-    }
-
-    if (fields.name.includes(word)) {
-      score += 10;
-    }
-
-    if (fields.sku.includes(word)) {
-      score += 14;
-    }
-
-    if (matched) {
-      matchedWords += 1;
-      if (originalWords.includes(word)) {
-        originalMatchedWords += 1;
-      }
-    }
-  }
-
-  if (originalWords.length > 1 && originalMatchedWords < Math.ceil(originalWords.length / 2)) {
-    return 0;
-  }
-
-  if (originalWords.length > 1 && originalMatchedWords === originalWords.length) {
-    score += 30 + originalWords.length * 5;
-  }
-
-  return matchedWords > 0 ? score + originalMatchedWords * 12 : 0;
-}
-
 export default async function CategoryPage({
   params,
   searchParams,
@@ -354,40 +119,21 @@ export default async function CategoryPage({
   const { slug } = await params;
   const query = await searchParams;
   const isAll = slug === "all";
-  const catalog = await getCatalogCategoryPage(slug);
-  const { category, products: categoryProducts } = catalog.data;
   const searchQuery = (query?.q ?? "").trim();
-  const searchText = searchQuery.toLowerCase();
-  const selectedSort = sortOptions.some((option) => option.value === query?.sort) ? query?.sort ?? "popular" : "popular";
-  const compareProducts = (a: (typeof categoryProducts)[number], b: (typeof categoryProducts)[number]) => {
-      if (selectedSort === "latest") {
-        return getProductCreatedTime(b) - getProductCreatedTime(a) || b.slug.localeCompare(a.slug);
-      }
-
-      if (selectedSort === "price-low") {
-        return getLowestPrice(a) - getLowestPrice(b);
-      }
-
-      if (selectedSort === "price-high") {
-        return getHighestPrice(b) - getHighestPrice(a);
-      }
-
-      return compareRecommendedProducts(a, b);
-  };
-  const visibleProducts = searchText
-    ? categoryProducts
-        .map((product) => ({ product, score: productSearchScore(product, searchText) }))
-        .filter((item) => item.score > 0)
-        .sort((a, b) => b.score - a.score || compareProducts(a.product, b.product))
-        .map((item) => item.product)
-    : [...categoryProducts].sort(compareProducts);
-  const recommendedProducts = searchText && !visibleProducts.length
-    ? [...categoryProducts].sort((a, b) => compareProducts(a, b)).slice(0, 8)
-    : [];
-  const totalPages = Math.max(1, Math.ceil(visibleProducts.length / pageSize));
   const requestedPage = Number(query?.page ?? "1");
-  const currentPage = Number.isFinite(requestedPage) ? Math.min(Math.max(1, Math.floor(requestedPage)), totalPages) : 1;
-  const paginatedProducts = visibleProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const selectedSort = sortOptions.some((option) => option.value === query?.sort) ? (query?.sort as CatalogListingSort) : "popular";
+  const catalog = await getCatalogCategoryListingPage(slug, {
+    page: Number.isFinite(requestedPage) ? Math.max(1, Math.floor(requestedPage)) : 1,
+    pageSize,
+    query: searchQuery,
+    sort: selectedSort,
+  });
+  const { category, products: paginatedProducts, totalProducts, totalPages, currentPage } = catalog.data;
+  const recommendedCatalog =
+    searchQuery && totalProducts === 0
+      ? await getCatalogCategoryListingPage(slug, { page: 1, pageSize: 8, sort: selectedSort })
+      : null;
+  const recommendedProducts = recommendedCatalog?.data.products ?? [];
   const pageHref = (page: number) => {
     const params = new URLSearchParams();
 
@@ -456,7 +202,7 @@ export default async function CategoryPage({
   return (
     <>
       <SiteHeader />
-      {searchQuery ? <SearchEventTracker query={searchQuery} resultCount={visibleProducts.length} categorySlug={slug} /> : null}
+      {searchQuery ? <SearchEventTracker query={searchQuery} resultCount={totalProducts} categorySlug={slug} /> : null}
       <DataSourceNotice message={catalog.message} />
       <MarketplaceShell>
         <section className="border-b border-orange-100 bg-white">
@@ -480,7 +226,7 @@ export default async function CategoryPage({
                 ) : null}
               </div>
               <div className="w-fit rounded-sm bg-orange-50 px-2 py-1 text-[11px] font-black text-orange-700 ring-1 ring-orange-200 sm:px-3 sm:py-2 sm:text-xs">
-                {visibleProducts.length} products / Public wholesale prices
+                {totalProducts} products / Public wholesale prices
               </div>
             </div>
           </Container>

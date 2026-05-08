@@ -19,21 +19,50 @@ export async function GET(request: Request) {
     return guard.response;
   }
 
-  const result = await getAdminProducts();
+  const url = new URL(request.url);
+  const page = Number(url.searchParams.get("page") ?? "1");
+  const pageSize = Number(url.searchParams.get("pageSize") ?? "24");
+  const result = await getAdminProducts({
+    page: Number.isFinite(page) ? page : 1,
+    pageSize: Number.isFinite(pageSize) ? pageSize : 24,
+    search: url.searchParams.get("q") ?? "",
+    categoryId: url.searchParams.get("categoryId") ?? "all",
+    stockStatus: url.searchParams.get("stockStatus") ?? "all",
+    activeStatus: (url.searchParams.get("activeStatus") as "all" | "active" | "hidden" | null) ?? "all",
+    attention: (url.searchParams.get("attention") as "all" | "unavailable" | "low_stock" | "missing_image" | "hidden" | null) ?? "all",
+  });
 
   if (result.error) {
     return jsonError(result.error, 500);
   }
 
   if (guard.admin.role === "sales" || guard.admin.role === "staff") {
-    return NextResponse.json({ ok: true, products: toAdminProductLookupRecords(result.products), categories: [] });
+    return NextResponse.json({
+      ok: true,
+      products: toAdminProductLookupRecords(result.products),
+      categories: [],
+      totalProducts: result.totalProducts,
+      page: result.page,
+      pageSize: result.pageSize,
+      summary: result.summary,
+      categoryProductCounts: result.categoryProductCounts,
+    });
   }
 
   if (!canManageProducts(guard.admin.role)) {
     return jsonError("Only product managers or sales staff can view product data.", 403);
   }
 
-  return NextResponse.json({ ok: true, products: result.products, categories: result.categories });
+  return NextResponse.json({
+    ok: true,
+    products: result.products,
+    categories: result.categories,
+    totalProducts: result.totalProducts,
+    page: result.page,
+    pageSize: result.pageSize,
+    summary: result.summary,
+    categoryProductCounts: result.categoryProductCounts,
+  });
 }
 
 async function assertUniqueProduct(
