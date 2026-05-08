@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { writeAdminAuditLog } from "@/lib/admin-audit-log";
 import { canManageStaff } from "@/lib/admin-role-access";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { verifyOwnerActionPassword } from "@/lib/owner-action-password";
@@ -33,6 +34,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const payload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const { data: previousUser } = await admin
+    .from("admin_users")
+    .select("id,email,name,role,active,employee_no,notes")
+    .eq("id", id)
+    .maybeSingle();
   const passwordCheck = await verifyOwnerActionPassword(payload.ownerPassword, guard.admin.id);
 
   if (!passwordCheck.ok) {
@@ -87,6 +93,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (error || !data) {
     return jsonError(error?.message ?? "Staff update failed.", 500);
   }
+  await writeAdminAuditLog({
+    supabase: admin,
+    admin: guard.admin,
+    action: "staff_updated",
+    entityType: "admin_user",
+    entityId: id,
+    entityLabel: typeof previousUser?.email === "string" ? previousUser.email : id,
+    previousData: (previousUser as Record<string, unknown> | null) ?? null,
+    newData: update,
+  });
 
   return NextResponse.json({ ok: true, user: data });
 }

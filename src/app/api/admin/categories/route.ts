@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { writeAdminAuditLog } from "@/lib/admin-audit-log";
 import { parseCategoryPayload, type CategoryPayload } from "@/lib/admin-category-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { canManageCategories } from "@/lib/admin-role-access";
@@ -105,6 +106,24 @@ export async function POST(request: Request) {
     }
 
     revalidateCatalogPages();
+    await writeAdminAuditLog({
+      supabase: admin,
+      admin: guard.admin,
+      action: "category_created",
+      entityType: "category",
+      entityId: (data as { id: string }).id,
+      entityLabel: payload.slug,
+      newData: {
+        name_en: payload.nameEn,
+        name_zh: payload.nameZh,
+        slug: payload.slug,
+        parent_id: payload.parentId,
+        level,
+        active: payload.active,
+        show_on_homepage: payload.showOnHomepage,
+        show_in_navigation: payload.showInNavigation,
+      },
+    });
 
     return NextResponse.json({ ok: true, categoryId: (data as { id: string }).id });
   } catch (error) {

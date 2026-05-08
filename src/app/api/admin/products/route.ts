@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { summarizeProductPayload, writeAdminAuditLog } from "@/lib/admin-audit-log";
 import { assertUniqueVariantSkus, saveProductVariants } from "@/lib/admin-product-variants";
 import { parseProductPayload, type ProductPayload } from "@/lib/admin-product-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
@@ -145,6 +146,15 @@ export async function POST(request: Request) {
   }
 
   revalidateCatalogPages();
+  await writeAdminAuditLog({
+    supabase: admin,
+    admin: guard.admin,
+    action: "product_created",
+    entityType: "product",
+    entityId: productId,
+    entityLabel: payload.sku,
+    newData: summarizeProductPayload(payload),
+  });
 
   return NextResponse.json({ ok: true, productId });
 }

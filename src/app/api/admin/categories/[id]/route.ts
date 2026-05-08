@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { writeAdminAuditLog } from "@/lib/admin-audit-log";
 import { parseCategoryPayload, type CategoryPayload } from "@/lib/admin-category-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { canManageCategories } from "@/lib/admin-role-access";
@@ -125,6 +126,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const rawPayload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const { data: previousCategory } = await admin
+    .from("categories")
+    .select("id,name_en,name_zh,slug,parent_id,level,active,show_on_homepage,show_in_navigation,sort_order")
+    .eq("id", id)
+    .maybeSingle();
 
   if (rawPayload.mode === "toggle") {
     const patch: Record<string, boolean> = {};
@@ -150,6 +156,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     revalidateCatalogPages();
+    await writeAdminAuditLog({
+      supabase: admin,
+      admin: guard.admin,
+      action: "category_toggled",
+      entityType: "category",
+      entityId: id,
+      entityLabel: typeof previousCategory?.slug === "string" ? previousCategory.slug : id,
+      previousData: (previousCategory as Record<string, unknown> | null) ?? null,
+      newData: patch,
+    });
 
     return NextResponse.json({ ok: true });
   }
@@ -168,6 +184,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     revalidateCatalogPages();
+    await writeAdminAuditLog({
+      supabase: admin,
+      admin: guard.admin,
+      action: "category_reordered",
+      entityType: "category",
+      entityId: id,
+      entityLabel: typeof previousCategory?.slug === "string" ? previousCategory.slug : id,
+      previousData: (previousCategory as Record<string, unknown> | null) ?? null,
+      newData: { sort_order: sortOrder },
+    });
 
     return NextResponse.json({ ok: true });
   }
@@ -220,6 +246,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     revalidateCatalogPages();
+    await writeAdminAuditLog({
+      supabase: admin,
+      admin: guard.admin,
+      action: "category_updated",
+      entityType: "category",
+      entityId: id,
+      entityLabel: payload.slug,
+      previousData: (previousCategory as Record<string, unknown> | null) ?? null,
+      newData: {
+        name_en: payload.nameEn,
+        name_zh: payload.nameZh,
+        slug: payload.slug,
+        parent_id: payload.parentId,
+        level,
+        active: payload.active,
+        show_on_homepage: payload.showOnHomepage,
+        show_in_navigation: payload.showInNavigation,
+        sort_order: payload.sortOrder,
+      },
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
@@ -245,6 +291,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   const { id } = await params;
+  const { data: previousCategory } = await admin
+    .from("categories")
+    .select("id,name_en,name_zh,slug,parent_id,level,active,show_on_homepage,show_in_navigation,sort_order")
+    .eq("id", id)
+    .maybeSingle();
   const { count: childCount, error: childError } = await admin
     .from("categories")
     .select("id", { count: "exact", head: true })
@@ -278,6 +329,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   revalidateCatalogPages();
+  await writeAdminAuditLog({
+    supabase: admin,
+    admin: guard.admin,
+    action: "category_deleted",
+    entityType: "category",
+    entityId: id,
+    entityLabel: typeof previousCategory?.slug === "string" ? previousCategory.slug : id,
+    previousData: (previousCategory as Record<string, unknown> | null) ?? null,
+  });
 
   return NextResponse.json({ ok: true });
 }

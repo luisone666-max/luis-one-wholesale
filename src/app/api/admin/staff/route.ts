@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { writeAdminAuditLog } from "@/lib/admin-audit-log";
 import { canManageStaff } from "@/lib/admin-role-access";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { getAdminStaffUsers } from "@/lib/admin-users-data";
@@ -127,6 +128,22 @@ export async function POST(request: Request) {
     await admin.auth.admin.deleteUser(authData.user.id).catch(() => undefined);
     return jsonError(insertError?.message ?? "Staff profile insert failed.", 500);
   }
+  await writeAdminAuditLog({
+    supabase: admin,
+    admin: guard.admin,
+    action: "staff_created",
+    entityType: "admin_user",
+    entityId: (staff as { id: string }).id,
+    entityLabel: email,
+    newData: {
+      email,
+      name,
+      role,
+      active: true,
+      employee_no: employeeNo || null,
+      notes: notes || null,
+    },
+  });
 
   return NextResponse.json({ ok: true, user: staff });
 }

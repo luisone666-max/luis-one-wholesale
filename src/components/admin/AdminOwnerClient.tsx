@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminPageTitle } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 
@@ -20,6 +20,10 @@ const copy = {
     staffAccess: "Staff Access",
     reports: "Employee Sales Reports",
     cashDrawer: "Cash Drawer",
+    auditLogs: "Security Audit Logs",
+    auditCaption: "Latest sensitive admin actions across products, categories, orders, and staff.",
+    noAuditLogs: "No audit logs yet.",
+    auditNotReady: "Audit log table is not ready yet. Run the latest migration first.",
     open: "Open",
   },
   zh: {
@@ -37,8 +41,23 @@ const copy = {
     staffAccess: "员工权限",
     reports: "员工销售报表",
     cashDrawer: "收银钱箱",
+    auditLogs: "安全操作记录",
+    auditCaption: "最新敏感后台操作：商品、分类、订单、员工权限。",
+    noAuditLogs: "暂无安全操作记录。",
+    auditNotReady: "操作记录表还没有准备好，请先执行最新 migration。",
     open: "打开",
   },
+};
+
+type AuditLog = {
+  id: string;
+  admin_email: string | null;
+  admin_role: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  entity_label: string | null;
+  created_at: string;
 };
 
 function inputClass() {
@@ -66,7 +85,37 @@ export function AdminOwnerClient() {
   const [highestPermissionPassword, setHighestPermissionPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditMessage, setAuditMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!unlocked) {
+      return;
+    }
+
+    let active = true;
+
+    void fetch("/api/admin/audit-logs")
+      .then((response) => response.json())
+      .then((result: { ok?: boolean; logs?: AuditLog[]; message?: string }) => {
+        if (!active) {
+          return;
+        }
+
+        setAuditLogs(result.logs ?? []);
+        setAuditMessage(result.message ?? "");
+      })
+      .catch(() => {
+        if (active) {
+          setAuditMessage(t.auditNotReady);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [t.auditNotReady, unlocked]);
 
   async function unlock() {
     setLoading(true);
@@ -163,6 +212,40 @@ export function AdminOwnerClient() {
               <OwnerLink href="/admin/reports" title={t.reports} caption="See monthly employee sales totals." button={t.open} />
               <OwnerLink href="/admin/cash-drawer" title={t.cashDrawer} caption="Open and close daily cash drawer." button={t.open} />
             </div>
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-black text-zinc-950">{t.auditLogs}</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-zinc-500">{t.auditCaption}</p>
+            {auditMessage ? <p className="mt-3 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-bold text-orange-700">{auditMessage}</p> : null}
+            {auditLogs.length ? (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left text-sm">
+                  <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
+                    <tr>
+                      <th className="px-3 py-2">Time</th>
+                      <th className="px-3 py-2">Admin</th>
+                      <th className="px-3 py-2">Action</th>
+                      <th className="px-3 py-2">Target</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {auditLogs.map((log) => (
+                      <tr key={log.id}>
+                        <td className="px-3 py-2 font-bold text-zinc-500">{new Date(log.created_at).toLocaleString()}</td>
+                        <td className="px-3 py-2 font-black text-zinc-900">
+                          {log.admin_email ?? "-"} <span className="text-xs text-zinc-400">{log.admin_role}</span>
+                        </td>
+                        <td className="px-3 py-2 font-black text-orange-700">{log.action}</td>
+                        <td className="px-3 py-2 font-bold text-zinc-600">{log.entity_type}: {log.entity_label ?? log.entity_id ?? "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : !auditMessage ? (
+              <p className="mt-4 text-sm font-bold text-zinc-500">{t.noAuditLogs}</p>
+            ) : null}
           </section>
         </>
       )}

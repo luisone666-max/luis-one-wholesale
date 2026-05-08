@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { summarizeProductAuditData, summarizeProductPayload, writeAdminAuditLog } from "@/lib/admin-audit-log";
 import { assertUniqueVariantSkus, saveProductVariants } from "@/lib/admin-product-variants";
 import { parseProductPayload, type ProductPayload } from "@/lib/admin-product-validation";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
@@ -49,6 +50,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const rawPayload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const { data: previousProduct } = await admin
+    .from("products")
+    .select("id,sku,name,slug,active,stock_status,moq,retail_price,category_id,subcategory_id,child_category_id")
+    .eq("id", id)
+    .maybeSingle();
 
   if (rawPayload.mode === "visibility") {
     const { error } = await admin.from("products").update({ active: Boolean(rawPayload.active) }).eq("id", id);
@@ -58,6 +64,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     revalidateCatalogPages();
+    await writeAdminAuditLog({
+      supabase: admin,
+      admin: guard.admin,
+      action: Boolean(rawPayload.active) ? "product_unhidden" : "product_hidden",
+      entityType: "product",
+      entityId: id,
+      entityLabel: typeof previousProduct?.sku === "string" ? previousProduct.sku : id,
+      previousData: summarizeProductAuditData(previousProduct as Record<string, unknown> | null),
+      newData: { active: Boolean(rawPayload.active) },
+    });
 
     return NextResponse.json({ ok: true });
   }
@@ -137,6 +153,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   revalidateCatalogPages();
+  await writeAdminAuditLog({
+    supabase: admin,
+    admin: guard.admin,
+    action: "product_updated",
+    entityType: "product",
+    entityId: id,
+    entityLabel: payload.sku,
+    previousData: summarizeProductAuditData(previousProduct as Record<string, unknown> | null),
+    newData: summarizeProductPayload(payload),
+  });
 
   return NextResponse.json({ ok: true });
 }
@@ -159,6 +185,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   const { id } = await params;
+  const { data: previousProduct } = await admin
+    .from("products")
+    .select("id,sku,name,slug,active,stock_status,moq,retail_price,category_id,subcategory_id,child_category_id")
+    .eq("id", id)
+    .maybeSingle();
   const { count, error: countError } = await admin
     .from("order_items")
     .select("id", { count: "exact", head: true })
@@ -179,6 +210,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   revalidateCatalogPages();
+  await writeAdminAuditLog({
+    supabase: admin,
+    admin: guard.admin,
+    action: "product_deleted",
+    entityType: "product",
+    entityId: id,
+    entityLabel: typeof previousProduct?.sku === "string" ? previousProduct.sku : id,
+    previousData: summarizeProductAuditData(previousProduct as Record<string, unknown> | null),
+  });
 
   return NextResponse.json({ ok: true });
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { writeAdminAuditLog } from "@/lib/admin-audit-log";
 import { requireActiveAdminApi } from "@/lib/admin-auth";
 import { awardCustomerLoyaltyPoints } from "@/lib/loyalty-points-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
@@ -273,6 +274,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
       reason: typeof update.order_status === "string" ? update.order_status : String(update.payment_status),
     });
   }
+  await writeAdminAuditLog({
+    supabase: admin,
+    admin: guard.admin,
+    action: "online_order_updated",
+    entityType: "online_order",
+    entityId: row.id,
+    entityLabel: row.order_no,
+    previousData: {
+      order_status: existingOrder.order_status,
+      payment_status: existingOrder.payment_status,
+      product_total: existingOrder.product_total,
+    },
+    newData: update,
+    metadata: {
+      loyalty,
+    },
+  });
 
   return NextResponse.json({
     ok: true,

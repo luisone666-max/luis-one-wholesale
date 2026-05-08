@@ -67,6 +67,8 @@ This runs:
 - Paid sales should not be hard deleted.
 - If a paid sale is wrong, Owner/Admin must void it with a reason. The system keeps the audit trail, reverses the payment record, and reverses loyalty points when needed.
 - Owner/Admin reviews cancelled, returned, and voided sales in Reports so daily totals stay trustworthy.
+- Owner/Admin can unlock Owner Center to review the latest sensitive admin action logs for products, categories, online orders, and staff access.
+- Run `supabase/migrations/20260508001000_admin_action_audit_logs.sql` in production so sensitive admin action history is fully active.
 - Physical cash in the drawer is only cash payments. GCash and bank transfer are shown separately in Cash Drawer totals.
 
 ## Next Improvement Backlog

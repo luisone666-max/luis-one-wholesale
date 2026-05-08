@@ -30,6 +30,7 @@ Run every SQL file in `supabase/migrations` against the production Supabase proj
 - `20260503004000_allow_single_piece_orders.sql`
 - `20260503005000_admin_users.sql`
 - `20260503006000_product_image_storage.sql`
+- `20260508001000_admin_action_audit_logs.sql`
 
 Use either Supabase CLI `supabase db push` after linking the project, or paste each migration into Supabase SQL Editor and run it in order.
 

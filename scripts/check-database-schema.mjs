@@ -77,6 +77,12 @@ const checks = [
     migrationHint: "20260507001000_pos_sale_audit_logs.sql",
   },
   {
+    label: "Admin sensitive action audit logs",
+    table: "admin_action_audit_logs",
+    columns: "id,admin_user_id,admin_email,admin_role,action,entity_type,entity_id,entity_label,created_at",
+    migrationHint: "20260508001000_admin_action_audit_logs.sql",
+  },
+  {
     label: "Customer loyalty transactions",
     table: "customer_loyalty_point_transactions",
     columns: "id,customer_id,source_type,source_id,points,amount,note,created_by_admin_user_id",
