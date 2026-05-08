@@ -4,11 +4,11 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPosSalePrintTemplate } from "@/components/admin/AdminPosSalePrintTemplate";
-import type { PosSaleRecord } from "@/lib/pos-data";
+import type { PosProductCatalogRecord, PosSaleRecord } from "@/lib/pos-data";
 import { formatPhp } from "@/lib/wholesale-pricing";
 
 type Customer = { id: string; name: string; phone: string; status: string };
-type Product = { id: string; sku: string; name: string; retailPrice: number | null };
+type Product = PosProductCatalogRecord;
 type PosSalesSummary = { todayTotal: number; monthTotal: number; waitingTotal: number; waitingCount: number; paidTotal: number; paidCount: number };
 
 type DraftItem = {
@@ -54,7 +54,7 @@ const copy = {
     monthSales: "This month paid sales",
     waitingCashier: "Waiting cashier",
     paidSales: "Paid sales",
-    productSearch: "Search products by SKU or name",
+    productSearch: "Search SKU, product name, model, category, or variant",
     statNote: "Today and monthly sales count cashier-confirmed paid sales only. Waiting cashier slips are listed separately.",
     slips: "slips",
     recentSales: "Recent Sales Slips",
@@ -127,7 +127,7 @@ const copy = {
     monthSales: "本月已收款销售额",
     waitingCashier: "待收银",
     paidSales: "已收款",
-    productSearch: "搜索商品 SKU 或名称",
+    productSearch: "搜索 SKU、商品名、型号、分类或变体",
     statNote: "今日和本月销售额只统计收银员已确认收款的销售单，待收银金额单独显示。",
     slips: "张单",
     recentSales: "最近销售单",
@@ -196,7 +196,7 @@ const zhCopy = {
   monthSales: "本月已收款销售额",
   waitingCashier: "待收银",
   paidSales: "已收款",
-  productSearch: "搜索商品 SKU 或名称",
+  productSearch: "搜索 SKU、商品名、型号、分类或变体",
   statNote: "今日和本月销售额只统计收银员已确认收款的销售单，待收银金额单独显示。",
   slips: "张单",
   recentSales: "最近销售单",
@@ -328,11 +328,30 @@ function productMatchesSearch(product: Product, search: string) {
     return true;
   }
 
-  const haystack = normalizeSearchText([product.sku, product.name].join(" "));
+  const haystack = normalizeSearchText(
+    [
+      product.sku,
+      product.name,
+      product.slug,
+      product.category,
+      product.subcategory,
+      product.childCategory,
+      product.brand,
+      product.model,
+      product.stockStatus,
+      product.leadTime,
+      product.description,
+      product.variantSearchText,
+    ].join(" "),
+  );
   const compactHaystack = haystack.replace(/\s+/g, "");
   const compactSearch = normalizeSearchText(search).replace(/\s+/g, "");
 
   return compactHaystack.includes(compactSearch) || words.every((word) => haystack.includes(word));
+}
+
+function productMetaText(product: Product) {
+  return [product.category, product.subcategory, product.childCategory, product.brand, product.model].filter(Boolean).slice(0, 3).join(" / ");
 }
 
 function paymentMethodLabel(method: string, language: "en" | "zh") {
@@ -873,6 +892,7 @@ export function AdminSalesDeskClient({
                   >
                     <span className="block truncate text-[11px] font-black uppercase tracking-[0.1em] text-orange-600">{product.sku}</span>
                     <span className="mt-1 line-clamp-2 min-h-8 text-xs font-black leading-4 text-zinc-950">{product.name}</span>
+                    {productMetaText(product) ? <span className="mt-1 block truncate text-[11px] font-bold text-zinc-500">{productMetaText(product)}</span> : null}
                     <span className="mt-2 block text-sm font-black text-zinc-700">{formatPhp(product.retailPrice ?? 0)}</span>
                   </button>
                 ))}
@@ -902,7 +922,7 @@ export function AdminSalesDeskClient({
                       <option value="">{t.selectProduct}</option>
                       {filteredProducts.map((product) => (
                         <option key={product.id} value={product.id}>
-                          {product.sku} - {product.name}
+                          {product.sku} - {product.name}{productMetaText(product) ? ` (${productMetaText(product)})` : ""}
                         </option>
                       ))}
                     </select>

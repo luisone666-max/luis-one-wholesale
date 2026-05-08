@@ -50,6 +50,37 @@ type PosSaleAuditLogRow = {
   created_at: string | null;
 };
 
+type PosProductCatalogRow = {
+  id: string;
+  sku: string;
+  name: string;
+  slug: string | null;
+  category_id: string | null;
+  subcategory_id: string | null;
+  child_category_id: string | null;
+  brand: string | null;
+  model: string | null;
+  stock_status: string | null;
+  lead_time: string | null;
+  description: string | null;
+  retail_price: number | string | null;
+};
+
+type PosCategoryCatalogRow = {
+  id: string;
+  name_en: string | null;
+};
+
+type PosVariantCatalogRow = {
+  product_id: string;
+  variant_name: string | null;
+  variant_sku: string | null;
+  model: string | null;
+  fits: string | null;
+  stock_status: string | null;
+  lead_time: string | null;
+};
+
 export type PosSaleItemRecord = {
   id: string;
   productId: string;
@@ -94,6 +125,23 @@ export type PosSaleRecord = {
   createdAt: string;
   items: PosSaleItemRecord[];
   auditLogs: PosSaleAuditLogRecord[];
+};
+
+export type PosProductCatalogRecord = {
+  id: string;
+  sku: string;
+  name: string;
+  slug: string;
+  category: string;
+  subcategory: string;
+  childCategory: string;
+  brand: string;
+  model: string;
+  stockStatus: string;
+  leadTime: string;
+  description: string;
+  retailPrice: number | null;
+  variantSearchText: string;
 };
 
 export type PosSalesResult = {
@@ -339,19 +387,51 @@ export async function getPosCatalogData() {
     return { staffUsers: [], customers: [], products: [], error: "Supabase admin client is not configured." };
   }
 
-  const [staffResult, customersResult, productsResult] = await Promise.all([
+  const [staffResult, customersResult, productsResult, categoriesResult, variantsResult] = await Promise.all([
     supabase.from("admin_users").select("id,name,email,employee_no,role,active").eq("active", true).order("name", { ascending: true }),
     supabase.from("customers").select("id,name,phone,status").order("name", { ascending: true }).limit(200),
-    supabase.from("products").select("id,sku,name,retail_price,active").eq("active", true).order("name", { ascending: true }).limit(300),
+    supabase
+      .from("products")
+      .select("id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,stock_status,lead_time,description,retail_price,active")
+      .eq("active", true)
+      .order("name", { ascending: true })
+      .limit(1000),
+    supabase.from("categories").select("id,name_en"),
+    supabase
+      .from("product_variants")
+      .select("product_id,variant_name,variant_sku,model,fits,stock_status,lead_time,active")
+      .eq("active", true)
+      .order("sort_order", { ascending: true }),
   ]);
 
-  if (staffResult.error || customersResult.error || productsResult.error) {
+  if (staffResult.error || customersResult.error || productsResult.error || categoriesResult.error || variantsResult.error) {
     return {
       staffUsers: [],
       customers: [],
       products: [],
-      error: staffResult.error?.message ?? customersResult.error?.message ?? productsResult.error?.message,
+      error: staffResult.error?.message ?? customersResult.error?.message ?? productsResult.error?.message ?? categoriesResult.error?.message ?? variantsResult.error?.message,
     };
+  }
+
+  const categoriesById = new Map(
+    ((categoriesResult.data ?? []) as PosCategoryCatalogRow[]).map((category) => [category.id, category.name_en ?? ""]),
+  );
+  const variantsByProductId = new Map<string, string[]>();
+
+  for (const variant of (variantsResult.data ?? []) as PosVariantCatalogRow[]) {
+    variantsByProductId.set(variant.product_id, [
+      ...(variantsByProductId.get(variant.product_id) ?? []),
+      [
+        variant.variant_sku,
+        variant.variant_name,
+        variant.model,
+        variant.fits,
+        variant.stock_status,
+        variant.lead_time,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    ]);
   }
 
   return {
@@ -368,11 +448,21 @@ export async function getPosCatalogData() {
       phone: customer.phone ?? "",
       status: customer.status ?? "",
     })),
-    products: (productsResult.data ?? []).map((product) => ({
+    products: ((productsResult.data ?? []) as PosProductCatalogRow[]).map((product): PosProductCatalogRecord => ({
       id: product.id,
       sku: product.sku,
       name: product.name,
+      slug: product.slug ?? "",
+      category: product.category_id ? categoriesById.get(product.category_id) ?? "" : "",
+      subcategory: product.subcategory_id ? categoriesById.get(product.subcategory_id) ?? "" : "",
+      childCategory: product.child_category_id ? categoriesById.get(product.child_category_id) ?? "" : "",
+      brand: product.brand ?? "",
+      model: product.model ?? "",
+      stockStatus: product.stock_status ?? "",
+      leadTime: product.lead_time ?? "",
+      description: product.description ?? "",
       retailPrice: product.retail_price === null ? null : Number(product.retail_price),
+      variantSearchText: (variantsByProductId.get(product.id) ?? []).join(" "),
     })),
   };
 }
