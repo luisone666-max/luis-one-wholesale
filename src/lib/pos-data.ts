@@ -233,6 +233,11 @@ function mapSale(row: PosSaleRow, items: PosSaleItemRow[], auditLogs: PosSaleAud
   };
 }
 
+function isMissingAuditLogTableError(error: { message?: string; code?: string } | null) {
+  const message = error?.message?.toLowerCase() ?? "";
+  return message.includes("pos_sale_audit_logs") && (message.includes("schema cache") || message.includes("could not find"));
+}
+
 export async function getPosSales(
   status?: string,
   options: { salespersonAdminUserId?: string; limit?: number } = {},
@@ -285,7 +290,7 @@ export async function getPosSales(
     return { sales: [], error: itemsError.message };
   }
 
-  if (auditError) {
+  if (auditError && !isMissingAuditLogTableError(auditError)) {
     return { sales: [], error: auditError.message };
   }
 
@@ -296,7 +301,7 @@ export async function getPosSales(
     itemsBySaleId.set(item.sale_id, [...(itemsBySaleId.get(item.sale_id) ?? []), item]);
   }
 
-  for (const log of (auditRows ?? []) as PosSaleAuditLogRow[]) {
+  for (const log of (isMissingAuditLogTableError(auditError) ? [] : (auditRows ?? [])) as PosSaleAuditLogRow[]) {
     auditLogsBySaleId.set(log.sale_id, [...(auditLogsBySaleId.get(log.sale_id) ?? []), log]);
   }
 
