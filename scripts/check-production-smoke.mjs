@@ -5,13 +5,15 @@ const publicChecks = [
   { path: "/", name: "home page", minLength: 1000 },
   { path: "/category/all", name: "product listing", minLength: 1000 },
   { path: "/product/1", name: "product detail", minLength: 1000 },
+  { path: "/login", name: "customer login page", minLength: 500 },
+  { path: "/register", name: "customer register page", minLength: 500 },
   { path: "/admin/login", name: "admin login page", minLength: 500 },
   { path: "/meta/catalog-feed.csv", name: "Meta catalog feed", minLength: 100 },
   { path: "/share/product/1", name: "Facebook product share page", minLength: 500 },
   { path: "/robots.txt", name: "robots.txt", minLength: 50 },
 ];
 
-const customerPageChecks = new Set(["/", "/category/all", "/product/1"]);
+const customerPageChecks = new Set(["/", "/category/all", "/product/1", "/login", "/register"]);
 const adminOnlyLeakTerms = [
   "supplier_notes",
   "internal_cost_notes",
@@ -19,6 +21,12 @@ const adminOnlyLeakTerms = [
   "supplier notes snapshot",
   "internal cost notes",
   "admin notes",
+];
+const publicErrorTerms = [
+  "using mock catalog data",
+  "catalog is refreshing",
+  "supabase auth is not configured",
+  "supabase server credentials are not configured",
 ];
 
 const protectedApiChecks = [
@@ -128,8 +136,10 @@ function checkRobotsTxt(text) {
 function checkCustomerPageSafety(path, html) {
   const lower = html.toLowerCase();
   const leaked = adminOnlyLeakTerms.find((term) => lower.includes(term));
+  const publicError = publicErrorTerms.find((term) => lower.includes(term));
 
   requireStatus(!leaked, `${path} appears to expose admin-only text: ${leaked}`);
+  requireStatus(!publicError, `${path} appears to show a production config/data error: ${publicError}`);
   console.log(`ok customer safety ${path}`);
 }
 
