@@ -18,12 +18,12 @@ import {
 } from "@/lib/mock-data";
 
 function variantToProduct(product: Product, variant: ProductVariant): Product {
-  const gallery = variant.image ? [variant.image, ...product.gallery] : product.gallery.length ? product.gallery : [product.image];
+  const gallery = variant.image ? [variant.image, ...product.gallery] : [];
 
   return {
     ...product,
     sku: variant.sku || product.sku,
-    image: variant.image || product.image,
+    image: variant.image || "",
     gallery: Array.from(new Set(gallery.filter(Boolean))),
     moq: variant.moq,
     stockStatus: variant.stockStatus,
