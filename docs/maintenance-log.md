@@ -534,3 +534,12 @@ Meta catalog feed health follow-up:
 - Duplicate catalog item IDs remain blocked before deployment.
 - Verification:
   - `npm.cmd run check:production` passed.
+
+Customer product card payload follow-up:
+
+- Reduced product-listing client payload for Messenger inquiry buttons.
+- Product cards now pass only product name, slug, SKU, MOQ, and display price range into the client inquiry button instead of serializing the full product object with variants, gallery, and details.
+- Messenger inquiry text remains unchanged for customers.
+- Verification:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.

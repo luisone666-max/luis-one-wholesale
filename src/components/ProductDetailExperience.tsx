@@ -38,6 +38,16 @@ function variantToProduct(product: Product, variant: ProductVariant): Product {
   };
 }
 
+function toInquiryProduct(product: Product, priceRange: string) {
+  return {
+    slug: product.slug,
+    name: product.name,
+    sku: product.sku,
+    moq: product.moq,
+    priceRange,
+  };
+}
+
 export function ProductDetailExperience({ product }: { product: Product }) {
   const activeVariants = product.variants?.filter((variant) => variant.active) ?? [];
   const [selectedVariantId, setSelectedVariantId] = useState("");
@@ -53,6 +63,8 @@ export function ProductDetailExperience({ product }: { product: Product }) {
   const subtotal = appliedTier ? appliedTier.price * quantity : 0;
   const directOrderUnavailable = isUnavailableStockStatus(displayProduct.stockStatus) || quotationOnly;
   const selectedVariantImagePending = Boolean(selectedVariant && !selectedVariant.image);
+  const displayPriceRange = selectedVariant ? getVariantPriceRange(selectedVariant) : getPriceRange(product);
+  const inquiryProduct = toInquiryProduct(displayProduct, displayPriceRange);
   const trackedViewContentKey = useRef("");
   const viewContentKey = `${product.id}:${selectedVariant?.id ?? "product"}`;
 
@@ -231,7 +243,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
               </p>
             ) : null}
             <p className="text-base font-black text-[#f65f18] sm:text-3xl">
-              {selectedVariant ? getVariantPriceRange(selectedVariant) : getPriceRange(product)}
+              {displayPriceRange}
             </p>
             <p className="mt-1 text-xs font-bold text-zinc-500">Public wholesale prices. Final order will be confirmed manually.</p>
           </div>
@@ -322,7 +334,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
 
           <div className="mt-4 hidden grid-cols-2 gap-2 border-t border-zinc-100 pt-3 sm:mt-6 sm:flex sm:gap-3 sm:pt-5">
             {directOrderUnavailable ? (
-              <ProductInquiryButton product={displayProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-4 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-72 sm:px-8 sm:text-sm" />
+              <ProductInquiryButton product={inquiryProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-4 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-72 sm:px-8 sm:text-sm" />
             ) : (
               <>
                 <button
@@ -333,7 +345,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
                 >
                   {loading ? "Adding..." : "Add to Order"}
                 </button>
-                <ProductInquiryButton product={displayProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-44 sm:px-8 sm:text-sm" />
+                <ProductInquiryButton product={inquiryProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-44 sm:px-8 sm:text-sm" />
               </>
             )}
           </div>
@@ -347,7 +359,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
       </div>
       <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-zinc-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
         {directOrderUnavailable ? (
-          <ProductInquiryButton product={displayProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="col-span-2 h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+          <ProductInquiryButton product={inquiryProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="col-span-2 h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
         ) : (
           <>
             <button
@@ -358,7 +370,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
             >
               {loading ? "Adding..." : "Add to Order"}
             </button>
-            <ProductInquiryButton product={displayProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+            <ProductInquiryButton product={inquiryProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
           </>
         )}
       </div>

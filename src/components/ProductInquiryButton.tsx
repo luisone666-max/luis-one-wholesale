@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import { messengerUrl } from "@/components/CustomerUi";
-import { getPriceRange, type Product } from "@/lib/mock-data";
+
+export type ProductInquiryDetails = {
+  slug: string;
+  name: string;
+  sku?: string;
+  moq: number;
+  priceRange: string;
+};
 
 export function ProductInquiryButton({
   product,
   label = "Messenger",
   className = "",
 }: {
-  product: Product;
+  product: ProductInquiryDetails;
   label?: string;
   className?: string;
 }) {
@@ -21,7 +28,7 @@ export function ProductInquiryButton({
       "Hi, I want to inquire about this product:",
       `Product: ${product.name}`,
       `SKU: ${product.sku ?? "-"}`,
-      `Price: ${getPriceRange(product)}`,
+      `Price: ${product.priceRange}`,
       `MOQ: ${product.moq}`,
       `Link: ${productLink}`,
     ].join("\n");

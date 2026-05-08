@@ -22,6 +22,14 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const unavailable = isUnavailableStockStatus(product.stockStatus);
   const stockLabel = product.stockStatus === "In stock" ? "Ready" : product.stockStatus === "Preorder" ? "Order" : product.stockStatus;
   const productHref = `/product/${product.slug}`;
+  const priceRange = getPriceRange(product);
+  const inquiryProduct = {
+    slug: product.slug,
+    name: product.name,
+    sku: product.sku,
+    moq: product.moq,
+    priceRange,
+  };
 
   return (
     <article className="group overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md">
@@ -48,9 +56,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
                 <span className="hidden sm:inline">Retail {formatMoney(product.retailPrice)}</span>
               </p>
             ) : null}
-            <p className="max-w-full truncate text-[10px] font-black leading-4 text-[#f65f18] sm:text-base sm:leading-5" title={getPriceRange(product)}>
+            <p className="max-w-full truncate text-[10px] font-black leading-4 text-[#f65f18] sm:text-base sm:leading-5" title={priceRange}>
               <span className="sm:hidden">{compactPrice}</span>
-              <span className="hidden sm:inline">{getPriceRange(product)}</span>
+              <span className="hidden sm:inline">{priceRange}</span>
             </p>
             <p className="mt-0.5 truncate text-[8px] font-bold leading-3 text-zinc-500 sm:mt-1 sm:text-[11px] sm:leading-4">
               {!hasPrice ? (
@@ -76,7 +84,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         <Link href={productHref} className="grid h-9 place-items-center rounded-sm border border-zinc-200 px-2 text-[11px] font-black leading-3 text-zinc-700 hover:border-orange-200 hover:text-orange-700 sm:h-10 sm:text-xs">
           View Details
         </Link>
-        <ProductInquiryButton product={product} className="h-9 w-full px-2 text-[11px] sm:h-10 sm:text-xs" />
+        <ProductInquiryButton product={inquiryProduct} className="h-9 w-full px-2 text-[11px] sm:h-10 sm:text-xs" />
       </div>
     </article>
   );
