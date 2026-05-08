@@ -445,6 +445,47 @@ function labelForStock(t: (key: TranslationKey) => string, value: string) {
   return t(stockStatusKeyByValue[value] ?? "forOrder");
 }
 
+function normalizeAdminProductSearch(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/([a-z])([0-9])/g, "$1 $2")
+    .replace(/([0-9])([a-z])/g, "$1 $2")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function productMatchesAdminSearch(product: AdminProductRecord, query: string) {
+  const words = normalizeAdminProductSearch(query)
+    .split(" ")
+    .filter((word) => word.length > 1);
+
+  if (!words.length) {
+    return true;
+  }
+
+  const searchable = normalizeAdminProductSearch(
+    [
+      product.sku,
+      product.name,
+      product.slug,
+      product.category,
+      product.subcategory,
+      product.childCategory,
+      product.brand,
+      product.model,
+      product.stockStatus,
+      product.leadTime,
+      product.description,
+      product.variants.map((variant) => [variant.sku, variant.name, variant.model, variant.fits, variant.stockStatus, variant.leadTime].join(" ")).join(" "),
+    ].join(" "),
+  );
+  const compactSearchable = searchable.replace(/\s+/g, "");
+  const compactQuery = words.join("");
+
+  return words.every((word) => searchable.includes(word) || compactSearchable.includes(word)) || compactSearchable.includes(compactQuery);
+}
+
 function escapeTemplateCsvCell(value: string) {
   if (/[",\n]/.test(value)) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -551,10 +592,10 @@ export function AdminProductsClient({
     hidden: products.filter((product) => !product.active).length,
   }), [products]);
   const filteredProducts = useMemo(() => {
-    const needle = search.trim().toLowerCase();
+    const needle = search.trim();
 
     return products.filter((product) => {
-      const searchMatch = !needle || product.sku.toLowerCase().includes(needle) || product.name.toLowerCase().includes(needle);
+      const searchMatch = productMatchesAdminSearch(product, needle);
       const categoryMatch =
         categoryFilter === "all" ||
         product.categoryId === categoryFilter ||
