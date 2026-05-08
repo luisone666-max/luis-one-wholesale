@@ -10,7 +10,8 @@ function formatMobileMoney(value: number) {
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const bulkTier = product.tiers.find((tier) => tier.min >= 6) ?? product.tiers[product.tiers.length - 1];
   const prices = product.tiers.map((tier) => tier.price);
-  const compactPrice = `${formatMobileMoney(Math.min(...prices))}+`;
+  const hasPrice = prices.length > 0;
+  const compactPrice = hasPrice ? `${formatMobileMoney(Math.min(...prices))}+` : "Quote";
   const unavailable = isUnavailableStockStatus(product.stockStatus);
   const stockLabel = product.stockStatus === "In stock" ? "Ready" : product.stockStatus === "Preorder" ? "Order" : product.stockStatus;
   const productHref = `/product/${product.slug}`;
@@ -45,12 +46,14 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               <span className="hidden sm:inline">{getPriceRange(product)}</span>
             </p>
             <p className="mt-0.5 truncate text-[8px] font-bold leading-3 text-zinc-500 sm:mt-1 sm:text-[11px] sm:leading-4">
-              {unavailable ? (
+              {!hasPrice ? (
+                "Ask on Messenger for price"
+              ) : unavailable ? (
                 "Ask on Messenger for availability"
               ) : (
                 <>
-                  <span className="sm:hidden">{bulkTier.label} from {formatMobileMoney(bulkTier.price)}</span>
-                  <span className="hidden sm:inline">{bulkTier.label} from {formatMoney(bulkTier.price)}</span>
+                  <span className="sm:hidden">{bulkTier?.label} from {formatMobileMoney(bulkTier?.price ?? 0)}</span>
+                  <span className="hidden sm:inline">{bulkTier?.label} from {formatMoney(bulkTier?.price ?? 0)}</span>
                 </>
               )}
             </p>

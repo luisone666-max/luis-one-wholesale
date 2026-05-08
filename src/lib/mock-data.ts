@@ -217,18 +217,29 @@ export function getActiveProductsByCategory(slug: string) {
 
 export function getPriceRange(product: Product) {
   const prices = product.tiers.map((tier) => tier.price);
+
+  if (!prices.length) {
+    return "Contact for quotation";
+  }
+
   return `${formatMoney(Math.min(...prices))} - ${formatMoney(Math.max(...prices))}`;
 }
 
 export function getVariantPriceRange(variant: ProductVariant) {
   const prices = variant.tiers.map((tier) => tier.price);
+
+  if (!prices.length) {
+    return "Contact for quotation";
+  }
+
   return `${formatMoney(Math.min(...prices))} - ${formatMoney(Math.max(...prices))}`;
 }
 
 export function getTierForQuantity(product: Product, quantity: number) {
   return (
     product.tiers.find((tier) => quantity >= tier.min && (tier.max === null || quantity <= tier.max)) ??
-    product.tiers[0]
+    product.tiers[0] ??
+    null
   );
 }
 

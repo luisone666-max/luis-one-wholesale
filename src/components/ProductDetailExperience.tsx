@@ -48,8 +48,9 @@ export function ProductDetailExperience({ product }: { product: Product }) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const appliedTier = getTierForQuantity(displayProduct, quantity);
-  const subtotal = appliedTier.price * quantity;
-  const directOrderUnavailable = isUnavailableStockStatus(displayProduct.stockStatus);
+  const quotationOnly = !appliedTier;
+  const subtotal = appliedTier ? appliedTier.price * quantity : 0;
+  const directOrderUnavailable = isUnavailableStockStatus(displayProduct.stockStatus) || quotationOnly;
   const selectedVariantImagePending = Boolean(selectedVariant && !selectedVariant.image);
 
   const selectVariant = (variant: ProductVariant) => {
@@ -67,7 +68,11 @@ export function ProductDetailExperience({ product }: { product: Product }) {
 
     if (directOrderUnavailable) {
       setSuccess(false);
-      setMessage("This item is currently unavailable for direct order. Please ask on Messenger so we can check stock or arrange a special order.");
+      setMessage(
+        quotationOnly
+          ? "This item needs price confirmation before ordering. Please ask on Messenger so we can quote it."
+          : "This item is currently unavailable for direct order. Please ask on Messenger so we can check stock or arrange a special order.",
+      );
       return;
     }
 
@@ -186,7 +191,9 @@ export function ProductDetailExperience({ product }: { product: Product }) {
           </div>
           {directOrderUnavailable ? (
             <div className="mt-3 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
-              This item is shown for inquiry only. Please use Messenger to check availability, color, lead time, or special order options.
+              {quotationOnly
+                ? "This item needs price confirmation. Please use Messenger so we can quote the current price."
+                : "This item is shown for inquiry only. Please use Messenger to check availability, color, lead time, or special order options."}
             </div>
           ) : null}
 
@@ -209,13 +216,19 @@ export function ProductDetailExperience({ product }: { product: Product }) {
               <span className="font-bold text-zinc-900">{displayProduct.sku ?? "-"}</span>
             </DetailRow>
             <DetailRow label="Wholesale Tiers">
-              <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
-                {displayProduct.tiers.map((tier) => (
-                  <span key={tier.label} className="rounded-sm border border-orange-100 bg-orange-50 px-2 py-1 text-[11px] font-black text-orange-700 sm:px-3 sm:py-1.5 sm:text-xs">
-                    {tier.label}: {formatMoney(tier.price)}
-                  </span>
-                ))}
-              </div>
+              {displayProduct.tiers.length ? (
+                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+                  {displayProduct.tiers.map((tier) => (
+                    <span key={tier.label} className="rounded-sm border border-orange-100 bg-orange-50 px-2 py-1 text-[11px] font-black text-orange-700 sm:px-3 sm:py-1.5 sm:text-xs">
+                      {tier.label}: {formatMoney(tier.price)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                  Contact us for quotation.
+                </p>
+              )}
             </DetailRow>
             <DetailRow label="Shipping">
               <div>
@@ -270,21 +283,21 @@ export function ProductDetailExperience({ product }: { product: Product }) {
                   />
                   <button type="button" onClick={() => setQuantity((current) => current + 1)} className="h-9 w-10 border-l border-zinc-200 text-lg font-black text-zinc-600">+</button>
                 </div>
-                <p className="mt-1 text-xs font-bold text-zinc-500">MOQ {displayProduct.moq} pc. Applied tier: {appliedTier.label}</p>
+                <p className="mt-1 text-xs font-bold text-zinc-500">MOQ {displayProduct.moq} pc. Applied tier: {appliedTier?.label ?? "Quotation required"}</p>
               </div>
             </DetailRow>
 
             <DetailRow label="Subtotal">
               <div className="flex flex-wrap items-center gap-4">
-                <span className="text-base font-black text-[#f65f18] sm:text-xl">{formatMoney(subtotal)}</span>
-                <span className="text-xs font-bold text-zinc-500">Unit price: {formatMoney(appliedTier.price)}</span>
+                <span className="text-base font-black text-[#f65f18] sm:text-xl">{appliedTier ? formatMoney(subtotal) : "Contact for quotation"}</span>
+                <span className="text-xs font-bold text-zinc-500">Unit price: {appliedTier ? formatMoney(appliedTier.price) : "To be confirmed"}</span>
               </div>
             </DetailRow>
           </div>
 
           <div className="mt-4 hidden grid-cols-2 gap-2 border-t border-zinc-100 pt-3 sm:mt-6 sm:flex sm:gap-3 sm:pt-5">
             {directOrderUnavailable ? (
-              <ProductInquiryButton product={displayProduct} label="Ask Availability on Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-4 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-72 sm:px-8 sm:text-sm" />
+              <ProductInquiryButton product={displayProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-4 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-72 sm:px-8 sm:text-sm" />
             ) : (
               <>
                 <button
@@ -309,7 +322,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
       </div>
       <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-zinc-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
         {directOrderUnavailable ? (
-          <ProductInquiryButton product={displayProduct} label="Ask Availability on Messenger" className="col-span-2 h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+          <ProductInquiryButton product={displayProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="col-span-2 h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
         ) : (
           <>
             <button
