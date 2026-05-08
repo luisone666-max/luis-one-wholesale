@@ -77,7 +77,7 @@ async function main() {
   console.log(`${mode} checks passed in ${seconds}s.`);
 
   if (mode === "maintenance") {
-    console.log("Run `npm.cmd run check:readiness` after production migrations are applied.");
+    console.log("Schema readiness is separate: run `npm.cmd run check:readiness` only after new production migrations are applied.");
   }
 }
 
