@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { getCatalogCategoryPage, getCatalogCategoryParams } from "@/lib/catalog-data";
+import { getProductPriceTiers, type Product } from "@/lib/mock-data";
 import { absoluteUrl, categoryDescription, getSiteUrl, siteName } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -86,13 +87,13 @@ const sortOptions = [
   { label: "Price High to Low", shortLabel: "High Price", value: "price-high" },
 ];
 
-function getLowestPrice(product: { tiers: { price: number }[] }) {
-  const prices = product.tiers.map((tier) => tier.price).filter((price) => price > 0);
-  return prices.length ? Math.min(...prices) : 0;
+function getLowestPrice(product: Product) {
+  const prices = getProductPriceTiers(product).map((tier) => tier.price);
+  return prices.length ? Math.min(...prices) : Number.POSITIVE_INFINITY;
 }
 
-function getHighestPrice(product: { tiers: { price: number }[] }) {
-  const prices = product.tiers.map((tier) => tier.price).filter((price) => price > 0);
+function getHighestPrice(product: Product) {
+  const prices = getProductPriceTiers(product).map((tier) => tier.price);
   return prices.length ? Math.max(...prices) : 0;
 }
 

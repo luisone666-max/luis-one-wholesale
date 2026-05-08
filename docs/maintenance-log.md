@@ -437,3 +437,11 @@ Admin protection smoke coverage follow-up:
 - Production smoke checks now also verify logged-out 403 protection for cash drawer and staff APIs.
 - Verification:
   - `npm.cmd run check:production` passed.
+
+Customer category price sorting follow-up:
+
+- Product listing price sorting now uses product and variant wholesale tiers together.
+- Products without a valid price no longer appear before priced items in low-to-high sorting.
+- Verification:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
