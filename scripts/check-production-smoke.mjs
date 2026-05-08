@@ -27,6 +27,13 @@ const protectedApiChecks = [
   "/api/admin/pos/sales",
 ];
 
+const protectedPageChecks = [
+  "/admin",
+  "/admin/products",
+  "/admin/orders",
+  "/admin/cashier",
+];
+
 const searchChecks = [
   {
     path: "/category/all?q=ignition",
@@ -67,6 +74,23 @@ async function checkProtectedApi(path) {
   const { response } = await fetchText(path);
   requireStatus(response.status === 403, `${path} expected 403 for logged-out visitor, got ${response.status}`);
   console.log(`ok ${response.status} ${path}`);
+}
+
+async function checkProtectedPage(path) {
+  const response = await fetch(absolute(path), {
+    headers: {
+      "user-agent": "LuisOneProductionSmokeCheck/1.0",
+    },
+    redirect: "manual",
+  });
+  const location = response.headers.get("location") ?? "";
+
+  requireStatus(
+    response.status === 307 || response.status === 308 || response.status === 302,
+    `${path} expected redirect for logged-out visitor, got ${response.status}`,
+  );
+  requireStatus(location.includes("/admin/login"), `${path} should redirect to /admin/login, got "${location}"`);
+  console.log(`ok ${response.status} ${path} -> ${location}`);
 }
 
 function checkShareTags(html) {
@@ -127,6 +151,10 @@ async function main() {
 
   for (const path of protectedApiChecks) {
     await checkProtectedApi(path);
+  }
+
+  for (const path of protectedPageChecks) {
+    await checkProtectedPage(path);
   }
 
   for (const check of searchChecks) {
