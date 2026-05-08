@@ -29,7 +29,7 @@ function adminLoginSuccessPage(request: Request, accessToken: string, maxAge: nu
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="refresh" content="1;url=${adminUrl}" />
-    <title>Opening Admin Dashboard</title>
+    <title>Opening Seller Centre</title>
     <script>
       window.setTimeout(function () {
         document.cookie = "wholesale_admin_access_token=${cookieValue}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure";
@@ -49,8 +49,8 @@ function adminLoginSuccessPage(request: Request, accessToken: string, maxAge: nu
     <main>
       <section>
         <h1>Login successful</h1>
-        <p>Opening admin dashboard. If it does not open automatically, tap the button below.</p>
-        <a href="${adminUrl}" onclick='document.cookie = "wholesale_admin_access_token=${cookieValue}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure";'>Open Admin Dashboard</a>
+        <p>Opening the correct work centre for your account role. If it does not open automatically, tap the button below.</p>
+        <a href="${adminUrl}" onclick='document.cookie = "wholesale_admin_access_token=${cookieValue}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure";'>Open Seller Centre</a>
       </section>
     </main>
   </body>

@@ -278,7 +278,7 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
           <div className={`flex h-16 items-center gap-3 border-b border-zinc-100 ${sidebarCollapsed ? "justify-center px-3" : "px-5"}`}>
             <span className="grid h-10 w-10 place-items-center rounded-md bg-[#f65f18] text-lg font-black text-white">S</span>
             <div className={sidebarCollapsed ? "hidden" : ""}>
-              <p className="text-base font-black text-zinc-950">Seller Center</p>
+              <p className="text-base font-black text-zinc-950">Seller Centre</p>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">WholesaleHub</p>
             </div>
           </div>
