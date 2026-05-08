@@ -976,6 +976,20 @@ function ProductEditor({
   const copy = language === "zh" ? productTextZh : text.en;
   const imageCopy = imageUploadText[language];
   const flowCopy = editorFlowText[language];
+  const uploadStatusCopy = {
+    optimizing: language === "zh" ? "图片优化中..." : "Optimizing image...",
+    uploading: language === "zh" ? "图片上传中..." : "Uploading image...",
+    uploadingVariant: (index: number) => (language === "zh" ? `正在上传变体 #${index + 1} 图片...` : `Uploading image for variant #${index + 1}...`),
+    optimized: (from: string, to: string) =>
+      language === "zh"
+        ? `图片已从 ${from} 优化到 ${to}。点击 ${idleSaveActionLabel} 或 ${imageCopy.uploadImage}。`
+        : `Image optimized from ${from} to ${to}. Click ${idleSaveActionLabel} or ${imageCopy.uploadImage}.`,
+    selected: (fileName: string) =>
+      language === "zh" ? `${fileName} 已选择。点击 ${idleSaveActionLabel} 或 ${imageCopy.uploadImage}。` : `${fileName} selected. Click ${idleSaveActionLabel} or ${imageCopy.uploadImage}.`,
+    variantOptimized: (from: string, to: string) => (language === "zh" ? `变体图片已从 ${from} 优化到 ${to}。` : `Variant image optimized from ${from} to ${to}.`),
+    variantUploaded: (index: number) =>
+      language === "zh" ? `变体 #${index + 1} 图片已上传。请保存商品以保留这张图片。` : `Variant #${index + 1} image uploaded. Save the product to keep this image.`,
+  };
   const [activeTab, setActiveTab] = useState<TranslationKey>("basicInfo");
   const [draft, setDraft] = useState<ProductDraft>(product ? productToDraft(product) : blankDraft(categories));
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -1097,7 +1111,7 @@ function ProductEditor({
       window.URL.revokeObjectURL(selectedImagePreview);
     }
 
-    setImageStatus("Optimizing image...");
+    setImageStatus(uploadStatusCopy.optimizing);
 
     try {
       const prepared = await prepareAdminUploadImage(file);
@@ -1105,8 +1119,8 @@ function ProductEditor({
       setSelectedImagePreview(window.URL.createObjectURL(prepared.file));
       setImageStatus(
         prepared.compressed
-          ? `Image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}. Click ${idleSaveActionLabel} or ${imageCopy.uploadImage}.`
-          : `${file.name} selected. Click ${idleSaveActionLabel} or ${imageCopy.uploadImage}.`,
+          ? uploadStatusCopy.optimized(formatImageBytes(prepared.originalBytes), formatImageBytes(prepared.file.size))
+          : uploadStatusCopy.selected(file.name),
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : imageCopy.imageTooLarge;
@@ -1123,7 +1137,7 @@ function ProductEditor({
     }
 
     setUploadingImage(true);
-    setImageStatus("Uploading image...");
+    setImageStatus(uploadStatusCopy.uploading);
 
     try {
       const formData = new FormData();
@@ -1177,7 +1191,7 @@ function ProductEditor({
       const prepared = await prepareAdminUploadImage(file);
       uploadFile = prepared.file;
       if (prepared.compressed) {
-        const status = `Variant image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}.`;
+        const status = uploadStatusCopy.variantOptimized(formatImageBytes(prepared.originalBytes), formatImageBytes(prepared.file.size));
 
         onMessage(status);
         setVariantImageStatus(status);
@@ -1196,7 +1210,7 @@ function ProductEditor({
     formData.append("sku", variant.sku || draft.sku || draft.slug || "product-variant");
 
     setUploadingImage(true);
-    setVariantImageStatus(`Uploading image for variant #${variantIndex + 1}...`);
+    setVariantImageStatus(uploadStatusCopy.uploadingVariant(variantIndex));
 
     try {
       const response = await fetch("/api/admin/products/image-upload", {
@@ -1219,7 +1233,7 @@ function ProductEditor({
 
       updateVariant(variantIndex, { imageUrl: result.imageUrl });
       onMessage(imageCopy.imageUploadSuccess);
-      setVariantImageStatus(`Variant #${variantIndex + 1} image uploaded. Save the product to keep this image.`);
+      setVariantImageStatus(uploadStatusCopy.variantUploaded(variantIndex));
     } finally {
       setUploadingImage(false);
     }
@@ -1563,7 +1577,7 @@ function ProductEditor({
                   onClick={() => void uploadImage()}
                   className="rounded-md bg-[#f65f18] px-4 py-2 text-sm font-black text-white disabled:opacity-40"
                 >
-                  {uploadingImage ? "Uploading..." : draft.imageUrl ? imageCopy.replaceImage : "Upload Image Now"}
+                  {uploadingImage ? uploadStatusCopy.uploading : draft.imageUrl ? imageCopy.replaceImage : imageCopy.uploadImage}
                 </button>
                 <button
                   type="button"
