@@ -50,6 +50,7 @@ const protectedPageChecks = [
   "/admin/owner",
   "/admin/settings",
   "/admin/help",
+  "/admin/wholesale-prices",
 ];
 
 const notFoundChecks = [

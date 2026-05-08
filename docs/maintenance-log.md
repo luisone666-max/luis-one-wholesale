@@ -491,3 +491,14 @@ Admin API protection follow-up:
 - `check:admin-api` now runs inside `npm.cmd run check:maintenance`.
 - Verification:
   - `npm.cmd run check:maintenance` passed.
+
+Admin page protection follow-up:
+
+- Added `npm.cmd run check:admin-pages`.
+- The check scans all `src/app/admin/**/page.tsx` files.
+- `/admin/login` is the only public admin page.
+- `/admin/wholesale-prices` is allowed only as a redirect to `/admin/products`.
+- Every other admin page must call `requireActiveAdminPage`.
+- Production smoke now also checks that logged-out visitors to `/admin/wholesale-prices` redirect to `/admin/login`.
+- Verification:
+  - `npm.cmd run check:maintenance` passed.
