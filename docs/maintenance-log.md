@@ -502,3 +502,11 @@ Admin page protection follow-up:
 - Production smoke now also checks that logged-out visitors to `/admin/wholesale-prices` redirect to `/admin/login`.
 - Verification:
   - `npm.cmd run check:maintenance` passed.
+
+Admin navigation link follow-up:
+
+- Added `npm.cmd run check:admin-links`.
+- The check scans static admin links and redirects in admin pages/components.
+- Any link to a missing `/admin/...` page will now fail maintenance checks before deployment.
+- Verification:
+  - `npm.cmd run check:maintenance` passed.
