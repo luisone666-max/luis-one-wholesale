@@ -401,3 +401,16 @@ Staff management page protection follow-up:
 - Verification:
   - `npm.cmd run lint` passed.
   - `npm.cmd run build` passed.
+
+Product share and variant price follow-up:
+
+- Product price ranges now include active variant wholesale tiers, so variant-only products show a real price range on cards, product pages, Messenger inquiry text, and share metadata.
+- Product cards now use the lowest valid bulk tier across product and variant tiers for the compact wholesale hint.
+- Selected variants no longer inherit the full product variant list inside Messenger inquiry pricing.
+- Product detail and product share pages now share the same SEO URL/image/description helpers.
+- Production smoke checks now verify both product page and share page Open Graph title, PHP pricing text, and absolute HTTPS product image.
+- Verification:
+  - `npm.cmd run check:customer-safety` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:production` passed.

@@ -1,4 +1,4 @@
-import type { Category, Product } from "@/lib/mock-data";
+import { getPriceRange, type Category, type Product } from "@/lib/mock-data";
 import { businessInfo } from "@/lib/business-info";
 
 export const productionSiteUrl = "https://luisonesupplyhub.com";
@@ -105,6 +105,30 @@ export function productJsonLd(product: Product) {
   }
 
   return structuredProduct;
+}
+
+export function productSeoDescription(product: Product) {
+  const priceRange = getPriceRange(product);
+  const priceText = priceRange === "Contact for quotation" ? "Price available on request" : `Price range: ${priceRange}`;
+  const stockText = product.stockStatus === "Unavailable" ? "Messenger inquiry only" : product.stockStatus;
+
+  return stripText(
+    `${product.category} wholesale item for resellers and shops in the Philippines. ${priceText}. MOQ ${product.moq} pc. Stock: ${stockText}. Orders are manually confirmed for pickup, courier, or Lalamove arrangement.`,
+  );
+}
+
+export function productPageTitle(product: Product) {
+  return `${product.name} | ${siteName}`;
+}
+
+export function productShareTitle(product: Product) {
+  const priceRange = getPriceRange(product);
+
+  if (priceRange === "Contact for quotation") {
+    return `${product.name} | Ask price on Messenger`;
+  }
+
+  return `${product.name} | ${priceRange}`;
 }
 
 export function breadcrumbJsonLd(items: { name: string; url: string }[]) {

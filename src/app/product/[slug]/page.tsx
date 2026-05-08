@@ -8,43 +8,17 @@ import { ResellerImages } from "@/components/ResellerImages";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { getCatalogProductPage } from "@/lib/catalog-data";
-import { getPriceRange } from "@/lib/mock-data";
-import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo";
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  getSiteUrl,
+  productJsonLd,
+  productPageTitle,
+  productSeoDescription,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-const productionSiteUrl = "https://luisonesupplyhub.com";
-
-function getSiteUrl() {
-  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const isProduction = process.env.NODE_ENV === "production";
-  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
-  const siteUrl = configuredUrl && !configuredUrl.includes("supabase.co") && !configuredUrl.includes("luis-one-wholesale.vercel.app")
-    ? configuredUrl
-    : isProduction
-      ? productionSiteUrl
-    : vercelUrl
-      ? `https://${vercelUrl}`
-      : productionSiteUrl;
-
-  return siteUrl.replace(/\/$/, "");
-}
-
-function absoluteUrl(pathOrUrl: string | undefined) {
-  const fallback = "/brand/luis-one-logo.jpg";
-  const value = pathOrUrl || fallback;
-
-  if (value.toLowerCase().endsWith(".svg")) {
-    return `${getSiteUrl()}${fallback}`;
-  }
-
-  if (value.startsWith("http://") || value.startsWith("https://")) {
-    return value;
-  }
-
-  return `${getSiteUrl()}${value.startsWith("/") ? value : `/${value}`}`;
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -84,8 +58,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
 
-  const title = `${product.name} | Luis One Supply Hub`;
-  const description = `${product.category} wholesale item. Price range: ${getPriceRange(product)}. MOQ ${product.moq} pc.`;
+  const title = productPageTitle(product);
+  const description = productSeoDescription(product);
   const url = `${getSiteUrl()}/product/${product.slug}`;
   const image = absoluteUrl(product.image);
 

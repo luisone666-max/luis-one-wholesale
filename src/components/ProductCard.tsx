@@ -1,15 +1,22 @@
 import Link from "next/link";
 import { ProductImage, StockStatusBadge } from "@/components/CustomerUi";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
-import { formatMoney, getPriceRange, isUnavailableStockStatus, type Product } from "@/lib/mock-data";
+import {
+  formatMoney,
+  getPriceRange,
+  getProductBulkHintTier,
+  getProductPriceTiers,
+  isUnavailableStockStatus,
+  type Product,
+} from "@/lib/mock-data";
 
 function formatMobileMoney(value: number) {
   return `PHP ${value.toLocaleString("en-US", { minimumFractionDigits: value % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
 
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
-  const bulkTier = product.tiers.find((tier) => tier.min >= 6) ?? product.tiers[product.tiers.length - 1];
-  const prices = product.tiers.map((tier) => tier.price);
+  const bulkTier = getProductBulkHintTier(product);
+  const prices = getProductPriceTiers(product).map((tier) => tier.price);
   const hasPrice = prices.length > 0;
   const compactPrice = hasPrice ? `${formatMobileMoney(Math.min(...prices))}+` : "Quote";
   const unavailable = isUnavailableStockStatus(product.stockStatus);

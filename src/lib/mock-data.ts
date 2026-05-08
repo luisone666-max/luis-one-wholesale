@@ -216,13 +216,30 @@ export function getActiveProductsByCategory(slug: string) {
 }
 
 export function getPriceRange(product: Product) {
-  const prices = product.tiers.map((tier) => tier.price);
+  const prices = getProductPriceTiers(product).map((tier) => tier.price);
 
   if (!prices.length) {
     return "Contact for quotation";
   }
 
   return `${formatMoney(Math.min(...prices))} - ${formatMoney(Math.max(...prices))}`;
+}
+
+export function getProductPriceTiers(product: Product) {
+  return [
+    ...product.tiers,
+    ...(product.variants ?? []).flatMap((variant) => variant.tiers),
+  ].filter((tier) => Number.isFinite(tier.price) && tier.price > 0);
+}
+
+export function getProductBulkHintTier(product: Product) {
+  const tiers = getProductPriceTiers(product);
+  const bulkTiers = tiers.filter((tier) => tier.min >= 6);
+  const candidates = bulkTiers.length ? bulkTiers : tiers;
+
+  return candidates
+    .slice()
+    .sort((a, b) => a.price - b.price || a.min - b.min)[0] ?? null;
 }
 
 export function getVariantPriceRange(variant: ProductVariant) {

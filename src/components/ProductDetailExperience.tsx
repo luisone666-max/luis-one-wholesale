@@ -27,6 +27,7 @@ function variantToProduct(product: Product, variant: ProductVariant): Product {
     gallery: Array.from(new Set(gallery.filter(Boolean))),
     moq: variant.moq,
     stockStatus: variant.stockStatus,
+    variants: undefined,
     details: [
       variant.model ? `Model: ${variant.model}` : "",
       variant.fits ? `Fits: ${variant.fits}` : "",

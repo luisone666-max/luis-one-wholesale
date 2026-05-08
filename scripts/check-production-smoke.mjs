@@ -135,19 +135,19 @@ async function checkNotFound(path) {
   console.log(`ok ${response.status} ${path}`);
 }
 
-function checkShareTags(html) {
+function checkProductOgTags(html, label) {
   const title = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i)?.[1] ?? "";
   const siteName = html.match(/<meta\s+property="og:site_name"\s+content="([^"]+)"/i)?.[1] ?? "";
   const image = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i)?.[1] ?? "";
   const description = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] ?? "";
 
-  requireStatus(title.length > 5, "share page is missing an OG title");
-  requireStatus(siteName.includes("Luis One Supply Hub"), "share page is missing Luis One Supply Hub OG site name");
-  requireStatus(title.includes("PHP") || description.includes("PHP"), "share page OG text should include PHP pricing");
-  requireStatus(/^https:\/\//.test(image), "share page is missing an absolute HTTPS OG image");
+  requireStatus(title.length > 5, `${label} is missing an OG title`);
+  requireStatus(siteName.includes("Luis One Supply Hub"), `${label} is missing Luis One Supply Hub OG site name`);
+  requireStatus(title.includes("PHP") || description.includes("PHP"), `${label} OG text should include PHP pricing`);
+  requireStatus(/^https:\/\//.test(image), `${label} is missing an absolute HTTPS OG image`);
 
-  console.log(`ok share OG title="${title}"`);
-  console.log(`ok share OG image=${image}`);
+  console.log(`ok ${label} OG title="${title}"`);
+  console.log(`ok ${label} OG image=${image}`);
 }
 
 function checkCatalogFeed(csv) {
@@ -216,7 +216,8 @@ async function main() {
     await checkSearchPage(check);
   }
 
-  checkShareTags(pageResults.get("/share/product/1") ?? "");
+  checkProductOgTags(pageResults.get("/product/1") ?? "", "product page");
+  checkProductOgTags(pageResults.get("/share/product/1") ?? "", "share page");
   checkCatalogFeed(pageResults.get("/meta/catalog-feed.csv") ?? "");
   checkRobotsTxt(pageResults.get("/robots.txt") ?? "");
   console.log("Production smoke check passed.");
