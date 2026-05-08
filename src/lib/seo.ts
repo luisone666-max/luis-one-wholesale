@@ -78,7 +78,7 @@ export function productJsonLd(product: Product) {
   const { lowPrice, highPrice } = getProductPriceBounds(product);
   const images = Array.from(new Set([product.image, ...(product.gallery ?? [])].map(absoluteUrl)));
 
-  return {
+  const structuredProduct: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
@@ -90,7 +90,10 @@ export function productJsonLd(product: Product) {
       "@type": "Brand",
       name: siteName,
     },
-    offers: {
+  };
+
+  if (lowPrice > 0 && highPrice > 0) {
+    structuredProduct.offers = {
       "@type": "AggregateOffer",
       url,
       priceCurrency: "PHP",
@@ -98,8 +101,10 @@ export function productJsonLd(product: Product) {
       highPrice,
       availability: stockAvailability(product),
       offerCount: product.tiers.length + (product.variants?.length ?? 0),
-    },
-  };
+    };
+  }
+
+  return structuredProduct;
 }
 
 export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
