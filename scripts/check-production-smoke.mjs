@@ -164,7 +164,15 @@ function checkCatalogFeed(csv) {
     requireStatus(header.includes(column), `Meta catalog feed is missing ${column} column`);
   }
 
+  const rows = csv.trim().split(/\r?\n/).slice(1).filter(Boolean);
+  const ids = rows.map((row) => (row.match(/^"((?:[^"]|"")*)"/)?.[1] ?? "").replace(/""/g, '"'));
+  const duplicateIds = ids.filter((id, index) => id && ids.indexOf(id) !== index);
+
+  requireStatus(rows.length >= 5, `Meta catalog feed should contain at least 5 products, got ${rows.length}`);
+  requireStatus(!duplicateIds.length, `Meta catalog feed has duplicate ids: ${Array.from(new Set(duplicateIds)).join(", ")}`);
+
   console.log("ok Meta catalog feed required columns found");
+  console.log(`ok Meta catalog feed rows=${rows.length}`);
 }
 
 function checkRobotsTxt(text) {

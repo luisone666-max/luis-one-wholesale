@@ -445,3 +445,10 @@ Customer category price sorting follow-up:
 - Verification:
   - `npm.cmd run lint` passed.
   - `npm.cmd run build` passed.
+
+Meta catalog feed smoke follow-up:
+
+- Production smoke checks now verify the Meta catalog feed has at least 5 product rows.
+- Production smoke checks now verify catalog item IDs are unique inside the feed.
+- Verification:
+  - `npm.cmd run check:production` passed.
