@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
 import { ProductCard } from "@/components/ProductCard";
+import { SearchEventTracker } from "@/components/SearchEventTracker";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { getCatalogCategoryPage, getCatalogCategoryParams } from "@/lib/catalog-data";
@@ -463,6 +464,7 @@ export default async function CategoryPage({
   return (
     <>
       <SiteHeader />
+      {searchQuery ? <SearchEventTracker query={searchQuery} resultCount={visibleProducts.length} categorySlug={slug} /> : null}
       <DataSourceNotice message={catalog.message} />
       <MarketplaceShell>
         <section className="border-b border-orange-100 bg-white">
