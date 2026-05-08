@@ -5,6 +5,10 @@ This checklist is the final run record for ongoing maintenance and feature work.
 ## Always Run Before Shipping
 
 - `npm.cmd run lint`
+- `npm.cmd run check:pos`
+- `npm.cmd run check:pos:corrections`
+- `npm.cmd run check:loyalty`
+- `npm.cmd run check:production`
 - `npm.cmd run build`
 - Check customer storefront:
   - Home page loads real products.
@@ -21,6 +25,7 @@ This checklist is the final run record for ongoing maintenance and feature work.
   - Cashier Center can confirm payment.
   - Cash Drawer reflects cash and transfer totals.
   - Employee monthly sales report loads.
+  - Wrong sales slips can be corrected through the approved correction flow.
 - Check data safety:
   - No real keys are committed.
   - `.env.local` stays ignored.
@@ -36,6 +41,17 @@ This checklist is the final run record for ongoing maintenance and feature work.
 - Owner/Admin should see full monthly sales, staff performance, cash drawer, product, customer, and order data.
 - Customers should browse fast on mobile, search accurately, and use Messenger when stock or delivery needs manual discussion.
 
+## Offline POS Correction Policy
+
+- Sales staff can edit their own sale only while it is still waiting for cashier review or has been returned by cashier.
+- Sales staff can cancel their own unpaid waiting sale when they made a mistake.
+- Cashier can return a waiting sale to Sales Desk when price, item, customer, or payment details need correction.
+- Cashier confirms payment only after money is received by cash, GCash, bank transfer, or another approved method.
+- Paid sales should not be hard deleted.
+- If a paid sale is wrong, Owner/Admin must void it with a reason. The system keeps the audit trail, reverses the payment record, and reverses loyalty points when needed.
+- Owner/Admin reviews cancelled, returned, and voided sales in Reports so daily totals stay trustworthy.
+- Physical cash in the drawer is only cash payments. GCash and bank transfer are shown separately in Cash Drawer totals.
+
 ## Next Improvement Backlog
 
 - Run the remaining Supabase migrations in production before relying on loyalty, staff, POS, and cash drawer data.
@@ -45,5 +61,5 @@ This checklist is the final run record for ongoing maintenance and feature work.
   - Cash Drawer summarizes physical cash, GCash, and bank transfer.
   - Reports show monthly staff performance.
 - Add clearer owner/admin monthly report filters after real staff data is stable.
-- Add a customer-facing “How to order” page focused on pickup, Messenger confirmation, GCash/bank transfer, Lalamove/courier, and no online payment.
+- Add a customer-facing "How to order" page focused on pickup, Messenger confirmation, GCash/bank transfer, Lalamove/courier, and no online payment.
 - Keep improving mobile catalog density without making buttons overlap product names or prices.
