@@ -481,3 +481,13 @@ Secret safety follow-up:
 - `check:secrets` now runs first inside `npm.cmd run check:maintenance`.
 - Verification:
   - `npm.cmd run check:maintenance` passed.
+
+Admin API protection follow-up:
+
+- Added `npm.cmd run check:admin-api`.
+- The check scans all `src/app/api/admin/**/route.ts` files.
+- `/api/admin/auth/login` and `/api/admin/auth/logout` are the only intentionally public admin API routes.
+- Every other admin API route must import and use `requireActiveAdminApi`; otherwise the maintenance suite fails.
+- `check:admin-api` now runs inside `npm.cmd run check:maintenance`.
+- Verification:
+  - `npm.cmd run check:maintenance` passed.

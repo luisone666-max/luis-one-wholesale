@@ -8,6 +8,7 @@
     "check:schema": "node scripts/check-database-schema.mjs",
     "check:secrets": "node scripts/check-secret-safety.mjs",
     "check:customer-safety": "node scripts/check-customer-frontend-safety.mjs",
+    "check:admin-api": "node scripts/check-admin-api-protection.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",
     "check:loyalty": "node scripts/check-online-order-loyalty.mjs",
     "check:pos": "node scripts/check-pos-flow.mjs",
