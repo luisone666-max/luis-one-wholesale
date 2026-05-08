@@ -43,6 +43,10 @@ const protectedPageChecks = [
   "/admin/cashier",
 ];
 
+const notFoundChecks = [
+  "/dev/supabase-test",
+];
+
 const searchChecks = [
   {
     path: "/category/all?q=ignition",
@@ -100,6 +104,18 @@ async function checkProtectedPage(path) {
   );
   requireStatus(location.includes("/admin/login"), `${path} should redirect to /admin/login, got "${location}"`);
   console.log(`ok ${response.status} ${path} -> ${location}`);
+}
+
+async function checkNotFound(path) {
+  const response = await fetch(absolute(path), {
+    headers: {
+      "user-agent": "LuisOneProductionSmokeCheck/1.0",
+    },
+    redirect: "manual",
+  });
+
+  requireStatus(response.status === 404, `${path} expected 404 in production, got ${response.status}`);
+  console.log(`ok ${response.status} ${path}`);
 }
 
 function checkShareTags(html) {
@@ -173,6 +189,10 @@ async function main() {
 
   for (const path of protectedPageChecks) {
     await checkProtectedPage(path);
+  }
+
+  for (const path of notFoundChecks) {
+    await checkNotFound(path);
   }
 
   for (const check of searchChecks) {
