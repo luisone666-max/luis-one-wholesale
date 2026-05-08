@@ -152,6 +152,9 @@ function manilaCalendar() {
     day: "2-digit",
   }).format(new Date());
   const month = today.slice(0, 7);
+  const [yearPart, monthPart] = month.split("-").map(Number);
+  const reportStartDate = new Date(Date.UTC(yearPart, monthPart - 12, 1));
+  const reportStart = reportStartDate.toISOString().slice(0, 7);
 
   return {
     today,
@@ -159,6 +162,7 @@ function manilaCalendar() {
     dayStart: `${today}T00:00:00+08:00`,
     dayEnd: `${today}T23:59:59+08:00`,
     monthStart: `${month}-01T00:00:00+08:00`,
+    reportStart: `${reportStart}-01T00:00:00+08:00`,
   };
 }
 
@@ -175,8 +179,23 @@ function toNumber(value: unknown) {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function isWithinRange(value: string | null, start: string, end: string) {
+  const time = value ? Date.parse(value) : Number.NaN;
+  const startTime = Date.parse(start);
+  const endTime = Date.parse(end);
+
+  return Number.isFinite(time) && time >= startTime && time <= endTime;
+}
+
 function isToday(value: string | null, dayStart: string, dayEnd: string) {
-  return Boolean(value && value >= dayStart && value <= dayEnd);
+  return isWithinRange(value, dayStart, dayEnd);
+}
+
+function isCurrentMonth(value: string | null, monthStart: string) {
+  const time = value ? Date.parse(value) : Number.NaN;
+  const startTime = Date.parse(monthStart);
+
+  return Number.isFinite(time) && time >= startTime;
 }
 
 function isCancelled(status: string | null) {
@@ -311,27 +330,27 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
     return { rows: [], monthOptions: [], overview, error: "Supabase admin client is not configured." };
   }
 
-  const { dayStart, dayEnd, monthStart } = manilaCalendar();
+  const { dayStart, dayEnd, monthStart, reportStart } = manilaCalendar();
   const [ordersResult, posSalesResult, posPaymentsResult, onlinePaymentsResult] = await Promise.all([
     supabase
       .from("orders")
       .select("id,product_total,order_status,payment_status,sales_admin_user_id,sales_name_snapshot,created_at")
-      .gte("created_at", monthStart)
+      .gte("created_at", reportStart)
       .order("created_at", { ascending: false }),
     supabase
       .from("pos_sales")
       .select("id,salesperson_admin_user_id,salesperson_employee_no,salesperson_name_snapshot,payment_method,total_amount,status,created_at")
-      .gte("created_at", monthStart)
+      .gte("created_at", reportStart)
       .order("created_at", { ascending: false }),
     supabase
       .from("pos_payment_confirmations")
       .select("payment_method,amount,confirmed_at")
-      .gte("confirmed_at", monthStart)
+      .gte("confirmed_at", reportStart)
       .order("confirmed_at", { ascending: false }),
     supabase
       .from("payment_records")
       .select("payment_method,amount,status,created_at")
-      .gte("created_at", monthStart)
+      .gte("created_at", reportStart)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -356,16 +375,19 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
 
   for (const order of (ordersResult.data ?? []) as OrderSalesRow[]) {
     const amount = toNumber(order.product_total);
+    const inCurrentMonth = isCurrentMonth(order.created_at, monthStart);
 
     if (isCancelled(order.order_status)) {
-      addExceptionTotal(
-        overview,
-        order.order_status === "unavailable_refund" ? "refund" : order.order_status === "voided" ? "voided" : "cancelled",
-        amount,
-        order.created_at,
-        dayStart,
-        dayEnd,
-      );
+      if (inCurrentMonth) {
+        addExceptionTotal(
+          overview,
+          order.order_status === "unavailable_refund" ? "refund" : order.order_status === "voided" ? "voided" : "cancelled",
+          amount,
+          order.created_at,
+          dayStart,
+          dayEnd,
+        );
+      }
       continue;
     }
 
@@ -382,19 +404,27 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
     if (isPaidOnline(order.payment_status)) {
       current.paidOrderCount += 1;
       current.paidTotal += amount;
-      overview.monthOnlinePaidTotal += amount;
+
+      if (inCurrentMonth) {
+        overview.monthOnlinePaidTotal += amount;
+      }
 
       if (isToday(order.created_at, dayStart, dayEnd)) {
         overview.todayOnlinePaidTotal += amount;
       }
     }
 
-    overview.monthOnlineSubmittedTotal += amount;
+    if (inCurrentMonth) {
+      overview.monthOnlineSubmittedTotal += amount;
+    }
 
     if (isPendingOnline(order.order_status)) {
       current.waitingTotal += amount;
-      overview.monthPendingOnlineCount += 1;
-      overview.monthPendingOnlineTotal += amount;
+
+      if (inCurrentMonth) {
+        overview.monthPendingOnlineCount += 1;
+        overview.monthPendingOnlineTotal += amount;
+      }
     }
 
     if (isToday(order.created_at, dayStart, dayEnd)) {
@@ -412,9 +442,12 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
 
   for (const sale of (posSalesResult.data ?? []) as PosSalesRow[]) {
     const amount = toNumber(sale.total_amount);
+    const inCurrentMonth = isCurrentMonth(sale.created_at, monthStart);
 
     if (sale.status === "cancelled" || sale.status === "voided") {
-      addExceptionTotal(overview, sale.status === "voided" ? "voided" : "cancelled", amount, sale.created_at, dayStart, dayEnd);
+      if (inCurrentMonth) {
+        addExceptionTotal(overview, sale.status === "voided" ? "voided" : "cancelled", amount, sale.created_at, dayStart, dayEnd);
+      }
       continue;
     }
 
@@ -428,12 +461,18 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
     current.orderCount += 1;
     current.productTotal += amount;
     current.offlineTotal += amount;
-    overview.monthOfflineSubmittedTotal += amount;
+
+    if (inCurrentMonth) {
+      overview.monthOfflineSubmittedTotal += amount;
+    }
 
     if (sale.status === "waiting_cashier") {
       current.waitingTotal += amount;
-      overview.monthWaitingCashierCount += 1;
-      overview.monthWaitingCashierTotal += amount;
+
+      if (inCurrentMonth) {
+        overview.monthWaitingCashierCount += 1;
+        overview.monthWaitingCashierTotal += amount;
+      }
     }
 
     if (isPaidPosSale(sale.status)) {
@@ -456,8 +495,11 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
   for (const payment of (posPaymentsResult.data ?? []) as PosPaymentRow[]) {
     const amount = toNumber(payment.amount);
     const method = normalizePaymentMethod(payment.payment_method);
-    overview.monthOfflinePaidTotal += amount;
-    addPaymentByMethod(overview, method, amount, "month");
+
+    if (isCurrentMonth(payment.confirmed_at, monthStart)) {
+      overview.monthOfflinePaidTotal += amount;
+      addPaymentByMethod(overview, method, amount, "month");
+    }
 
     if (isToday(payment.confirmed_at, dayStart, dayEnd)) {
       overview.todayOfflinePaidTotal += amount;
@@ -474,7 +516,9 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
       continue;
     }
 
-    addPaymentByMethod(overview, method, amount, "month");
+    if (isCurrentMonth(payment.created_at, monthStart)) {
+      addPaymentByMethod(overview, method, amount, "month");
+    }
 
     if (isToday(payment.created_at, dayStart, dayEnd)) {
       addPaymentByMethod(overview, method, amount, "today");

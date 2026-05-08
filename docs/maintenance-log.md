@@ -414,3 +414,12 @@ Product share and variant price follow-up:
   - `npm.cmd run lint` passed.
   - `npm.cmd run build` passed.
   - `npm.cmd run check:production` passed.
+
+Owner report history follow-up:
+
+- Employee sales reports now load the last 12 months instead of only the current month.
+- The employee/month table can now show historical monthly sales by salesperson when data exists.
+- Today and this-month overview cards still count only today/current-month records, so older sales do not inflate boss dashboard totals.
+- Verification:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
