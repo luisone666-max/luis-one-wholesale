@@ -232,6 +232,10 @@ function isPaidOnline(status: string | null) {
   return status === "deposit_verified" || status === "fully_paid";
 }
 
+function isConfirmedOnlinePaymentRecord(status: string | null) {
+  return status === "verified" || status === "deposit_verified" || status === "fully_paid";
+}
+
 function isPaidPosSale(status: string | null) {
   return status === "paid";
 }
@@ -466,7 +470,7 @@ export async function getEmployeeSalesReport(): Promise<EmployeeSalesReportResul
     const method = normalizePaymentMethod(payment.payment_method);
     const status = payment.status ?? "";
 
-    if (status === "rejected" || status === "cancelled") {
+    if (!isConfirmedOnlinePaymentRecord(status)) {
       continue;
     }
 
