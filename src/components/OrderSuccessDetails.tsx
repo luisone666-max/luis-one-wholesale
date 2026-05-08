@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { messengerUrl } from "@/components/CustomerUi";
+import { trackMetaEvent } from "@/components/MetaPixel";
 import { getCustomerOrderDetail, type CustomerOrderDetail } from "@/lib/customer-orders";
 import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty-points";
 import { getReceivingMethodLabel, getShippingFeePaymentLabel } from "@/lib/order-labels";
@@ -11,6 +12,7 @@ import { formatPhp } from "@/lib/wholesale-pricing";
 export function OrderSuccessDetails() {
   const [order, setOrder] = useState<CustomerOrderDetail | null>(null);
   const [message, setMessage] = useState("Loading submitted order...");
+  const trackedOrderNo = useRef("");
 
   useEffect(() => {
     let active = true;
@@ -39,6 +41,37 @@ export function OrderSuccessDetails() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!order || trackedOrderNo.current === order.orderNo) {
+      return;
+    }
+
+    const storageKey = `meta-lead-tracked:${order.orderNo}`;
+
+    try {
+      if (window.localStorage.getItem(storageKey)) {
+        trackedOrderNo.current = order.orderNo;
+        return;
+      }
+    } catch {
+      // Ignore browser storage restrictions; the in-memory guard still prevents duplicate events during this page load.
+    }
+
+    trackedOrderNo.current = order.orderNo;
+    trackMetaEvent("Lead", {
+      content_name: "Wholesale order submitted",
+      currency: "PHP",
+      order_id: order.orderNo,
+      value: order.productTotal,
+    });
+
+    try {
+      window.localStorage.setItem(storageKey, "1");
+    } catch {
+      // Ignore browser storage restrictions.
+    }
+  }, [order]);
 
   if (!order) {
     return (

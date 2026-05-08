@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { messengerUrl, ProductImage, StockStatusBadge } from "@/components/CustomerUi";
 import { trackMetaEvent } from "@/components/MetaPixel";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
@@ -52,6 +52,30 @@ export function ProductDetailExperience({ product }: { product: Product }) {
   const subtotal = appliedTier ? appliedTier.price * quantity : 0;
   const directOrderUnavailable = isUnavailableStockStatus(displayProduct.stockStatus) || quotationOnly;
   const selectedVariantImagePending = Boolean(selectedVariant && !selectedVariant.image);
+  const trackedViewContentKey = useRef("");
+  const viewContentKey = `${product.id}:${selectedVariant?.id ?? "product"}`;
+
+  useEffect(() => {
+    if (trackedViewContentKey.current === viewContentKey) {
+      return;
+    }
+
+    trackedViewContentKey.current = viewContentKey;
+    trackMetaEvent("ViewContent", {
+      content_ids: [metaCatalogItemId(product, selectedVariant)],
+      content_name: displayProduct.name,
+      content_type: "product",
+      currency: "PHP",
+      value: appliedTier?.price ?? displayProduct.retailPrice ?? 0,
+    });
+  }, [
+    appliedTier?.price,
+    displayProduct.name,
+    displayProduct.retailPrice,
+    product,
+    selectedVariant,
+    viewContentKey,
+  ]);
 
   const selectVariant = (variant: ProductVariant) => {
     setSelectedVariantId(variant.id);

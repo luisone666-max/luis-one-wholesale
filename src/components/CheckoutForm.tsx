@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { trackMetaEvent } from "@/components/MetaPixel";
 import { getCustomerCartItems, type CustomerCartItem } from "@/lib/customer-cart";
 import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty-points";
 import type { ReceivingMethod, ShippingFeePayment } from "@/lib/order-labels";
@@ -171,6 +172,13 @@ export function CheckoutForm() {
       setMessage("Please login before placing an order.");
       return;
     }
+
+    trackMetaEvent("InitiateCheckout", {
+      content_type: "product",
+      currency: "PHP",
+      num_items: items.reduce((sum, item) => sum + item.quantity, 0),
+      value: productTotal,
+    });
 
     setSubmitting(true);
     const response = await fetch("/api/orders/submit", {

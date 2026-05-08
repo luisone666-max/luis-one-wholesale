@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { trackMetaEvent } from "@/components/MetaPixel";
 import { getFriendlyAuthError } from "@/lib/customer-auth";
 
 const businessTypes = ["Reseller", "Shop Owner", "Online Seller", "Walk-in Buyer", "Other"];
@@ -44,6 +45,10 @@ export function RegisterForm() {
         return;
       }
 
+      trackMetaEvent("CompleteRegistration", {
+        content_name: "Wholesale account registration",
+        status: true,
+      });
       router.push("/login?registered=1");
     } catch {
       setMessage("Unable to register right now. Please try again.");
