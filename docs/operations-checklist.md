@@ -46,7 +46,8 @@ This runs:
 
 - `npm.cmd run check:schema`
 - `npm.cmd run check:pos:corrections`
-- Current known blocker: run `supabase/migrations/20260507001000_pos_sale_audit_logs.sql` in Supabase SQL Editor so POS correction audit history can be fully verified.
+
+If this check fails, open the error message, run the missing Supabase migration in SQL Editor, then run `npm.cmd run check:readiness` again.
 
 ## Business Flow To Keep Improving
 
@@ -68,11 +69,9 @@ This runs:
 - If a paid sale is wrong, Owner/Admin must void it with a reason. The system keeps the audit trail, reverses the payment record, and reverses loyalty points when needed.
 - Owner/Admin reviews cancelled, returned, and voided sales in Reports so daily totals stay trustworthy.
 - Owner/Admin can unlock Owner Center to review the latest sensitive admin action logs for products, categories, online orders, and staff access.
-- Run `supabase/migrations/20260508001000_admin_action_audit_logs.sql` in production so sensitive admin action history is fully active.
 - Physical cash in the drawer is only cash payments. GCash and bank transfer are shown separately in Cash Drawer totals.
 
 ## Next Improvement Backlog
 
-- Run `supabase/migrations/20260507001000_pos_sale_audit_logs.sql` in production so POS correction audit history is fully active.
 - Add clearer owner/admin monthly report filters after more real staff data is collected.
 - Keep improving mobile catalog density without making buttons overlap product names or prices.
