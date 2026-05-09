@@ -339,6 +339,95 @@ const saleActionsText = {
   },
 };
 
+const readableSalesDeskZh: Partial<typeof copy.en> = {
+  caption: "这里只做门店线下销售。销售员先开销售单，保存后交给收银员确认收款。",
+  employeeNo: "销售员工号",
+  customer: "客户",
+  walkInCustomer: "散客 / 手动客户",
+  customerName: "客户姓名",
+  customerPhone: "客户电话",
+  paymentMethod: "收款方式",
+  discount: "折扣金额",
+  priceNotes: "改价 / 折扣备注",
+  saleNotes: "销售备注",
+  addManualItem: "添加一行商品",
+  saveSale: "保存并发送给收银",
+  product: "商品",
+  qty: "数量",
+  unitPrice: "单价",
+  subtotal: "小计",
+  total: "应收金额",
+  remove: "删除",
+  saved: "销售单已保存，正在等待收银员确认收款。",
+  discountTooHigh: "折扣不能大于商品小计。",
+  selectProduct: "选择商品",
+  onlineOrdersLink: "网站客户订单请到“线上订单”处理，这里只处理线下门店销售。",
+  flowTitle: "线下 POS 流程",
+  flowStep1: "1. 销售员开单",
+  flowStep2: "2. 收银员确认收款",
+  flowStep3: "3. 老板查看报表",
+  myStats: "我的销售",
+  allStats: "门店 POS 销售",
+  todaySales: "今日已收款销售额",
+  monthSales: "本月已收款销售额",
+  waitingCashier: "待收银",
+  paidSales: "已收款",
+  productSearch: "搜索 SKU、商品名、型号、分类或变体",
+  statNote: "今日和本月销售额只统计收银员已确认收款的销售单，待收银金额单独显示。",
+  slips: "张单",
+  recentSales: "最近销售单",
+  refreshRecent: "刷新销售单",
+  saleNo: "销售单号",
+  status: "状态",
+  waitingStatus: "等待收银",
+  paidStatus: "已收款",
+  cancelledStatus: "已取消",
+  date: "日期",
+  printA6: "打印 A6",
+  stepCustomer: "1. 客户与收款方式",
+  stepItems: "2. 商品与价格",
+  stepSubmit: "3. 发送给收银",
+  memberCustomer: "已选择会员客户。收银确认后会自动计算积分。",
+  walkInNoPoints: "散客单。除非选择客户账号，否则不会累计会员积分。",
+  amountPreview: "收银员应收",
+  cashPaymentHint: "现金单会在收银确认后进入钱箱现金统计。",
+  transferPaymentHint: "GCash / 银行转账会单独统计，不进入实体钱箱现金。",
+  customerNamePlaceholder: "散客姓名",
+  memberBadge: "会员",
+  walkInBadge: "散客",
+  employeeLocked: "工号已锁定，用于销售归属和审计记录。",
+  quickAddProducts: "快速加商品",
+  tapProductToAdd: "点击下面商品加入销售单，重复点同款会自动增加数量。",
+  noProductResults: "没有找到商品，也可以手动添加一行。",
+  orderBreakdown: "订单拆分",
+  productTotal: "商品小计",
+  cashierReceives: "收银员应收",
+  details: "详情",
+  hideDetails: "收起详情",
+  itemDetails: "商品明细",
+  auditTrail: "操作记录",
+  noAudit: "暂无操作记录。",
+  by: "操作人",
+  reason: "原因",
+  statusChange: "状态变化",
+  cashier: "收银员",
+};
+
+const readableSaleActionsZh = {
+  editSale: "修改",
+  cancelSale: "取消",
+  voidPaidSale: "作废已收款",
+  stopEditing: "停止修改",
+  editingSale: "正在修改销售单",
+  updateSale: "保存修改并发送给收银",
+  editReason: "收银确认前修改销售单。",
+  cancelReasonPrompt: "请输入取消这张销售单的原因：",
+  voidReasonPrompt: "老板/Admin 作废已收款销售单的原因：",
+  cancelDone: "销售单已取消。",
+  voidDone: "已收款销售单已作废，收款金额已反向冲销。",
+  action: "操作",
+} satisfies typeof saleActionsText.en;
+
 function inputClass() {
   return "h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-orange-500";
 }
@@ -512,9 +601,9 @@ export function AdminSalesDeskClient({
   initialError?: string;
 }) {
   const { language } = useAdminI18n();
-  const t = language === "zh" ? zhCopy : copy.en;
+  const t = language === "zh" ? { ...zhCopy, ...readableSalesDeskZh } : copy.en;
   const ui = salesDeskFlowText[language];
-  const actionText = saleActionsText[language];
+  const actionText = language === "zh" ? readableSaleActionsZh : saleActionsText.en;
   const [summaryState, setSummaryState] = useState(summary);
   const [employeeNo, setEmployeeNo] = useState(defaultEmployeeNo);
   const [customerId, setCustomerId] = useState("");
