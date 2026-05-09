@@ -152,6 +152,14 @@ const text = {
     viewOnStorefront: "Open Product Page",
     openStoreShort: "Store",
     storefrontCheckHint: "Check the customer page to confirm image, price, variants, and visibility.",
+    filters: "Filters",
+    hideFilters: "Hide filters",
+    showCategories: "Show categories",
+    hideCategories: "Hide categories",
+    clearFilter: "Clear",
+    productWorkspaceClosed: "Product workspace is closed",
+    productWorkspaceHint: "Click Add Product or click any product card to edit it here.",
+    hiddenCategorySuffix: "hidden",
   },
   zh: {
     addTier: "\u65b0\u589e\u4ef7\u683c\u9636\u68af",
@@ -188,6 +196,14 @@ const text = {
     viewOnStorefront: "打开前台商品页",
     openStoreShort: "前台",
     storefrontCheckHint: "检查客户页面的图片、价格、变体和显示状态。",
+    filters: "筛选",
+    hideFilters: "收起筛选",
+    showCategories: "显示分类",
+    hideCategories: "收起分类",
+    clearFilter: "清除",
+    productWorkspaceClosed: "商品编辑区已收起",
+    productWorkspaceHint: "点击新增商品，或点击任意商品卡片在这里编辑。",
+    hiddenCategorySuffix: "隐藏",
   },
 };
 
@@ -249,6 +265,14 @@ const productTextZh = {
   viewOnStorefront: "打开前台商品页",
   openStoreShort: "前台",
   storefrontCheckHint: "检查客户页面的图片、价格、变体和显示状态。",
+  filters: "筛选",
+  hideFilters: "收起筛选",
+  showCategories: "显示分类",
+  hideCategories: "收起分类",
+  clearFilter: "清除",
+  productWorkspaceClosed: "商品编辑区已收起",
+  productWorkspaceHint: "点击新增商品，或点击任意商品卡片在这里编辑。",
+  hiddenCategorySuffix: "隐藏",
 };
 
 const stockStatusKeyByValue: Record<string, TranslationKey> = {
@@ -785,10 +809,10 @@ export function AdminProductsClient({
           />
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => setFiltersOpen((current) => !current)} className="h-11 rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-zinc-700">
-              {filtersOpen ? "Hide filters" : "Filters"}
+              {filtersOpen ? copy.hideFilters : copy.filters}
             </button>
             <button type="button" onClick={() => setCategoryPanelOpen((current) => !current)} className="h-11 rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-zinc-700">
-              {categoryPanelOpen ? "Hide categories" : "Show categories"}
+              {categoryPanelOpen ? copy.hideCategories : copy.showCategories}
             </button>
             <button type="button" onClick={startCreate} className="h-11 rounded-md bg-[#f65f18] px-4 text-sm font-black text-white">
               {t("addProduct")}
@@ -814,7 +838,7 @@ export function AdminProductsClient({
                 }}
                 className="text-xs font-black text-zinc-600 hover:text-orange-700"
               >
-                Clear
+                {copy.clearFilter}
               </button>
             ) : null}
           </div>
@@ -844,7 +868,7 @@ export function AdminProductsClient({
               <option value="all">{copy.allCategories}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {"  ".repeat(category.level - 1)}{category.name}{category.active ? "" : " (hidden)"}
+                  {"  ".repeat(category.level - 1)}{category.name}{category.active ? "" : ` (${copy.hiddenCategorySuffix})`}
                 </option>
               ))}
             </select>
@@ -883,8 +907,8 @@ export function AdminProductsClient({
         <div className="mb-4 rounded-md border border-orange-100 bg-orange-50 p-4 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-black text-zinc-950">Product workspace is closed</p>
-              <p className="mt-1 text-sm font-bold text-orange-700">Click Add Product or click any product card to edit it here.</p>
+              <p className="text-sm font-black text-zinc-950">{copy.productWorkspaceClosed}</p>
+              <p className="mt-1 text-sm font-bold text-orange-700">{copy.productWorkspaceHint}</p>
             </div>
             <button type="button" onClick={startCreate} className="h-10 rounded-md bg-[#f65f18] px-4 text-sm font-black text-white">
               {t("addProduct")}
