@@ -68,6 +68,13 @@ const copy = {
     flowStep1: "1. Open drawer",
     flowStep2: "2. Record cash in / cash out",
     flowStep3: "3. Count and close",
+    closeChecklist: "Closing Checklist",
+    openingRecorded: "Opening cash is recorded.",
+    paymentsIncluded: "Confirmed cash payments are included automatically.",
+    transfersSeparate: "GCash / bank transfer is separate from physical cash.",
+    actualCashRequired: "Enter the actual counted cash before closing the drawer.",
+    varianceClear: "Variance is clear.",
+    varianceWarning: "Variance exists. Add a closing note before closing if you continue.",
   },
 };
 
@@ -130,6 +137,13 @@ const zhCopy = {
   flowStep1: "1. \u6253\u5f00\u94b1\u7bb1",
   flowStep2: "2. \u8bb0\u5f55\u8865\u73b0\u91d1 / \u73b0\u91d1\u652f\u51fa",
   flowStep3: "3. \u70b9\u94b1\u5e76\u5173\u8d26",
+  closeChecklist: "\u5173\u8d26\u68c0\u67e5",
+  openingRecorded: "\u5f00\u5e97\u5907\u7528\u73b0\u91d1\u5df2\u8bb0\u5f55\u3002",
+  paymentsIncluded: "\u5df2\u786e\u8ba4\u7684\u73b0\u91d1\u6536\u6b3e\u4f1a\u81ea\u52a8\u8ba1\u5165\u3002",
+  transfersSeparate: "GCash / \u94f6\u884c\u8f6c\u8d26\u548c\u5b9e\u4f53\u73b0\u91d1\u5206\u5f00\u7edf\u8ba1\u3002",
+  actualCashRequired: "\u8bf7\u5148\u8f93\u5165\u5b9e\u9645\u70b9\u7b97\u73b0\u91d1\uff0c\u518d\u5173\u8d26\u3002",
+  varianceClear: "\u5dee\u989d\u6b63\u5e38\u3002",
+  varianceWarning: "\u5b58\u5728\u5dee\u989d\u3002\u5982\u679c\u7ee7\u7eed\u5173\u8d26\uff0c\u8bf7\u586b\u5199\u5173\u8d26\u5907\u6ce8\u3002",
 } satisfies typeof copy.en;
 
 type ApiResult = (CashDrawerData & { ok: true }) | { ok: false; message?: string };
@@ -173,6 +187,29 @@ function FormulaStep({ label, value, tone = "neutral" }: { label: string; value:
     <div className={`rounded-md px-3 py-2 ring-1 ${toneClass}`}>
       <p className="text-[10px] font-black uppercase tracking-[0.12em] opacity-70">{label}</p>
       <p className="mt-1 text-sm font-black">{value}</p>
+    </div>
+  );
+}
+
+function DrawerChecklistCard({
+  title,
+  body,
+  tone,
+}: {
+  title: string;
+  body: string;
+  tone: "orange" | "green" | "neutral";
+}) {
+  const toneClass = {
+    green: "border-emerald-100 bg-emerald-50 text-emerald-800",
+    neutral: "border-zinc-100 bg-zinc-50 text-zinc-700",
+    orange: "border-orange-100 bg-orange-50 text-orange-800",
+  }[tone];
+
+  return (
+    <div className={`rounded-md border p-3 ${toneClass}`}>
+      <p className="text-xs font-black uppercase tracking-[0.12em] opacity-80">{title}</p>
+      <p className="mt-2 text-xs font-bold leading-5">{body}</p>
     </div>
   );
 }
@@ -222,6 +259,7 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
   const displayedActualCash = isClosed ? (session?.actualCash ?? null) : hasActualCashInput ? actualCashNumber : null;
   const hasDisplayedDifference = displayedDifference !== null;
   const hasVariance = hasDisplayedDifference && Math.abs(displayedDifference) >= 0.01;
+  const canCloseDrawer = hasActualCashInput && Number.isFinite(actualCashNumber);
   const varianceTone = useMemo(() => {
     if (displayedDifference === null) {
       return "green";
@@ -278,6 +316,18 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
     } finally {
       setLoading(false);
     }
+  }
+
+  function closeDrawer() {
+    if (!canCloseDrawer) {
+      setMessage(t.actualCashRequired);
+      return;
+    }
+
+    void post({ action: "close", sessionId: session?.id, actualCash, notes: closingNotes }, () => {
+      setActualCash("");
+      setClosingNotes("");
+    });
   }
 
   return (
@@ -449,6 +499,21 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
               <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
                 <h2 className="text-lg font-black text-zinc-950">{t.closeDrawer}</h2>
                 <p className="mt-2 text-sm font-bold leading-6 text-zinc-500">{t.closeHint}</p>
+                <div className="mt-4 rounded-lg border border-orange-100 bg-orange-50/60 p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-700">{t.closeChecklist}</p>
+                      <p className="mt-1 text-sm font-bold text-zinc-700">{t.actualCashRequired}</p>
+                    </div>
+                    <StatusPill tone={canCloseDrawer ? varianceTone : "orange"}>{canCloseDrawer ? t.closeReady : t.countActualCash}</StatusPill>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <DrawerChecklistCard tone="green" title={t.openingCash} body={t.openingRecorded} />
+                    <DrawerChecklistCard tone="green" title={t.cashSales} body={t.paymentsIncluded} />
+                    <DrawerChecklistCard tone="neutral" title={t.transferSales} body={t.transfersSeparate} />
+                    <DrawerChecklistCard tone={canCloseDrawer && hasVariance ? "orange" : canCloseDrawer ? "green" : "orange"} title={t.difference} body={canCloseDrawer && hasVariance ? t.varianceWarning : canCloseDrawer ? t.varianceClear : t.actualCashRequired} />
+                  </div>
+                </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <Field label={t.actualCash}>
                     <input className={inputClass()} type="number" min="0" step="0.01" value={actualCash} onChange={(event) => setActualCash(event.target.value)} />
@@ -477,13 +542,8 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
                 ) : null}
                 <button
                   type="button"
-                  disabled={loading}
-                  onClick={() =>
-                    void post({ action: "close", sessionId: session.id, actualCash, notes: closingNotes }, () => {
-                      setActualCash("");
-                      setClosingNotes("");
-                    })
-                  }
+                  disabled={loading || !canCloseDrawer}
+                  onClick={closeDrawer}
                   className="mt-4 rounded-md bg-[#f65f18] px-5 py-2.5 text-sm font-black text-white disabled:opacity-60"
                 >
                   {t.closeDrawer}
