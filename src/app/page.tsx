@@ -7,7 +7,6 @@ import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { businessInfo } from "@/lib/business-info";
 import { getCatalogSnapshot } from "@/lib/catalog-data";
 import { compareRecommendedProducts } from "@/lib/product-sort";
-import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -18,10 +17,6 @@ export default async function Home() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd(), websiteJsonLd()]) }}
-      />
       <SiteHeader />
       <DataSourceNotice message={catalog.message} />
       <MarketplaceShell>
@@ -41,8 +36,8 @@ export default async function Home() {
           </Container>
         </section>
 
-        <Container className="py-3 sm:py-4">
-          <div className="mb-3 flex items-center justify-between rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:mb-4 sm:p-4">
+        <Container className="!px-1.5 py-2 sm:!px-6 sm:py-4 lg:!px-8">
+          <div className="mb-2 flex items-center justify-between rounded-sm border border-zinc-200 bg-white p-1.5 shadow-sm sm:mb-4 sm:p-4">
             <div className="flex gap-1.5 overflow-x-auto text-xs font-black sm:flex-wrap sm:gap-2 sm:text-sm">
               <Link href="/category/all" className="shrink-0 rounded-sm bg-[#f65f18] px-2.5 py-1.5 text-white sm:px-3 sm:py-2">
                 Recommended
@@ -60,7 +55,7 @@ export default async function Home() {
             <Link href="/cart" className="ml-2 shrink-0 text-xs font-black text-orange-700 sm:text-sm">Order List</Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4 xl:grid-cols-6">
             {visibleProducts.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} />)}
           </div>
 

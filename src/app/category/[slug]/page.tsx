@@ -232,7 +232,7 @@ export default async function CategoryPage({
           </Container>
         </section>
 
-        <Container className="px-1.5 py-2 sm:px-6 sm:py-4 lg:px-8">
+        <Container className="!px-1.5 py-2 sm:!px-6 sm:py-4 lg:!px-8">
             <div className="mb-2 flex flex-col gap-2 rounded-sm border border-zinc-200 bg-white p-1.5 shadow-sm sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
               <div className="flex snap-x gap-1 overflow-x-auto text-[11px] font-black [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-2 sm:text-sm [&::-webkit-scrollbar]:hidden">
                 {sortOptions.map((item) => (
