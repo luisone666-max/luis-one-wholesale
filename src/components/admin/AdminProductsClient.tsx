@@ -149,6 +149,8 @@ const text = {
     productListUpdated: "Product list updated.",
     selectedImageSaveHint: "Selected image will upload automatically when you save.",
     reviewBeforeSaving: "Review product details, prices, images, and variants before saving.",
+    viewOnStorefront: "Open Product Page",
+    storefrontCheckHint: "Check the customer page to confirm image, price, variants, and visibility.",
   },
   zh: {
     addTier: "\u65b0\u589e\u4ef7\u683c\u9636\u68af",
@@ -182,6 +184,8 @@ const text = {
     productListUpdated: "商品列表已更新。",
     selectedImageSaveHint: "已选择的图片会在保存商品时自动上传。",
     reviewBeforeSaving: "保存前请检查商品资料、价格、图片和变体。",
+    viewOnStorefront: "打开前台商品页",
+    storefrontCheckHint: "检查客户页面的图片、价格、变体和显示状态。",
   },
 };
 
@@ -240,6 +244,8 @@ const productTextZh = {
   productListUpdated: "商品列表已更新。",
   selectedImageSaveHint: "已选择的图片会在保存商品时自动上传。",
   reviewBeforeSaving: "保存前请检查商品资料、价格、图片和变体。",
+  viewOnStorefront: "打开前台商品页",
+  storefrontCheckHint: "检查客户页面的图片、价格、变体和显示状态。",
 };
 
 const stockStatusKeyByValue: Record<string, TranslationKey> = {
@@ -1053,6 +1059,7 @@ function ProductEditor({
   const [variantImageStatus, setVariantImageStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [successDialog, setSuccessDialog] = useState("");
+  const [savedProductSlug, setSavedProductSlug] = useState("");
   const subcategories = categories.filter((category) => category.parentId === draft.categoryId);
   const childCategories = categories.filter((category) => category.parentId === draft.subcategoryId);
   const disabled = mode === "view";
@@ -1332,6 +1339,7 @@ function ProductEditor({
 
     const successMessage = mode === "create" ? copy.productUploadSuccess : copy.productUpdateSuccess;
     const refreshed = await onSaved(result.productId ?? draft.id, { revealSavedProduct: mode === "create" });
+    setSavedProductSlug(payload.slug);
     setSuccessDialog(refreshed ? successMessage : `${successMessage} Refresh the page if the product is not visible yet.`);
     onMessage(successMessage);
     } finally {
@@ -1690,10 +1698,21 @@ function ProductEditor({
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-orange-600 text-sm font-black text-white">OK</div>
             <h3 className="mt-4 text-lg font-black text-zinc-950">{successDialog}</h3>
             <p className="mt-2 text-sm font-bold text-zinc-500">{copy.productListUpdated}</p>
+            {savedProductSlug ? (
+              <Link
+                href={`/product/${savedProductSlug}`}
+                target="_blank"
+                className="mt-4 grid h-10 place-items-center rounded-md border border-zinc-200 bg-white px-5 text-sm font-black text-zinc-800 hover:border-orange-200 hover:text-orange-700"
+              >
+                {copy.viewOnStorefront}
+              </Link>
+            ) : null}
+            <p className="mt-2 text-xs font-bold leading-relaxed text-zinc-500">{copy.storefrontCheckHint}</p>
             <button
               type="button"
               onClick={() => {
                 setSuccessDialog("");
+                setSavedProductSlug("");
                 if (mode === "create") {
                   onClose();
                 }
@@ -1707,6 +1726,7 @@ function ProductEditor({
                 type="button"
                 onClick={() => {
                   setSuccessDialog("");
+                  setSavedProductSlug("");
                   setDraft(blankDraft(categories));
                   setSelectedImage(null);
                   if (selectedImagePreview) {
