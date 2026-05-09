@@ -41,6 +41,9 @@ const copy = {
     total: "Amount Due",
     remove: "Remove",
     saved: "Sale saved and sent to cashier.",
+    refreshFailed: "Unable to refresh sales.",
+    actionFailed: "Sale action failed.",
+    saleSaveFailed: "Sale save failed.",
     discountTooHigh: "Discount cannot be greater than product total.",
     selectProduct: "Select product",
     onlineOrdersLink: "Website orders are handled in Online Orders.",
@@ -140,6 +143,9 @@ const copy = {
     total: "应收金额",
     remove: "删除",
     saved: "销售单已保存，正在等待收银员确认收款。",
+    refreshFailed: "无法刷新销售单。",
+    actionFailed: "销售单操作失败。",
+    saleSaveFailed: "销售单保存失败。",
     discountTooHigh: "折扣不能大于商品小计。",
     selectProduct: "选择商品",
     onlineOrdersLink: "网站客户下单请去“线上订单”处理，这里只处理线下门店销售。",
@@ -209,6 +215,9 @@ const zhCopy = {
   total: "应收金额",
   remove: "删除",
   saved: "销售单已保存，正在等待收银员确认收款。",
+  refreshFailed: "无法刷新销售单。",
+  actionFailed: "销售单操作失败。",
+  saleSaveFailed: "销售单保存失败。",
   discountTooHigh: "折扣不能大于商品小计。",
   selectProduct: "选择商品",
   onlineOrdersLink: "网站客户订单请去“线上订单”处理，这里只处理线下门店销售。",
@@ -835,16 +844,20 @@ export function AdminSalesDeskClient({
   }
 
   async function refreshRecent() {
-    const url = summaryScope === "mine" ? "/api/admin/pos/sales?scope=mine" : "/api/admin/pos/sales";
-    const response = await fetch(url);
-    const result = (await response.json()) as { ok?: boolean; message?: string; sales?: PosSaleRecord[] };
+    try {
+      const url = summaryScope === "mine" ? "/api/admin/pos/sales?scope=mine" : "/api/admin/pos/sales";
+      const response = await fetch(url);
+      const result = (await response.json()) as { ok?: boolean; message?: string; sales?: PosSaleRecord[] };
 
-    if (!response.ok || !result.ok) {
-      setMessage(result.message ?? "Unable to refresh sales.");
-      return;
+      if (!response.ok || !result.ok) {
+        setMessage(result.message ?? t.refreshFailed);
+        return;
+      }
+
+      setSales(result.sales ?? []);
+    } catch {
+      setMessage(t.refreshFailed);
     }
-
-    setSales(result.sales ?? []);
   }
 
   function printPosSale(sale: PosSaleRecord) {
@@ -871,13 +884,15 @@ export function AdminSalesDeskClient({
       const result = (await response.json()) as { ok?: boolean; message?: string };
 
       if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Sale action failed.");
+        setMessage(result.message ?? t.actionFailed);
         return;
       }
 
       setSummaryState((current) => subtractSaleFromSummary(current, sale));
       setMessage(successText);
       await refreshRecent();
+    } catch {
+      setMessage(t.actionFailed);
     } finally {
       setLoading(false);
     }
@@ -918,7 +933,7 @@ export function AdminSalesDeskClient({
       const result = (await response.json()) as { ok?: boolean; message?: string; saleNo?: string };
 
       if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Sale save failed.");
+        setMessage(result.message ?? t.saleSaveFailed);
         return;
       }
 
@@ -933,6 +948,8 @@ export function AdminSalesDeskClient({
       setMessage(`${editingSaleId ? actionText.updateSale : t.saved} ${result.saleNo ?? ""}`);
       resetForm();
       await refreshRecent();
+    } catch {
+      setMessage(t.saleSaveFailed);
     } finally {
       setLoading(false);
     }
