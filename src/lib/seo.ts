@@ -6,18 +6,36 @@ export const siteName = "Luis One Supply Hub";
 export const siteDescription =
   "Motorcycle helmets, accessories, parts, and wholesale supplies for resellers and shops in the Philippines with public tier pricing and manual order confirmation.";
 
+function isConfiguredSiteUrl(value: string | undefined) {
+  if (!value) return false;
+
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      !host.endsWith("supabase.co") &&
+      !host.endsWith(".vercel.app") &&
+      host !== "localhost" &&
+      host !== "127.0.0.1"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function getSiteUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
   const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
 
-  const siteUrl =
-    configuredUrl && !configuredUrl.includes("supabase.co") && !configuredUrl.includes("luis-one-wholesale.vercel.app")
-      ? configuredUrl
-      : process.env.NODE_ENV === "production"
-        ? productionSiteUrl
-        : vercelUrl
-          ? `https://${vercelUrl}`
-          : productionSiteUrl;
+  const siteUrl = isConfiguredSiteUrl(configuredUrl)
+    ? configuredUrl!
+    : process.env.NODE_ENV === "production"
+      ? productionSiteUrl
+      : vercelUrl
+        ? `https://${vercelUrl}`
+        : productionSiteUrl;
 
   return siteUrl.replace(/\/$/, "");
 }
