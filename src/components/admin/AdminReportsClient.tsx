@@ -56,6 +56,13 @@ const copy = {
     cancelledTotal: "Cancelled",
     voidedTotal: "Voided Paid Sales",
     refundTotal: "Unavailable / Refund",
+    ownerDiagnosis: "Owner Diagnosis",
+    collectionRate: "Collection Rate",
+    salesMix: "Sales Mix",
+    cashControl: "Cash Control",
+    pendingRisk: "Pending Risk",
+    exceptionRate: "Correction Rate",
+    staffCoverage: "Active Salespeople",
   },
   zh: {
     caption: "老板报表：线上订单、线下 POS、收银确认、收款方式、员工销售额统一查看。",
@@ -158,6 +165,13 @@ const zhCopy = {
   cancelledTotal: "已取消",
   voidedTotal: "已作废已收款单",
   refundTotal: "缺货 / 退款",
+  ownerDiagnosis: "老板经营诊断",
+  collectionRate: "收款率",
+  salesMix: "销售结构",
+  cashControl: "现金控制",
+  pendingRisk: "待处理风险",
+  exceptionRate: "更正率",
+  staffCoverage: "活跃销售人数",
 } satisfies typeof copy.en;
 
 function SummaryCard({ label, value, tone = "neutral", detail }: { label: string; value: string; tone?: "orange" | "green" | "neutral"; detail?: string }) {
@@ -225,6 +239,11 @@ export function AdminReportsClient({
     }),
     [visibleRows],
   );
+  const monthExceptionTotal = overview.monthCancelledTotal + overview.monthVoidedTotal + overview.monthRefundTotal;
+  const monthExceptionCount = overview.monthCancelledCount + overview.monthVoidedCount + overview.monthRefundCount;
+  const monthTransferTotal = overview.monthGcashTotal + overview.monthBankTransferTotal;
+  const monthPendingTotal = overview.monthWaitingCashierTotal + overview.monthPendingOnlineTotal;
+  const monthPendingCount = overview.monthWaitingCashierCount + overview.monthPendingOnlineCount;
 
   return (
     <div className="space-y-6">
@@ -233,6 +252,18 @@ export function AdminReportsClient({
       {initialError ? <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-700">{initialError}</div> : null}
 
       <div className="rounded-lg border border-orange-100 bg-orange-50 p-4 text-sm font-bold leading-6 text-orange-800">{t.note}</div>
+
+      <section className="space-y-3">
+        <SectionTitle title={t.ownerDiagnosis} />
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <SummaryCard label={t.collectionRate} value={percent(overview.monthPaidTotal, overview.monthSalesTotal)} tone="green" detail={`${formatPhp(overview.monthPaidTotal)} / ${formatPhp(overview.monthSalesTotal)}`} />
+          <SummaryCard label={t.salesMix} value={`${percent(overview.monthOfflineSubmittedTotal, overview.monthSalesTotal)} POS`} detail={`${t.onlineSales} ${percent(overview.monthOnlineSubmittedTotal, overview.monthSalesTotal)}`} />
+          <SummaryCard label={t.cashControl} value={percent(overview.monthCashTotal, overview.monthPaidTotal)} detail={`${formatPhp(overview.monthCashTotal)} cash / ${formatPhp(monthTransferTotal)} transfer`} />
+          <SummaryCard label={t.pendingRisk} value={formatPhp(monthPendingTotal)} tone={monthPendingTotal ? "orange" : "green"} detail={`${monthPendingCount}`} />
+          <SummaryCard label={t.exceptionRate} value={percent(monthExceptionTotal, overview.monthSalesTotal + monthExceptionTotal)} tone={monthExceptionTotal ? "orange" : "green"} detail={`${monthExceptionCount}`} />
+          <SummaryCard label={t.staffCoverage} value={`${summary.staffCount}`} detail={`${t.selectedOrders}: ${summary.orderCount}`} />
+        </div>
+      </section>
 
       <section className="space-y-3">
         <SectionTitle title={t.bossFocus} />

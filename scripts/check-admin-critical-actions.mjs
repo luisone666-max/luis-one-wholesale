@@ -219,6 +219,19 @@ function main() {
     "data.hiddenProducts",
   ]);
 
+  requireIncludes("src/components/admin/AdminReportsClient.tsx", [
+    "Owner Diagnosis",
+    "collectionRate",
+    "salesMix",
+    "cashControl",
+    "pendingRisk",
+    "exceptionRate",
+    "staffCoverage",
+    "monthExceptionTotal",
+    "monthTransferTotal",
+    "monthPendingTotal",
+  ]);
+
   requireIncludes("src/lib/admin-audit-log.ts", [
     "server-only",
     "admin_action_audit_logs",
