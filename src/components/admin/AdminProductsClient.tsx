@@ -152,6 +152,14 @@ const text = {
     viewOnStorefront: "Open Product Page",
     openStoreShort: "Store",
     storefrontCheckHint: "Check the customer page to confirm image, price, variants, and visibility.",
+    refreshFailed: "Product list refresh failed.",
+    updateFailed: "Update failed.",
+    duplicateFailed: "Duplicate failed.",
+    duplicateRefreshHint: "Refresh the page if the product is not visible yet.",
+    productActive: "Product is active.",
+    productDeleted: "Product deleted.",
+    exportDone: "Products exported from this page",
+    saveFailed: "Save failed.",
     filters: "Filters",
     hideFilters: "Hide filters",
     showCategories: "Show categories",
@@ -196,6 +204,14 @@ const text = {
     viewOnStorefront: "打开前台商品页",
     openStoreShort: "前台",
     storefrontCheckHint: "检查客户页面的图片、价格、变体和显示状态。",
+    refreshFailed: "商品列表刷新失败。",
+    updateFailed: "更新失败。",
+    duplicateFailed: "复制失败。",
+    duplicateRefreshHint: "如果商品暂时看不到，请刷新页面。",
+    productActive: "商品已上架。",
+    productDeleted: "商品已删除。",
+    exportDone: "已导出本页商品",
+    saveFailed: "保存失败。",
     filters: "筛选",
     hideFilters: "收起筛选",
     showCategories: "显示分类",
@@ -265,6 +281,14 @@ const productTextZh = {
   viewOnStorefront: "打开前台商品页",
   openStoreShort: "前台",
   storefrontCheckHint: "检查客户页面的图片、价格、变体和显示状态。",
+  refreshFailed: "商品列表刷新失败。",
+  updateFailed: "更新失败。",
+  duplicateFailed: "复制失败。",
+  duplicateRefreshHint: "如果商品暂时看不到，请刷新页面。",
+  productActive: "商品已上架。",
+  productDeleted: "商品已删除。",
+  exportDone: "已导出本页商品",
+  saveFailed: "保存失败。",
   filters: "筛选",
   hideFilters: "收起筛选",
   showCategories: "显示分类",
@@ -589,10 +613,10 @@ export function AdminProductsClient({
       attention: requestAttention,
     });
     const response = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Product list refresh failed." }))) as ProductsListResponse;
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.refreshFailed }))) as ProductsListResponse;
 
     if (!response.ok || !result.ok || !result.products) {
-      setMessage(result.message ?? "Product list refresh failed.");
+      setMessage(result.message ?? copy.refreshFailed);
       return false;
     }
 
@@ -634,7 +658,7 @@ export function AdminProductsClient({
     });
 
     return true;
-  }, [activeFilter, attentionFilter, categoryFilter, page, pageSize, search, stockFilter]);
+  }, [activeFilter, attentionFilter, categoryFilter, copy.refreshFailed, page, pageSize, search, stockFilter]);
 
   useEffect(() => {
     if (!didMountRef.current) {
@@ -698,28 +722,28 @@ export function AdminProductsClient({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ mode: "visibility", active: !product.active }),
     });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Update failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.updateFailed }))) as { ok?: boolean; message?: string };
 
     if (!response.ok || !result.ok) {
-      setMessage(result.message ?? "Update failed.");
+      setMessage(result.message ?? copy.updateFailed);
       return;
     }
 
     await refreshProducts(product.id);
-    setMessage(product.active ? copy.hiddenFromFrontend : "Product is active.");
+    setMessage(product.active ? copy.hiddenFromFrontend : copy.productActive);
   };
 
   const duplicateProduct = async (product: AdminProductRecord) => {
     const response = await fetch(`/api/admin/products/${product.id}/duplicate`, { method: "POST" });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Duplicate failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.duplicateFailed }))) as { ok?: boolean; message?: string };
 
     if (!response.ok || !result.ok) {
-      setMessage(result.message ?? "Duplicate failed.");
+      setMessage(result.message ?? copy.duplicateFailed);
       return;
     }
 
     const refreshed = await refreshProducts();
-    setMessage(refreshed ? copy.duplicateDone : "Product duplicated. Refresh the page if it is not visible yet.");
+    setMessage(refreshed ? copy.duplicateDone : `${copy.duplicateDone} ${copy.duplicateRefreshHint}`);
   };
 
   const deleteProduct = async (product: AdminProductRecord) => {
@@ -728,7 +752,7 @@ export function AdminProductsClient({
     }
 
     const response = await fetch(`/api/admin/products/${product.id}`, { method: "DELETE" });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Delete failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.deleteBlocked }))) as { ok?: boolean; message?: string };
 
     if (!response.ok || !result.ok) {
       setMessage(result.message ?? copy.deleteBlocked);
@@ -737,7 +761,7 @@ export function AdminProductsClient({
 
     await refreshProducts();
     setSelectedProduct(null);
-    setMessage("Product deleted.");
+    setMessage(copy.productDeleted);
   };
 
   const exportProductsCsv = () => {
@@ -776,7 +800,7 @@ export function AdminProductsClient({
     link.download = `luis-one-products-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
-    setMessage(`Exported ${visibleProducts.length} products on this page.`);
+    setMessage(`${copy.exportDone}: ${visibleProducts.length}`);
   };
 
   const downloadBulkUploadTemplate = () => {
@@ -1361,21 +1385,21 @@ function ProductEditor({
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Save failed." }))) as {
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.saveFailed }))) as {
       ok?: boolean;
       message?: string;
       productId?: string;
     };
 
     if (!response.ok || !result.ok) {
-      onMessage(result.message ?? "Save failed.");
+      onMessage(result.message ?? copy.saveFailed);
       return;
     }
 
     const successMessage = mode === "create" ? copy.productUploadSuccess : copy.productUpdateSuccess;
     const refreshed = await onSaved(result.productId ?? draft.id, { revealSavedProduct: mode === "create" });
     setSavedProductSlug(payload.slug);
-    setSuccessDialog(refreshed ? successMessage : `${successMessage} Refresh the page if the product is not visible yet.`);
+    setSuccessDialog(refreshed ? successMessage : `${successMessage} ${copy.duplicateRefreshHint}`);
     onMessage(successMessage);
     } finally {
       setSaving(false);
