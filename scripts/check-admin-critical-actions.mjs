@@ -245,6 +245,15 @@ function main() {
     "monthPendingTotal",
   ]);
 
+  requireIncludes("src/components/admin/AdminCustomersClient.tsx", [
+    "Member Overview",
+    "Every PHP 100 paid = 1 point",
+    "CustomerMetricCard",
+    "getCustomerSegment",
+    "filterHasPoints",
+    "filterRepeat",
+  ]);
+
   requireIncludes("src/lib/admin-audit-log.ts", [
     "server-only",
     "admin_action_audit_logs",

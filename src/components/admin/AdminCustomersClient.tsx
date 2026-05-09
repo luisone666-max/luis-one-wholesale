@@ -30,6 +30,26 @@ const copy = {
     applyAdjustment: "Apply adjustment",
     adjustmentSaved: "Customer points adjusted.",
     saving: "Saving...",
+    memberOverview: "Member Overview",
+    totalCustomers: "Total customers",
+    repeatCustomers: "Repeat buyers",
+    noPurchaseCustomers: "No purchase yet",
+    pointsOutstanding: "Points outstanding",
+    lifetimePointsIssued: "Lifetime points issued",
+    loyaltyRule: "Loyalty rule",
+    loyaltyRuleBody: "Every PHP 100 paid = 1 point. Points are awarded after cashier or online payment confirmation.",
+    linkedSalesRule: "Online and offline sales are linked by customer account. Walk-in sales need a selected customer account to earn points.",
+    topCustomer: "Top customer",
+    filterAll: "All customers",
+    filterHasPoints: "Has points",
+    filterRepeat: "Repeat buyers",
+    filterNoPurchase: "No purchase",
+    filterNoPoints: "No points",
+    customerSegment: "Segment",
+    vipBuyer: "VIP buyer",
+    repeatBuyer: "Repeat buyer",
+    firstBuyer: "First buyer",
+    prospect: "Prospect",
   },
   zh: {
     caption: "真实客户资料，包含线上注册客户和线下会员销售记录。",
@@ -57,6 +77,51 @@ const copy = {
   },
 };
 
+const zhCopy = {
+  caption: "\u771f\u5b9e\u5ba2\u6237\u8d44\u6599\uff0c\u5305\u542b\u7ebf\u4e0a\u6ce8\u518c\u5ba2\u6237\u548c\u7ebf\u4e0b\u4f1a\u5458\u9500\u552e\u8bb0\u5f55\u3002",
+  search: "\u641c\u7d22\u5ba2\u6237\u59d3\u540d\u3001\u7535\u8bdd\u3001Messenger \u6216\u5730\u533a",
+  points: "\u79ef\u5206",
+  lifetimePoints: "\u7d2f\u8ba1\u79ef\u5206",
+  action: "\u64cd\u4f5c",
+  viewPoints: "\u67e5\u770b\u79ef\u5206",
+  hidePoints: "\u6536\u8d77\u79ef\u5206",
+  pointsHistory: "\u79ef\u5206\u6d41\u6c34",
+  paidAmount: "\u4ed8\u6b3e\u91d1\u989d",
+  source: "\u6765\u6e90",
+  date: "\u65e5\u671f",
+  note: "\u5907\u6ce8",
+  loadingPoints: "\u6b63\u5728\u8bfb\u53d6\u79ef\u5206\u6d41\u6c34...",
+  pointsNotReady: "\u8bf7\u5148\u6267\u884c\u4f1a\u5458\u79ef\u5206 migration\uff0c\u4e4b\u540e\u8fd9\u91cc\u4f1a\u663e\u793a\u79ef\u5206\u4f59\u989d\u3002",
+  noPointsHistory: "\u6682\u65e0\u79ef\u5206\u6d41\u6c34\u3002",
+  noCustomers: "\u6682\u65e0\u5ba2\u6237\u3002",
+  adjustPoints: "\u624b\u52a8\u8c03\u6574\u79ef\u5206",
+  adjustmentPoints: "\u79ef\u5206\uff08+ \u589e\u52a0 / - \u6263\u51cf\uff09",
+  adjustmentNote: "\u8c03\u6574\u5907\u6ce8",
+  applyAdjustment: "\u786e\u8ba4\u8c03\u6574",
+  adjustmentSaved: "\u5ba2\u6237\u79ef\u5206\u5df2\u8c03\u6574\u3002",
+  saving: "\u4fdd\u5b58\u4e2d...",
+  memberOverview: "\u4f1a\u5458\u6982\u89c8",
+  totalCustomers: "\u5ba2\u6237\u603b\u6570",
+  repeatCustomers: "\u590d\u8d2d\u5ba2\u6237",
+  noPurchaseCustomers: "\u672a\u6210\u4ea4\u5ba2\u6237",
+  pointsOutstanding: "\u672a\u4f7f\u7528\u79ef\u5206",
+  lifetimePointsIssued: "\u7d2f\u8ba1\u53d1\u653e\u79ef\u5206",
+  loyaltyRule: "\u4f1a\u5458\u79ef\u5206\u89c4\u5219",
+  loyaltyRuleBody: "\u6bcf PHP 100 \u5b9e\u6536 = 1 \u79ef\u5206\u3002\u6536\u94f6\u6216\u7ebf\u4e0a\u6536\u6b3e\u786e\u8ba4\u540e\u624d\u53d1\u79ef\u5206\u3002",
+  linkedSalesRule: "\u7ebf\u4e0a\u4e0e\u7ebf\u4e0b\u9500\u552e\u90fd\u6309\u5ba2\u6237\u8d26\u53f7\u5173\u8054\u3002\u6563\u5ba2\u5355\u8981\u5148\u9009\u5ba2\u6237\u8d26\u53f7\u624d\u4f1a\u7d2f\u79ef\u5206\u3002",
+  topCustomer: "\u6700\u9ad8\u6d88\u8d39\u5ba2\u6237",
+  filterAll: "\u5168\u90e8\u5ba2\u6237",
+  filterHasPoints: "\u6709\u79ef\u5206",
+  filterRepeat: "\u590d\u8d2d\u5ba2\u6237",
+  filterNoPurchase: "\u672a\u6210\u4ea4",
+  filterNoPoints: "\u65e0\u79ef\u5206",
+  customerSegment: "\u5ba2\u6237\u5206\u5c42",
+  vipBuyer: "VIP \u5ba2\u6237",
+  repeatBuyer: "\u590d\u8d2d\u5ba2\u6237",
+  firstBuyer: "\u9996\u6b21\u6210\u4ea4",
+  prospect: "\u5f85\u8ddf\u8fdb\u5ba2\u6237",
+} satisfies typeof copy.en;
+
 type AdminCustomerLoyaltyTransaction = {
   id: string;
   sourceType: string;
@@ -74,6 +139,8 @@ type LoyaltyHistoryState = {
   transactions: AdminCustomerLoyaltyTransaction[];
 };
 
+type CustomerFilter = "all" | "has_points" | "repeat" | "no_purchase" | "no_points";
+
 export function AdminCustomersClient({
   initialCustomers,
   initialError,
@@ -84,9 +151,10 @@ export function AdminCustomersClient({
   pointsReady: boolean;
 }) {
   const { t, language } = useAdminI18n();
-  const text = copy[language];
+  const text = language === "zh" ? zhCopy : copy.en;
   const [customers, setCustomers] = useState(initialCustomers);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<CustomerFilter>("all");
   const [expandedCustomerId, setExpandedCustomerId] = useState("");
   const [loyaltyHistoryByCustomer, setLoyaltyHistoryByCustomer] = useState<Record<string, LoyaltyHistoryState>>({});
   const [adjustPoints, setAdjustPoints] = useState("");
@@ -94,14 +162,56 @@ export function AdminCustomersClient({
   const [adjusting, setAdjusting] = useState(false);
   const [adjustMessage, setAdjustMessage] = useState("");
 
+  const overview = useMemo(() => {
+    const repeatCustomers = customers.filter((customer) => customer.orderCount >= 2).length;
+    const noPurchaseCustomers = customers.filter((customer) => customer.orderCount === 0).length;
+    const pointsOutstanding = customers.reduce((sum, customer) => sum + (customer.pointsBalance ?? 0), 0);
+    const lifetimePointsIssued = customers.reduce((sum, customer) => sum + (customer.lifetimePoints ?? 0), 0);
+    const topCustomer = customers.reduce<AdminCustomerRecord | null>((best, customer) => {
+      if (!best || customer.totalSpend > best.totalSpend) {
+        return customer;
+      }
+
+      return best;
+    }, null);
+
+    return {
+      totalCustomers: customers.length,
+      repeatCustomers,
+      noPurchaseCustomers,
+      pointsOutstanding,
+      lifetimePointsIssued,
+      topCustomer,
+    };
+  }, [customers]);
+
   const visibleCustomers = useMemo(() => {
     const needle = search.trim().toLowerCase();
+    const filteredCustomers = customers.filter((customer) => {
+      if (filter === "has_points") {
+        return (customer.pointsBalance ?? 0) > 0;
+      }
+
+      if (filter === "repeat") {
+        return customer.orderCount >= 2;
+      }
+
+      if (filter === "no_purchase") {
+        return customer.orderCount === 0;
+      }
+
+      if (filter === "no_points") {
+        return (customer.pointsBalance ?? 0) === 0;
+      }
+
+      return true;
+    });
 
     if (!needle) {
-      return customers;
+      return filteredCustomers;
     }
 
-    return customers.filter((customer) =>
+    return filteredCustomers.filter((customer) =>
       [
         customer.name,
         customer.phone,
@@ -114,7 +224,7 @@ export function AdminCustomersClient({
         .toLowerCase()
         .includes(needle),
     );
-  }, [customers, search]);
+  }, [customers, filter, search]);
 
   async function togglePointsHistory(customerId: string) {
     setAdjustMessage("");
@@ -221,6 +331,23 @@ export function AdminCustomersClient({
       {initialError ? <div className="mb-4 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-700">{initialError}</div> : null}
       {!pointsReady ? <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">{text.pointsNotReady}</div> : null}
 
+      <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1.15fr]">
+        <CustomerMetricCard label={text.totalCustomers} value={overview.totalCustomers.toLocaleString("en-US")} hint={text.memberOverview} />
+        <CustomerMetricCard label={text.repeatCustomers} value={overview.repeatCustomers.toLocaleString("en-US")} hint={text.customerSegment} />
+        <CustomerMetricCard label={text.pointsOutstanding} value={overview.pointsOutstanding.toLocaleString("en-US")} hint={text.lifetimePointsIssued + ": " + overview.lifetimePointsIssued.toLocaleString("en-US")} />
+        <div className="rounded-lg border border-orange-100 bg-orange-50 p-4 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-700">{text.loyaltyRule}</p>
+          <p className="mt-2 text-sm font-black leading-6 text-zinc-950">{text.loyaltyRuleBody}</p>
+          <p className="mt-2 text-xs font-bold leading-5 text-zinc-600">{text.linkedSalesRule}</p>
+        </div>
+      </div>
+
+      {overview.topCustomer ? (
+        <div className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">
+          {text.topCustomer}: <span className="font-black">{overview.topCustomer.name}</span> / {formatPhp(overview.topCustomer.totalSpend)} / {overview.topCustomer.orderCount.toLocaleString("en-US")} {t("orders")}
+        </div>
+      ) : null}
+
       <div className="mb-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <input
           value={search}
@@ -228,11 +355,31 @@ export function AdminCustomersClient({
           placeholder={text.search}
           className="h-11 w-full rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
         />
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            { key: "all", label: text.filterAll },
+            { key: "has_points", label: text.filterHasPoints },
+            { key: "repeat", label: text.filterRepeat },
+            { key: "no_purchase", label: text.filterNoPurchase },
+            { key: "no_points", label: text.filterNoPoints },
+          ].map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setFilter(item.key as CustomerFilter)}
+              className={`rounded-md px-3 py-2 text-xs font-black ring-1 ${
+                filter === item.key ? "bg-[#f65f18] text-white ring-[#f65f18]" : "bg-white text-zinc-700 ring-zinc-200 hover:bg-zinc-50"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <TableShell>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1220px] text-left text-sm">
+          <table className="w-full min-w-[1320px] text-left text-sm">
             <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
               <tr>
                 <th className="px-4 py-3">{t("name")}</th>
@@ -242,6 +389,7 @@ export function AdminCustomersClient({
                 <th className="px-4 py-3">{t("businessType")}</th>
                 <th className="px-4 py-3">{t("orderCount")}</th>
                 <th className="px-4 py-3">{t("totalSpend")}</th>
+                <th className="px-4 py-3">{text.customerSegment}</th>
                 <th className="px-4 py-3">{text.points}</th>
                 <th className="px-4 py-3">{text.lifetimePoints}</th>
                 <th className="px-4 py-3">{t("status")}</th>
@@ -263,6 +411,7 @@ export function AdminCustomersClient({
                       <td className="px-4 py-4 text-zinc-600">{customer.businessType || "-"}</td>
                       <td className="px-4 py-4 font-bold text-zinc-700">{customer.orderCount}</td>
                       <td className="px-4 py-4 font-black text-orange-700">{formatPhp(customer.totalSpend)}</td>
+                      <td className="px-4 py-4"><StatusPill tone={getCustomerSegment(customer).tone}>{getCustomerSegment(customer).label(text)}</StatusPill></td>
                       <td className="px-4 py-4 font-black text-emerald-700">{customer.pointsBalance === null ? "-" : customer.pointsBalance.toLocaleString("en-US")}</td>
                       <td className="px-4 py-4 font-bold text-zinc-700">{customer.lifetimePoints === null ? "-" : customer.lifetimePoints.toLocaleString("en-US")}</td>
                       <td className="px-4 py-4"><StatusPill tone="green">{customer.status}</StatusPill></td>
@@ -278,7 +427,7 @@ export function AdminCustomersClient({
                     </tr>
                     {isExpanded ? (
                       <tr>
-                        <td className="bg-zinc-50 px-4 py-4" colSpan={11}>
+                        <td className="bg-zinc-50 px-4 py-4" colSpan={12}>
                           <div className="rounded-lg border border-zinc-200 bg-white p-4">
                             <h3 className="text-sm font-black text-zinc-950">{text.pointsHistory}</h3>
                             {loyaltyState?.loading ? <p className="mt-3 text-sm font-bold text-zinc-500">{text.loadingPoints}</p> : null}
@@ -353,7 +502,7 @@ export function AdminCustomersClient({
               })}
               {!visibleCustomers.length ? (
                 <tr>
-                  <td className="px-4 py-6 text-zinc-500" colSpan={11}>{text.noCustomers}</td>
+                  <td className="px-4 py-6 text-zinc-500" colSpan={12}>{text.noCustomers}</td>
                 </tr>
               ) : null}
             </tbody>
@@ -362,6 +511,32 @@ export function AdminCustomersClient({
       </TableShell>
     </>
   );
+}
+
+function CustomerMetricCard({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{label}</p>
+      <p className="mt-2 text-2xl font-black text-zinc-950">{value}</p>
+      <p className="mt-1 text-xs font-bold text-zinc-500">{hint}</p>
+    </div>
+  );
+}
+
+function getCustomerSegment(customer: AdminCustomerRecord) {
+  if (customer.totalSpend >= 50000 || customer.orderCount >= 5) {
+    return { tone: "green" as const, label: (text: typeof copy.en) => text.vipBuyer };
+  }
+
+  if (customer.orderCount >= 2) {
+    return { tone: "orange" as const, label: (text: typeof copy.en) => text.repeatBuyer };
+  }
+
+  if (customer.orderCount === 1) {
+    return { tone: "neutral" as const, label: (text: typeof copy.en) => text.firstBuyer };
+  }
+
+  return { tone: "neutral" as const, label: (text: typeof copy.en) => text.prospect };
 }
 
 function formatDate(value: string) {
