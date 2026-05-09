@@ -10,6 +10,7 @@
     "check:customer-safety": "node scripts/check-customer-frontend-safety.mjs",
     "check:admin-api": "node scripts/check-admin-api-protection.mjs",
     "check:admin-pages": "node scripts/check-admin-page-protection.mjs",
+    "check:admin-roles": "node scripts/check-admin-role-access.mjs",
     "check:admin-links": "node scripts/check-admin-links.mjs",
     "check:customer-links": "node scripts/check-customer-links.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",

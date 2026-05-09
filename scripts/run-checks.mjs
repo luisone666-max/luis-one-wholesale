@@ -6,6 +6,7 @@ const suites = {
     ["check:customer-safety", "Customer frontend safety"],
     ["check:admin-api", "Admin API protection"],
     ["check:admin-pages", "Admin page protection"],
+    ["check:admin-roles", "Admin role access"],
     ["check:admin-links", "Admin navigation links"],
     ["check:customer-links", "Customer navigation links"],
     ["lint", "ESLint"],
