@@ -47,12 +47,35 @@ const publicErrorTerms = [
 ];
 
 const protectedApiChecks = [
-  "/api/admin/products",
-  "/api/admin/orders",
-  "/api/admin/categories",
-  "/api/admin/pos/sales",
-  "/api/admin/cash-drawer",
-  "/api/admin/staff",
+  { path: "/api/admin/audit-logs" },
+  { path: "/api/admin/cash-drawer" },
+  { path: "/api/admin/cash-drawer", method: "POST", body: { openingCashAmount: 0 } },
+  { path: "/api/admin/categories", method: "POST", body: {} },
+  { path: "/api/admin/categories/smoke-test-id", method: "PATCH", body: { mode: "toggle", active: true } },
+  { path: "/api/admin/categories/smoke-test-id", method: "DELETE" },
+  { path: "/api/admin/categories/image-upload", method: "POST" },
+  { path: "/api/admin/categories/templates", method: "POST", body: { template: "motorcycle_parts" } },
+  { path: "/api/admin/customers/smoke-test-id/loyalty" },
+  { path: "/api/admin/customers/smoke-test-id/loyalty", method: "POST", body: { points: 1, note: "smoke" } },
+  { path: "/api/admin/orders/LO-SMOKE-TEST", method: "PATCH", body: { adminNotes: "smoke" } },
+  { path: "/api/admin/orders/LO-SMOKE-TEST/payments", method: "POST", body: { paymentMethod: "cash", amount: 1 } },
+  { path: "/api/admin/owner/password", method: "PATCH", body: {} },
+  { path: "/api/admin/owner/verify", method: "POST", body: {} },
+  { path: "/api/admin/pos/sales" },
+  { path: "/api/admin/pos/sales", method: "POST", body: {} },
+  { path: "/api/admin/pos/sales/smoke-test-id", method: "PATCH", body: {} },
+  { path: "/api/admin/pos/sales/smoke-test-id", method: "POST", body: { action: "cancel", reason: "smoke" } },
+  { path: "/api/admin/pos/sales/smoke-test-id/confirm-payment", method: "POST", body: { amount: 1 } },
+  { path: "/api/admin/products" },
+  { path: "/api/admin/products", method: "POST", body: {} },
+  { path: "/api/admin/products/smoke-test-id", method: "PATCH", body: { mode: "visibility", active: true } },
+  { path: "/api/admin/products/smoke-test-id", method: "DELETE" },
+  { path: "/api/admin/products/smoke-test-id/duplicate", method: "POST" },
+  { path: "/api/admin/products/bulk-upload", method: "POST", body: { rows: [] } },
+  { path: "/api/admin/products/image-upload", method: "POST" },
+  { path: "/api/admin/staff" },
+  { path: "/api/admin/staff", method: "POST", body: {} },
+  { path: "/api/admin/staff/smoke-test-id", method: "PATCH", body: {} },
 ];
 
 const protectedPageChecks = [
@@ -101,11 +124,14 @@ function absolute(path) {
   return `${baseUrl}${path}`;
 }
 
-async function fetchText(path) {
+async function fetchText(path, init = {}) {
+  const headers = {
+    "user-agent": "LuisOneProductionSmokeCheck/1.0",
+    ...(init.headers ?? {}),
+  };
   const response = await fetch(absolute(path), {
-    headers: {
-      "user-agent": "LuisOneProductionSmokeCheck/1.0",
-    },
+    ...init,
+    headers,
   });
   const text = await response.text();
   return { response, text };
@@ -126,10 +152,17 @@ async function checkPublicPage(check) {
   return text;
 }
 
-async function checkProtectedApi(path) {
-  const { response } = await fetchText(path);
-  requireStatus(response.status === 403, `${path} expected 403 for logged-out visitor, got ${response.status}`);
-  console.log(`ok ${response.status} ${path}`);
+async function checkProtectedApi(check) {
+  const method = check.method ?? "GET";
+  const body = "body" in check ? JSON.stringify(check.body) : undefined;
+  const { response } = await fetchText(check.path, {
+    method,
+    body,
+    headers: body ? { "content-type": "application/json" } : undefined,
+  });
+
+  requireStatus(response.status === 403, `${method} ${check.path} expected 403 for logged-out visitor, got ${response.status}`);
+  console.log(`ok ${response.status} ${method} ${check.path}`);
 }
 
 async function checkProtectedPage(path) {
