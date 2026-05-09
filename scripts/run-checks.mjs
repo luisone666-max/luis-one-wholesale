@@ -8,6 +8,7 @@ const suites = {
     ["check:admin-api", "Admin API protection"],
     ["check:admin-pages", "Admin page protection"],
     ["check:admin-roles", "Admin role access"],
+    ["check:admin-actions", "Admin critical actions"],
     ["check:admin-links", "Admin navigation links"],
     ["check:customer-links", "Customer navigation links"],
     ["lint", "ESLint"],
