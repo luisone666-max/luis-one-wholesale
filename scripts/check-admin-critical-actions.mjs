@@ -252,6 +252,22 @@ function main() {
     "getCustomerSegment",
     "filterHasPoints",
     "filterRepeat",
+    "/admin/customers/${customer.id}",
+  ]);
+
+  requireIncludes("src/app/admin/customers/[id]/page.tsx", [
+    "requireActiveAdminPage",
+    "canViewCustomerRecords",
+    "getAdminCustomerDetail",
+    "AdminCustomerDetailClient",
+  ]);
+
+  requireIncludes("src/components/admin/AdminCustomerDetailClient.tsx", [
+    "Customer Profile",
+    "Online Orders",
+    "Offline POS Sales",
+    "Points Ledger",
+    "If a walk-in customer wants points",
   ]);
 
   requireIncludes("src/lib/admin-audit-log.ts", [

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
@@ -13,6 +14,7 @@ const copy = {
     points: "Points",
     lifetimePoints: "Lifetime Points",
     action: "Action",
+    viewProfile: "View profile",
     viewPoints: "View points",
     hidePoints: "Hide points",
     pointsHistory: "Points history",
@@ -83,6 +85,7 @@ const zhCopy = {
   points: "\u79ef\u5206",
   lifetimePoints: "\u7d2f\u8ba1\u79ef\u5206",
   action: "\u64cd\u4f5c",
+  viewProfile: "\u67e5\u770b\u6863\u6848",
   viewPoints: "\u67e5\u770b\u79ef\u5206",
   hidePoints: "\u6536\u8d77\u79ef\u5206",
   pointsHistory: "\u79ef\u5206\u6d41\u6c34",
@@ -416,13 +419,21 @@ export function AdminCustomersClient({
                       <td className="px-4 py-4 font-bold text-zinc-700">{customer.lifetimePoints === null ? "-" : customer.lifetimePoints.toLocaleString("en-US")}</td>
                       <td className="px-4 py-4"><StatusPill tone="green">{customer.status}</StatusPill></td>
                       <td className="px-4 py-4">
-                        <button
-                          type="button"
-                          onClick={() => void togglePointsHistory(customer.id)}
-                          className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700 hover:bg-orange-50"
-                        >
-                          {isExpanded ? text.hidePoints : text.viewPoints}
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/admin/customers/${customer.id}`}
+                            className="rounded-md bg-[#f65f18] px-3 py-2 text-xs font-black text-white hover:bg-orange-700"
+                          >
+                            {text.viewProfile}
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => void togglePointsHistory(customer.id)}
+                            className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700 hover:bg-orange-50"
+                          >
+                            {isExpanded ? text.hidePoints : text.viewPoints}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     {isExpanded ? (
