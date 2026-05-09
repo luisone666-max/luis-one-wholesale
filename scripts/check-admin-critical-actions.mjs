@@ -264,6 +264,10 @@ function main() {
 
   requireIncludes("src/components/admin/AdminCustomerDetailClient.tsx", [
     "Customer Profile",
+    "Recommended Follow-up",
+    "getFollowUpActions",
+    "vipFollowUpTitle",
+    "missingContactTitle",
     "Online Orders",
     "Offline POS Sales",
     "Points Ledger",

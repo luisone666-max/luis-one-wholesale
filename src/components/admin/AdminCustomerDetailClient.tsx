@@ -43,6 +43,21 @@ const copy = {
     pointsNotReady: "Run the loyalty points migration to show member points.",
     notFound: "Customer was not found.",
     onlineOfflineHint: "If a walk-in customer wants points, select this customer account on the Sales Desk before sending the sale to cashier.",
+    followUpTitle: "Recommended Follow-up",
+    followUpCaption: "Use these prompts to decide what sales or customer service should do next.",
+    priority: "Priority",
+    vipFollowUpTitle: "Protect this VIP reseller",
+    vipFollowUpBody: "Offer a monthly price list, faster Messenger support, and early notice for new stock.",
+    firstOrderTitle: "Help this customer place the first order",
+    firstOrderBody: "Send product recommendations and explain MOQ, pickup, Lalamove, courier, and payment confirmation.",
+    pointsReminderTitle: "Remind customer about points",
+    pointsReminderBody: "This customer has points balance. Mention it during the next order to increase repeat purchase.",
+    reactivationTitle: "Reactivation needed",
+    reactivationBody: "No recent activity. Send new arrivals, promos, or ask what items they are looking for.",
+    onlineOnlyTitle: "Connect online buyer to store member record",
+    onlineOnlyBody: "If this customer also buys in store, sales should select this customer account on Sales Desk to keep points and history together.",
+    missingContactTitle: "Complete customer contact",
+    missingContactBody: "Phone or Messenger information is missing. Ask staff to complete it before the next transaction.",
   },
 };
 
@@ -82,7 +97,28 @@ const zhCopy = {
   pointsNotReady: "\u8bf7\u5148\u6267\u884c\u4f1a\u5458\u79ef\u5206 migration\uff0c\u624d\u80fd\u663e\u793a\u79ef\u5206\u3002",
   notFound: "\u627e\u4e0d\u5230\u8fd9\u4e2a\u5ba2\u6237\u3002",
   onlineOfflineHint: "\u5982\u679c\u7ebf\u4e0b\u6563\u5ba2\u8981\u7d2f\u79ef\u5206\uff0c\u9500\u552e\u5f00\u5355\u65f6\u8981\u5148\u9009\u8fd9\u4e2a\u5ba2\u6237\u8d26\u53f7\u3002",
+  followUpTitle: "\u5efa\u8bae\u8ddf\u8fdb",
+  followUpCaption: "\u7528\u8fd9\u4e9b\u63d0\u9192\u5224\u65ad\u9500\u552e\u6216\u5ba2\u670d\u4e0b\u4e00\u6b65\u8981\u505a\u4ec0\u4e48\u3002",
+  priority: "\u4f18\u5148\u7ea7",
+  vipFollowUpTitle: "\u91cd\u70b9\u7ef4\u62a4 VIP \u7ecf\u9500\u5ba2\u6237",
+  vipFollowUpBody: "\u53ef\u4ee5\u63d0\u4f9b\u6708\u5ea6\u62a5\u4ef7\u5355\u3001\u66f4\u5feb\u7684 Messenger \u56de\u590d\u3001\u65b0\u8d27\u4f18\u5148\u901a\u77e5\u3002",
+  firstOrderTitle: "\u5e2e\u5ba2\u6237\u5b8c\u6210\u9996\u5355",
+  firstOrderBody: "\u4e3b\u52a8\u63a8\u8350\u5546\u54c1\uff0c\u8bf4\u660e MOQ\u3001\u81ea\u63d0\u3001Lalamove\u3001\u5feb\u9012\u548c\u6536\u6b3e\u786e\u8ba4\u6d41\u7a0b\u3002",
+  pointsReminderTitle: "\u63d0\u9192\u5ba2\u6237\u6709\u79ef\u5206",
+  pointsReminderBody: "\u8fd9\u4e2a\u5ba2\u6237\u8fd8\u6709\u79ef\u5206\u4f59\u989d\uff0c\u4e0b\u6b21\u4e0b\u5355\u65f6\u53ef\u4ee5\u63d0\u9192\uff0c\u63d0\u9ad8\u590d\u8d2d\u3002",
+  reactivationTitle: "\u9700\u8981\u5524\u9192\u5ba2\u6237",
+  reactivationBody: "\u6700\u8fd1\u6ca1\u6709\u52a8\u6001\u3002\u53ef\u4ee5\u53d1\u65b0\u54c1\u3001\u4f18\u60e0\u6216\u95ee\u5ba2\u6237\u6700\u8fd1\u9700\u8981\u627e\u4ec0\u4e48\u8d27\u3002",
+  onlineOnlyTitle: "\u628a\u7ebf\u4e0a\u5ba2\u6237\u4e0e\u95e8\u5e97\u4f1a\u5458\u8bb0\u5f55\u4e32\u8d77\u6765",
+  onlineOnlyBody: "\u5982\u679c\u8fd9\u4e2a\u5ba2\u6237\u4e5f\u5230\u5e97\u91cc\u4e70\uff0c\u9500\u552e\u5f00\u5355\u65f6\u8981\u9009\u8fd9\u4e2a\u5ba2\u6237\u8d26\u53f7\uff0c\u8ba9\u79ef\u5206\u548c\u6d88\u8d39\u8bb0\u5f55\u5408\u5728\u4e00\u8d77\u3002",
+  missingContactTitle: "\u8865\u5168\u5ba2\u6237\u8054\u7cfb\u65b9\u5f0f",
+  missingContactBody: "\u7535\u8bdd\u6216 Messenger \u8d44\u6599\u4e0d\u5b8c\u6574\u3002\u4e0b\u6b21\u4ea4\u6613\u524d\u8bf7\u5458\u5de5\u8865\u5168\u3002",
 } satisfies typeof copy.en;
+
+type FollowUpAction = {
+  title: string;
+  body: string;
+  tone: "orange" | "green" | "neutral";
+};
 
 export function AdminCustomerDetailClient({
   detail,
@@ -109,6 +145,7 @@ export function AdminCustomerDetailClient({
   }
 
   const customer = detail.customer;
+  const followUpActions = getFollowUpActions(detail, text);
 
   return (
     <>
@@ -148,6 +185,27 @@ export function AdminCustomerDetailClient({
           </div>
         </section>
       </div>
+
+      <section className="mb-4 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">{text.followUpTitle}</p>
+            <p className="mt-1 text-sm font-bold text-zinc-500">{text.followUpCaption}</p>
+          </div>
+          <StatusPill tone="orange">{followUpActions.length.toLocaleString("en-US")}</StatusPill>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {followUpActions.map((action) => (
+            <div key={action.title} className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-black text-zinc-950">{action.title}</h3>
+                <StatusPill tone={action.tone}>{text.priority}</StatusPill>
+              </div>
+              <p className="mt-2 text-xs font-bold leading-5 text-zinc-600">{action.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="mb-4">
         <SectionTitle title={text.onlineOrders} count={detail.onlineOrders.length} />
@@ -276,6 +334,39 @@ function SectionTitle({ title, count }: { title: string; count: number }) {
       <StatusPill tone="neutral">{count.toLocaleString("en-US")}</StatusPill>
     </div>
   );
+}
+
+function getFollowUpActions(detail: AdminCustomerDetail, text: typeof copy.en): FollowUpAction[] {
+  const actions: FollowUpAction[] = [];
+  const customer = detail.customer;
+  const lastActivityTime = detail.summary.lastActivityAt ? Date.parse(detail.summary.lastActivityAt) : 0;
+  const inactiveDays = lastActivityTime ? (Date.now() - lastActivityTime) / 86400000 : 999;
+
+  if (detail.summary.totalPaid >= 50000 || customer.orderCount >= 5) {
+    actions.push({ title: text.vipFollowUpTitle, body: text.vipFollowUpBody, tone: "green" });
+  }
+
+  if (customer.orderCount === 0) {
+    actions.push({ title: text.firstOrderTitle, body: text.firstOrderBody, tone: "orange" });
+  }
+
+  if ((customer.pointsBalance ?? 0) >= 100) {
+    actions.push({ title: text.pointsReminderTitle, body: text.pointsReminderBody, tone: "green" });
+  }
+
+  if (customer.orderCount > 0 && inactiveDays >= 30) {
+    actions.push({ title: text.reactivationTitle, body: text.reactivationBody, tone: "orange" });
+  }
+
+  if (detail.summary.onlineOrderCount > 0 && detail.summary.offlineSaleCount === 0) {
+    actions.push({ title: text.onlineOnlyTitle, body: text.onlineOnlyBody, tone: "neutral" });
+  }
+
+  if (!customer.phone || !customer.facebookMessenger) {
+    actions.push({ title: text.missingContactTitle, body: text.missingContactBody, tone: "neutral" });
+  }
+
+  return actions.length ? actions.slice(0, 4) : [{ title: text.reactivationTitle, body: text.reactivationBody, tone: "neutral" }];
 }
 
 function formatDateTime(value: string) {
