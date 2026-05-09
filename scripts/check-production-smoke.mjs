@@ -30,6 +30,7 @@ const customerPageChecks = new Set([
   "/login",
   "/register",
   "/wholesale-guides",
+  "/share/product/1",
 ]);
 const adminOnlyLeakTerms = [
   "supplier_notes",
@@ -250,9 +251,12 @@ function parseCsvLine(line) {
 }
 
 function checkCatalogFeed(csv) {
+  const leaked = adminOnlyLeakTerms.find((term) => csv.toLowerCase().includes(term));
   const lines = csv.trim().split(/\r?\n/).filter(Boolean);
   const headers = parseCsvLine(lines[0] ?? "");
   const requiredColumns = ["id", "title", "description", "availability", "condition", "price", "link", "image_link", "brand", "mpn"];
+
+  requireStatus(!leaked, `Meta catalog feed appears to expose admin-only text: ${leaked}`);
 
   for (const column of requiredColumns) {
     requireStatus(headers.includes(column), `Meta catalog feed is missing ${column} column`);
