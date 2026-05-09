@@ -78,6 +78,15 @@ const copy = {
     roleGuideTitle: "Cashier confirms money received",
     roleGuideBody: "Confirm only after the exact amount is received. Cash updates the physical cash drawer; GCash and bank transfers are recorded separately.",
     roleGuideWarning: "If the price, customer, or items are wrong, return the slip to Sales Desk instead of confirming payment.",
+    confirmationChecklist: "Payment Confirmation Check",
+    amountMustMatch: "Amount must match the sale slip before confirmation.",
+    referenceMustBeReady: "GCash / bank transfer requires a reference number.",
+    cashDrawerImpact: "Cash payment will enter the physical cash drawer after confirmation.",
+    transferImpact: "Transfer payment is recorded separately from physical cash.",
+    wrongSlipReturn: "Wrong customer, product, price, or payment method? Return to Sales Desk.",
+    readyToConfirm: "Ready to confirm",
+    blockedConfirm: "Cannot confirm yet",
+    confirmGuardTitle: "Confirm only after money is verified",
   },
   zh: {
     caption: "这里只做线下收银确认。收银员核对销售单、收款方式和金额后，再确认收款。",
@@ -166,6 +175,15 @@ const zhCopy = {
   roleGuideTitle: "\u6536\u94f6\u5458\u53ea\u8d1f\u8d23\u786e\u8ba4\u6536\u5230\u94b1",
   roleGuideBody: "\u53ea\u6709\u786e\u8ba4\u91d1\u989d\u5df2\u6536\u5230\u624d\u80fd\u70b9\u786e\u8ba4\u6536\u6b3e\u3002\u73b0\u91d1\u4f1a\u8fdb\u5b9e\u4f53\u94b1\u7bb1\uff1bGCash \u548c\u94f6\u884c\u8f6c\u8d26\u4f1a\u5355\u72ec\u8bb0\u5f55\u3002",
   roleGuideWarning: "\u5982\u679c\u4ef7\u683c\u3001\u5ba2\u6237\u6216\u5546\u54c1\u6709\u9519\uff0c\u4e0d\u8981\u786e\u8ba4\u6536\u6b3e\uff0c\u8bf7\u9000\u56de\u9500\u552e\u53f0\u4fee\u6539\u3002",
+  confirmationChecklist: "\u6536\u6b3e\u786e\u8ba4\u68c0\u67e5",
+  amountMustMatch: "\u786e\u8ba4\u524d\uff0c\u5b9e\u6536\u91d1\u989d\u5fc5\u987b\u548c\u9500\u552e\u5355\u5bf9\u4e0a\u3002",
+  referenceMustBeReady: "GCash / \u94f6\u884c\u8f6c\u8d26\u5fc5\u987b\u586b\u5199\u53c2\u8003\u53f7\u3002",
+  cashDrawerImpact: "\u73b0\u91d1\u786e\u8ba4\u540e\u4f1a\u8fdb\u5165\u5b9e\u4f53\u94b1\u7bb1\u3002",
+  transferImpact: "\u8f6c\u8d26\u4f1a\u5355\u72ec\u8bb0\u5f55\uff0c\u4e0d\u8ba1\u5165\u5b9e\u4f53\u73b0\u91d1\u3002",
+  wrongSlipReturn: "\u5ba2\u6237\u3001\u5546\u54c1\u3001\u4ef7\u683c\u6216\u6536\u6b3e\u65b9\u5f0f\u4e0d\u5bf9\uff1f\u8bf7\u9000\u56de\u9500\u552e\u53f0\u3002",
+  readyToConfirm: "\u53ef\u4ee5\u786e\u8ba4",
+  blockedConfirm: "\u6682\u4e0d\u80fd\u786e\u8ba4",
+  confirmGuardTitle: "\u53ea\u6709\u786e\u8ba4\u6536\u5230\u94b1\u540e\u624d\u70b9\u786e\u8ba4",
 } satisfies typeof copy.en;
 
 const cashierActionText = {
@@ -259,6 +277,29 @@ function SummaryCard({ label, value, tone = "neutral" }: { label: string; value:
     <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-400">{label}</p>
       <p className={`mt-2 text-2xl font-black ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
+
+function CashierGuardCard({
+  title,
+  body,
+  tone,
+}: {
+  title: string;
+  body: string;
+  tone: "orange" | "green" | "neutral";
+}) {
+  const toneClass = {
+    green: "border-emerald-100 bg-emerald-50 text-emerald-800",
+    neutral: "border-zinc-100 bg-zinc-50 text-zinc-700",
+    orange: "border-orange-100 bg-orange-50 text-orange-800",
+  }[tone];
+
+  return (
+    <div className={`rounded-md border p-3 ${toneClass}`}>
+      <p className="text-xs font-black uppercase tracking-[0.12em] opacity-80">{title}</p>
+      <p className="mt-2 text-xs font-bold leading-5">{body}</p>
     </div>
   );
 }
@@ -601,6 +642,30 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
                 <p className="mt-1 text-sm font-bold text-zinc-600">
                   {isTransferPayment(sale.paymentMethod) ? t.transferConfirmHint : t.cashConfirmHint}
                 </p>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-orange-100 bg-orange-50/60 p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-700">{t.confirmationChecklist}</p>
+                    <p className="mt-1 text-sm font-bold text-zinc-700">{t.confirmGuardTitle}</p>
+                  </div>
+                  <StatusPill tone={canConfirm ? "green" : "orange"}>{canConfirm ? t.readyToConfirm : t.blockedConfirm}</StatusPill>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <CashierGuardCard tone="green" title={formatPhp(sale.totalAmount)} body={t.amountMustMatch} />
+                  <CashierGuardCard
+                    tone={needsReference && !canConfirm ? "orange" : "green"}
+                    title={needsReference ? t.referenceNo : paymentMethodLabel(sale.paymentMethod, language)}
+                    body={needsReference ? t.referenceMustBeReady : t.cashConfirmHint}
+                  />
+                  <CashierGuardCard
+                    tone={sale.paymentMethod === "cash" ? "green" : "neutral"}
+                    title={paymentMethodLabel(sale.paymentMethod, language)}
+                    body={sale.paymentMethod === "cash" ? t.cashDrawerImpact : t.transferImpact}
+                  />
+                  <CashierGuardCard tone="orange" title={actionText.returnToSales} body={t.wrongSlipReturn} />
+                </div>
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto_auto_auto]">

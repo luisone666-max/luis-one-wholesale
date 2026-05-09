@@ -176,6 +176,12 @@ function main() {
     "return_to_sales",
     "referenceRequired",
     "cashDrawerUpdated",
+    "CashierGuardCard",
+    "Payment Confirmation Check",
+    "Amount must match the sale slip before confirmation.",
+    "Wrong customer, product, price, or payment method? Return to Sales Desk.",
+    "readyToConfirm",
+    "blockedConfirm",
   ]);
 
   requireIncludes("src/app/api/admin/pos/sales/[id]/confirm-payment/route.ts", [
