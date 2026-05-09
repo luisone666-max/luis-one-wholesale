@@ -8,6 +8,7 @@
     "check:schema": "node scripts/check-database-schema.mjs",
     "check:secrets": "node scripts/check-secret-safety.mjs",
     "check:customer-safety": "node scripts/check-customer-frontend-safety.mjs",
+    "check:checkout-safety": "node scripts/check-checkout-safety.mjs",
     "check:admin-api": "node scripts/check-admin-api-protection.mjs",
     "check:admin-pages": "node scripts/check-admin-page-protection.mjs",
     "check:admin-roles": "node scripts/check-admin-role-access.mjs",

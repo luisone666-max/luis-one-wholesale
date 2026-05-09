@@ -4,6 +4,7 @@ const suites = {
   maintenance: [
     ["check:secrets", "Secret safety"],
     ["check:customer-safety", "Customer frontend safety"],
+    ["check:checkout-safety", "Checkout safety"],
     ["check:admin-api", "Admin API protection"],
     ["check:admin-pages", "Admin page protection"],
     ["check:admin-roles", "Admin role access"],
