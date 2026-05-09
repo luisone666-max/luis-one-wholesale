@@ -53,6 +53,18 @@ const copy = {
     status: "Status",
     total: "Total",
     dataNote: "Offline sales here are cashier-confirmed payments. Online order total is submitted website order value.",
+    businessHealth: "Business Health",
+    actionRequired: "Action Required",
+    ready: "Ready",
+    openIssues: "Open Issues",
+    stockRisk: "Low / unavailable items",
+    hiddenCatalog: "Hidden catalog items",
+    viewProducts: "View Products",
+    dailyChecklist: "Daily Operating Checklist",
+    checklistOnline: "Confirm online orders before promising stock, pickup, or delivery.",
+    checklistCashier: "Cashier confirms payment before a sale becomes paid.",
+    checklistInventory: "Low or unavailable products should be restocked or switched to Messenger inquiry.",
+    checklistStaff: "Review employee sales and audit logs before closing the day.",
   },
   zh: {
     caption: "这里显示 Supabase 真实经营数据。测试订单删除后，仪表盘也会同步更新。",
@@ -127,6 +139,18 @@ const readableDashboardZh = {
   status: "\u72b6\u6001",
   total: "\u91d1\u989d",
   dataNote: "\u8fd9\u91cc\u7684\u7ebf\u4e0b\u9500\u552e\u989d\u53ea\u7edf\u8ba1\u6536\u94f6\u5458\u5df2\u786e\u8ba4\u6536\u6b3e\uff1b\u7ebf\u4e0a\u8ba2\u5355\u91d1\u989d\u662f\u5ba2\u6237\u63d0\u4ea4\u7684\u8ba2\u5355\u91d1\u989d\uff0c\u4ed8\u6b3e\u4ecd\u9700\u4eba\u5de5\u786e\u8ba4\u3002",
+  businessHealth: "\u7ecf\u8425\u5065\u5eb7\u72b6\u6001",
+  actionRequired: "\u9700\u8981\u5904\u7406",
+  ready: "\u6b63\u5e38",
+  openIssues: "\u5f85\u5904\u7406\u9879",
+  stockRisk: "\u4f4e\u5e93\u5b58 / \u7f3a\u8d27\u5546\u54c1",
+  hiddenCatalog: "\u9690\u85cf\u5546\u54c1",
+  viewProducts: "\u67e5\u770b\u5546\u54c1",
+  dailyChecklist: "\u6bcf\u65e5\u8425\u4e1a\u68c0\u67e5",
+  checklistOnline: "\u5148\u786e\u8ba4\u7ebf\u4e0a\u8ba2\u5355\uff0c\u518d\u627f\u8bfa\u5e93\u5b58\u3001\u53d6\u8d27\u6216\u914d\u9001\u3002",
+  checklistCashier: "\u9500\u552e\u5355\u5fc5\u987b\u7531\u6536\u94f6\u5458\u786e\u8ba4\u6536\u6b3e\u540e\uff0c\u624d\u7b97\u5df2\u6536\u6b3e\u3002",
+  checklistInventory: "\u4f4e\u5e93\u5b58\u6216\u7f3a\u8d27\u5546\u54c1\uff0c\u8981\u53ca\u65f6\u8865\u8d27\u6216\u6539\u6210 Messenger \u8be2\u95ee\u3002",
+  checklistStaff: "\u6bcf\u5929\u5173\u5e97\u524d\u770b\u5458\u5de5\u9500\u552e\u548c\u64cd\u4f5c\u8bb0\u5f55\u3002",
 };
 
 function StatCard({ label, value, tone = "neutral" }: { label: string; value: string | number; tone?: "orange" | "green" | "neutral" }) {
@@ -147,6 +171,41 @@ function StatCard({ label, value, tone = "neutral" }: { label: string; value: st
   );
 }
 
+function HealthCard({
+  href,
+  label,
+  note,
+  status,
+  value,
+  tone,
+}: {
+  href: string;
+  label: string;
+  note: string;
+  status: string;
+  value: string | number;
+  tone: "orange" | "green" | "neutral";
+}) {
+  const toneClasses = {
+    green: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    neutral: "border-zinc-200 bg-zinc-50 text-zinc-800",
+    orange: "border-orange-200 bg-orange-50 text-orange-800",
+  }[tone];
+
+  return (
+    <Link href={href} className={`block rounded-md border p-4 transition hover:-translate-y-0.5 hover:shadow-sm ${toneClasses}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-black">{label}</p>
+          <p className="mt-1 text-xs font-bold opacity-75">{note}</p>
+        </div>
+        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black shadow-sm">{status}</span>
+      </div>
+      <p className="mt-4 text-2xl font-black">{value}</p>
+    </Link>
+  );
+}
+
 function orderStatusLabel(status: string, language: "en" | "zh") {
   const readableZh: Record<string, string> = {
     pending_confirmation: "\u5f85\u786e\u8ba4",
@@ -162,22 +221,26 @@ function orderStatusLabel(status: string, language: "en" | "zh") {
     return readableZh[status] ?? status;
   }
 
-  const labels: Record<string, { en: string; zh: string }> = {
-    pending_confirmation: { en: "Pending Confirmation", zh: "待确认" },
-    waiting_deposit: { en: "Waiting Deposit", zh: "等待定金" },
-    deposit_paid: { en: "Deposit Paid", zh: "已付定金" },
-    sourcing_items: { en: "Sourcing Items", zh: "备货中" },
-    ready_for_pickup: { en: "Ready", zh: "可取货" },
-    completed: { en: "Completed", zh: "已完成" },
-    cancelled: { en: "Cancelled", zh: "已取消" },
+  const labels: Record<string, string> = {
+    pending_confirmation: "Pending Confirmation",
+    waiting_deposit: "Waiting Deposit",
+    deposit_paid: "Deposit Paid",
+    sourcing_items: "Sourcing Items",
+    ready_for_pickup: "Ready",
+    completed: "Completed",
+    cancelled: "Cancelled",
   };
 
-  return labels[status]?.[language] ?? status;
+  return labels[status] ?? status;
 }
 
 export function AdminDashboardClient({ data }: { data: AdminDashboardData }) {
   const { language } = useAdminI18n();
   const text = language === "zh" ? { ...copy.zh, ...readableDashboardZh } : copy.en;
+  const openIssueCount = data.pendingOnlineOrders + data.waitingCashierCount + data.lowStockProducts;
+  const hasOnlineAction = data.pendingOnlineOrders > 0;
+  const hasCashierAction = data.waitingCashierCount > 0;
+  const hasStockAction = data.lowStockProducts > 0;
 
   return (
     <>
@@ -274,6 +337,64 @@ export function AdminDashboardClient({ data }: { data: AdminDashboardData }) {
         <StatCard label={text.lowStockProducts} value={data.lowStockProducts} tone="orange" />
       </section>
       <p className="mt-3 rounded-md border border-orange-100 bg-orange-50 px-4 py-3 text-xs font-bold text-orange-800">{text.dataNote}</p>
+
+      <section className="mt-6 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">{text.businessHealth}</p>
+              <h2 className="mt-1 text-lg font-black text-zinc-950">
+                {text.openIssues}: {openIssueCount}
+              </h2>
+            </div>
+            <StatusPill tone={openIssueCount ? "orange" : "green"}>{openIssueCount ? text.actionRequired : text.ready}</StatusPill>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <HealthCard
+              href="/admin/orders"
+              label={text.pendingOnlineOrders}
+              note={text.needOnlineFollowUp}
+              status={hasOnlineAction ? text.actionRequired : text.ready}
+              value={data.pendingOnlineOrders}
+              tone={hasOnlineAction ? "orange" : "green"}
+            />
+            <HealthCard
+              href="/admin/cashier"
+              label={text.waitingCashier}
+              note={text.needCashier}
+              status={hasCashierAction ? text.actionRequired : text.ready}
+              value={data.waitingCashierCount}
+              tone={hasCashierAction ? "orange" : "green"}
+            />
+            <HealthCard
+              href="/admin/products"
+              label={text.stockRisk}
+              note={text.viewProducts}
+              status={hasStockAction ? text.actionRequired : text.ready}
+              value={data.lowStockProducts}
+              tone={hasStockAction ? "orange" : "green"}
+            />
+            <HealthCard
+              href="/admin/products"
+              label={text.hiddenCatalog}
+              note={text.viewProducts}
+              status={data.hiddenProducts ? text.actionRequired : text.ready}
+              value={data.hiddenProducts}
+              tone={data.hiddenProducts ? "neutral" : "green"}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="mb-4 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{text.dailyChecklist}</p>
+          <div className="space-y-3 text-sm font-bold text-zinc-700">
+            <p className="rounded-md bg-zinc-50 px-3 py-2">{text.checklistOnline}</p>
+            <p className="rounded-md bg-zinc-50 px-3 py-2">{text.checklistCashier}</p>
+            <p className="rounded-md bg-zinc-50 px-3 py-2">{text.checklistInventory}</p>
+            <p className="rounded-md bg-zinc-50 px-3 py-2">{text.checklistStaff}</p>
+          </div>
+        </div>
+      </section>
 
       <section className="mt-6 rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">

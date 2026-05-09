@@ -208,6 +208,17 @@ function main() {
     "limit(80)",
   ]);
 
+  requireIncludes("src/components/admin/AdminDashboardClient.tsx", [
+    "Business Health",
+    "Daily Operating Checklist",
+    "openIssueCount",
+    "HealthCard",
+    "data.pendingOnlineOrders",
+    "data.waitingCashierCount",
+    "data.lowStockProducts",
+    "data.hiddenProducts",
+  ]);
+
   requireIncludes("src/lib/admin-audit-log.ts", [
     "server-only",
     "admin_action_audit_logs",
