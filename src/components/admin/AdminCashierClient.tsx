@@ -40,6 +40,7 @@ const copy = {
     waiting: "Waiting cashier",
     noSales: "No offline sales waiting for cashier.",
     confirmed: "Payment confirmed.",
+    loadSalesFailed: "Unable to load sales.",
     paymentConfirmFailed: "Payment confirmation failed.",
     pointsAwarded: "awarded to member.",
     pointsNeedManualCheck: "Points need manual check:",
@@ -107,6 +108,7 @@ const copy = {
     waiting: "等待收银",
     noSales: "暂无等待收银的线下销售单。",
     confirmed: "已确认收款。",
+    loadSalesFailed: "无法载入待收款销售单。",
     paymentConfirmFailed: "收款确认失败。",
     pointsAwarded: "已给会员增加积分。",
     pointsNeedManualCheck: "积分需要人工检查：",
@@ -145,6 +147,7 @@ const zhCopy = {
   waiting: "等待收银",
   noSales: "暂无等待收银的线下销售单。",
   confirmed: "已确认收款。",
+  loadSalesFailed: "无法载入待收款销售单。",
   paymentConfirmFailed: "收款确认失败。",
   pointsAwarded: "已给会员增加积分。",
   pointsNeedManualCheck: "积分需要人工检查：",
@@ -388,11 +391,13 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
       const result = (await response.json()) as { ok?: boolean; message?: string; sales?: PosSaleRecord[] };
 
       if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Unable to load sales.");
+        setMessage(result.message ?? t.loadSalesFailed);
         return;
       }
 
       setSales(result.sales ?? []);
+    } catch {
+      setMessage(t.loadSalesFailed);
     } finally {
       setLoading(false);
     }
