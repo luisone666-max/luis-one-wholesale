@@ -49,6 +49,18 @@ const text = {
     confirmDelete: "Delete this category?",
     confirmTemplate: "Create missing categories from this template? New categories are inactive by default.",
     productCountHint: "Direct / total products under this category path",
+    saveFailed: "Save failed.",
+    updateFailed: "Update failed.",
+    reorderFailed: "Reorder failed.",
+    deleteFailed: "Delete failed.",
+    templateFailed: "Template failed.",
+    invalidImageType: "Only JPG, PNG, and WebP image files are allowed.",
+    optimizingImage: "Optimizing image...",
+    imageOptimized: "Image optimized",
+    imageOptimizedTo: "to",
+    imageTooLarge: "Image file must be 2MB or smaller.",
+    uploadFailed: "Upload failed.",
+    imageUploaded: "Image uploaded. Save the category to keep it.",
   },
   zh: {
     slug: "Slug",
@@ -64,6 +76,18 @@ const text = {
     confirmDelete: "确定删除这个分类？",
     confirmTemplate: "从模板创建缺失分类？新模板分类默认不启用。",
     productCountHint: "直接商品数 / 分类路径总商品数",
+    saveFailed: "保存失败。",
+    updateFailed: "更新失败。",
+    reorderFailed: "排序失败。",
+    deleteFailed: "删除失败。",
+    templateFailed: "模板应用失败。",
+    invalidImageType: "只允许上传 JPG、PNG、WebP 图片。",
+    optimizingImage: "正在优化图片...",
+    imageOptimized: "图片已优化",
+    imageOptimizedTo: "到",
+    imageTooLarge: "图片必须小于 2MB。",
+    uploadFailed: "上传失败。",
+    imageUploaded: "图片已上传，请保存分类。",
   },
 };
 
@@ -182,10 +206,10 @@ export function AdminCategoriesClient({
       headers: { "content-type": "application/json" },
       body: JSON.stringify(draft),
     });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Save failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.saveFailed }))) as { ok?: boolean; message?: string };
 
     if (!response.ok || !result.ok) {
-      setMessage(result.message ?? "Save failed.");
+      setMessage(result.message ?? copy.saveFailed);
       return;
     }
 
@@ -199,10 +223,10 @@ export function AdminCategoriesClient({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ mode: "toggle", ...patch }),
     });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Update failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.updateFailed }))) as { ok?: boolean; message?: string };
 
     if (!response.ok || !result.ok) {
-      setMessage(result.message ?? "Update failed.");
+      setMessage(result.message ?? copy.updateFailed);
       return;
     }
 
@@ -216,10 +240,10 @@ export function AdminCategoriesClient({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ mode: "reorder", sortOrder: nextSortOrder }),
     });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Reorder failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.reorderFailed }))) as { ok?: boolean; message?: string };
 
     if (!response.ok || !result.ok) {
-      setMessage(result.message ?? "Reorder failed.");
+      setMessage(result.message ?? copy.reorderFailed);
       return;
     }
 
@@ -232,10 +256,10 @@ export function AdminCategoriesClient({
     }
 
     const response = await fetch(`/api/admin/categories/${category.id}`, { method: "DELETE" });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Delete failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.deleteFailed }))) as { ok?: boolean; message?: string };
 
     if (!response.ok || !result.ok) {
-      setMessage(result.message ?? "Delete failed.");
+      setMessage(result.message ?? copy.deleteFailed);
       return;
     }
 
@@ -253,10 +277,10 @@ export function AdminCategoriesClient({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ template }),
     });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Template failed." }))) as { ok?: boolean; message?: string };
+    const result = (await response.json().catch(() => ({ ok: false, message: copy.templateFailed }))) as { ok?: boolean; message?: string };
 
     if (!response.ok || !result.ok) {
-      setMessage(result.message ?? "Template failed.");
+      setMessage(result.message ?? copy.templateFailed);
       return;
     }
 
@@ -272,21 +296,21 @@ export function AdminCategoriesClient({
     setMessage("");
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setMessage("Only JPG, PNG, and WebP image files are allowed.");
+      setMessage(copy.invalidImageType);
       return;
     }
 
     let uploadFile = file;
 
     try {
-      setMessage("Optimizing image...");
+      setMessage(copy.optimizingImage);
       const prepared = await prepareAdminUploadImage(file);
       uploadFile = prepared.file;
       if (prepared.compressed) {
-        setMessage(`Image optimized from ${formatImageBytes(prepared.originalBytes)} to ${formatImageBytes(prepared.file.size)}.`);
+        setMessage(`${copy.imageOptimized}: ${formatImageBytes(prepared.originalBytes)} ${copy.imageOptimizedTo} ${formatImageBytes(prepared.file.size)}.`);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Image file must be 2MB or smaller.");
+      setMessage(error instanceof Error ? error.message : copy.imageTooLarge);
       return;
     }
 
@@ -302,19 +326,19 @@ export function AdminCategoriesClient({
         method: "POST",
         body: formData,
       });
-      const result = (await response.json().catch(() => ({ ok: false, message: "Upload failed." }))) as {
+      const result = (await response.json().catch(() => ({ ok: false, message: copy.uploadFailed }))) as {
         ok?: boolean;
         imageUrl?: string;
         message?: string;
       };
 
       if (!response.ok || !result.ok || !result.imageUrl) {
-        setMessage(result.message ?? "Upload failed.");
+        setMessage(result.message ?? copy.uploadFailed);
         return;
       }
 
       setDraft((current) => ({ ...current, imageUrl: result.imageUrl ?? "" }));
-      setMessage(language === "zh" ? "图片已上传，请保存分类。" : "Image uploaded. Save the category to keep it.");
+      setMessage(copy.imageUploaded);
     } finally {
       setUploadingImage(false);
     }
