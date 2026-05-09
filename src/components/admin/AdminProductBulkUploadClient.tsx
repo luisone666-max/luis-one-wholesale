@@ -339,6 +339,7 @@ export function AdminProductBulkUploadClient() {
   const callApi = async (mode: "preview" | "import") => {
     setBusy(true);
     setMessage("");
+    const bulkUploadFailed = language === "zh" ? "批量上传失败。" : "Bulk upload failed.";
 
     try {
       const response = await fetch("/api/admin/products/bulk-upload", {
@@ -346,10 +347,10 @@ export function AdminProductBulkUploadClient() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ mode, rows, missingCategoryMode }),
       });
-      const result = (await response.json().catch(() => ({ ok: false, message: "Bulk upload failed." }))) as ApiResponse;
+      const result = (await response.json().catch(() => ({ ok: false, message: bulkUploadFailed }))) as ApiResponse;
 
       if (!response.ok) {
-        setMessage(result.ok ? "Bulk upload failed." : result.message);
+        setMessage(result.ok ? bulkUploadFailed : result.message);
         return;
       }
 
@@ -361,6 +362,8 @@ export function AdminProductBulkUploadClient() {
       setPreview(result.preview);
       setImportSummary(result.importSummary ?? null);
       setMessage(mode === "import" ? t.importDone : t.fileParsed);
+    } catch {
+      setMessage(bulkUploadFailed);
     } finally {
       setBusy(false);
     }
