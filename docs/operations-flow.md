@@ -90,9 +90,15 @@ Owner reports show:
 Run these before deployment:
 
 ```bash
-npm run check:pos
-npm run lint
-npm run build
+npm run check:maintenance
 ```
 
-`npm run check:pos` creates a temporary offline sale, confirms cashier payment, verifies loyalty points and cash drawer source totals, then removes the test data.
+`npm run check:maintenance` verifies secret safety, customer frontend safety, admin route/API protection, admin links, POS flow, online loyalty flow, production smoke checks, and the production build.
+
+Run this after production database migrations:
+
+```bash
+npm run check:readiness
+```
+
+`npm run check:readiness` verifies schema tables and POS correction audit workflow against the current Supabase project.
