@@ -253,6 +253,7 @@ function checkCatalogFeed(csv) {
     requireStatus(/^\d+(?:\.\d{2})\sPHP$/.test(price), `Meta catalog feed line ${lineNumber} has invalid PHP price "${price}"`);
     requireStatus(Number.isFinite(numericPrice) && numericPrice > 0, `Meta catalog feed line ${lineNumber} has non-positive price "${price}"`);
     requireStatus(/^https:\/\//.test(link), `Meta catalog feed line ${lineNumber} has non-HTTPS link "${link}"`);
+    requireStatus(link.includes(canonicalHost), `Meta catalog feed line ${lineNumber} should use ${canonicalHost}, got "${link}"`);
     requireStatus(/^https:\/\//.test(imageLink), `Meta catalog feed line ${lineNumber} has non-HTTPS image link "${imageLink}"`);
   });
 
