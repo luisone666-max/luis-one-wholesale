@@ -6,15 +6,31 @@ const publicChecks = [
   { path: "/", name: "home page", minLength: 1000 },
   { path: "/category/all", name: "product listing", minLength: 1000 },
   { path: "/product/1", name: "product detail", minLength: 1000 },
+  { path: "/cart", name: "cart page", minLength: 500 },
+  { path: "/checkout", name: "checkout page", minLength: 500 },
+  { path: "/member", name: "member center page", minLength: 500 },
+  { path: "/my-orders", name: "my orders page", minLength: 500 },
   { path: "/login", name: "customer login page", minLength: 500 },
   { path: "/register", name: "customer register page", minLength: 500 },
+  { path: "/wholesale-guides", name: "SEO guide index", minLength: 500 },
   { path: "/admin/login", name: "admin login page", minLength: 500 },
   { path: "/meta/catalog-feed.csv", name: "Meta catalog feed", minLength: 100 },
   { path: "/share/product/1", name: "Facebook product share page", minLength: 500 },
   { path: "/robots.txt", name: "robots.txt", minLength: 50 },
 ];
 
-const customerPageChecks = new Set(["/", "/category/all", "/product/1", "/login", "/register"]);
+const customerPageChecks = new Set([
+  "/",
+  "/category/all",
+  "/product/1",
+  "/cart",
+  "/checkout",
+  "/member",
+  "/my-orders",
+  "/login",
+  "/register",
+  "/wholesale-guides",
+]);
 const adminOnlyLeakTerms = [
   "supplier_notes",
   "internal_cost_notes",
