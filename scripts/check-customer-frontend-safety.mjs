@@ -23,10 +23,6 @@ const ignoredPathParts = [
   `${path.sep}admin-`,
   `${path.sep}auth${path.sep}`,
 ];
-const allowedCjkFiles = new Set([
-  path.join(root, "src/components/SiteHeaderClient.tsx"),
-]);
-
 function isIgnored(filePath) {
   const normalized = filePath.replaceAll("/", path.sep);
   return ignoredPathParts.some((part) => normalized.includes(part));
@@ -71,11 +67,9 @@ async function main() {
       }
     }
 
-    if (!allowedCjkFiles.has(file)) {
-      const cjkMatch = contents.match(/[\u3400-\u9fff]/u);
-      if (cjkMatch?.index !== undefined) {
-        failures.push(`${path.relative(root, file)}:${lineNumber(contents, cjkMatch.index)} contains CJK text in customer-facing code`);
-      }
+    const cjkMatch = contents.match(/[\u3400-\u9fff]/u);
+    if (cjkMatch?.index !== undefined) {
+      failures.push(`${path.relative(root, file)}:${lineNumber(contents, cjkMatch.index)} contains CJK text in customer-facing code`);
     }
   }
 
@@ -89,7 +83,7 @@ async function main() {
 
   console.log("Customer frontend safety check passed:");
   console.log("- no admin-only product/order note fields found in customer app/components");
-  console.log("- no Chinese customer-facing copy found outside explicitly allowed shared header code");
+  console.log("- no Chinese customer-facing copy found in customer app/components");
 }
 
 main().catch((error) => {
