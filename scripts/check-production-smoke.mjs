@@ -17,6 +17,7 @@ const publicChecks = [
   { path: "/meta/catalog-feed.csv", name: "Meta catalog feed", minLength: 100 },
   { path: "/share/product/1", name: "Facebook product share page", minLength: 500 },
   { path: "/robots.txt", name: "robots.txt", minLength: 50 },
+  { path: "/sitemap.xml", name: "sitemap.xml", minLength: 500 },
 ];
 
 const customerPageChecks = new Set([
@@ -306,6 +307,27 @@ function checkRobotsTxt(text) {
   console.log("ok robots.txt rules found");
 }
 
+function checkSitemap(text) {
+  const requiredUrls = [
+    `${defaultBaseUrl}/`,
+    `${defaultBaseUrl}/category/all`,
+    `${defaultBaseUrl}/product/1`,
+    `${defaultBaseUrl}/wholesale-guides`,
+  ];
+  const blockedPaths = ["/admin", "/api", "/dev"];
+
+  for (const url of requiredUrls) {
+    requireStatus(text.includes(url), `sitemap.xml is missing ${url}`);
+  }
+
+  for (const blockedPath of blockedPaths) {
+    requireStatus(!text.includes(`${defaultBaseUrl}${blockedPath}`), `sitemap.xml should not expose ${blockedPath} routes`);
+  }
+
+  requireStatus(!text.includes(".vercel.app"), "sitemap.xml should use the production custom domain, not Vercel preview domains");
+  console.log("ok sitemap.xml core public routes found");
+}
+
 function checkCustomerPageSafety(path, html) {
   const lower = html.toLowerCase();
   const leaked = adminOnlyLeakTerms.find((term) => lower.includes(term));
@@ -360,6 +382,7 @@ async function main() {
   checkProductOgTags(pageResults.get("/share/product/1") ?? "", "share page");
   checkCatalogFeed(pageResults.get("/meta/catalog-feed.csv") ?? "");
   checkRobotsTxt(pageResults.get("/robots.txt") ?? "");
+  checkSitemap(pageResults.get("/sitemap.xml") ?? "");
   console.log("Production smoke check passed.");
 }
 
