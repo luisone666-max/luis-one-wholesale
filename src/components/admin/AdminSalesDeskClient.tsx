@@ -112,6 +112,9 @@ const copy = {
     noManualItems: "All items are linked to catalog products.",
     priceChangeNeedsNotes: "Negotiated price detected. Add price / discount notes before sending to cashier.",
     noPriceChange: "No negotiated product price changes detected.",
+    auditNoteRequired: "Manual item, discount, or negotiated price requires a price / discount note before sending to cashier.",
+    auditNoteReady: "Price / discount note is ready for cashier review.",
+    saleReadyBlocked: "Complete required checks before sending to cashier.",
     cashierPendingNotice: "After saving, status becomes Waiting Cashier. Sales cannot mark it paid here.",
     cashDrawerPendingNotice: "Cash drawer updates only after cashier confirms payment.",
     catalogItem: "Catalog item",
@@ -277,6 +280,9 @@ const zhCopy = {
   noManualItems: "\u6240\u6709\u5546\u54c1\u90fd\u5df2\u5173\u8054\u5546\u54c1\u5e93\u3002",
   priceChangeNeedsNotes: "\u68c0\u6d4b\u5230\u8c08\u4ef7 / \u6539\u4ef7\u3002\u53d1\u7ed9\u6536\u94f6\u524d\u8bf7\u586b\u5199\u6539\u4ef7 / \u6298\u6263\u5907\u6ce8\u3002",
   noPriceChange: "\u6682\u672a\u68c0\u6d4b\u5230\u5546\u54c1\u6539\u4ef7\u3002",
+  auditNoteRequired: "\u624b\u52a8\u5546\u54c1\u3001\u6298\u6263\u6216\u8c08\u4ef7\u5fc5\u987b\u586b\u5199\u6539\u4ef7 / \u6298\u6263\u5907\u6ce8\uff0c\u624d\u80fd\u53d1\u7ed9\u6536\u94f6\u3002",
+  auditNoteReady: "\u6539\u4ef7 / \u6298\u6263\u5907\u6ce8\u5df2\u586b\u5199\uff0c\u6536\u94f6\u53ef\u4ee5\u590d\u6838\u3002",
+  saleReadyBlocked: "\u8bf7\u5148\u5b8c\u6210\u5fc5\u8981\u68c0\u67e5\uff0c\u518d\u53d1\u7ed9\u6536\u94f6\u3002",
   cashierPendingNotice: "\u4fdd\u5b58\u540e\u72b6\u6001\u4f1a\u53d8\u6210\u7b49\u5f85\u6536\u94f6\uff0c\u9500\u552e\u53f0\u4e0d\u80fd\u6807\u8bb0\u5df2\u6536\u6b3e\u3002",
   cashDrawerPendingNotice: "\u53ea\u6709\u6536\u94f6\u786e\u8ba4\u540e\uff0c\u94b1\u7bb1\u624d\u4f1a\u66f4\u65b0\u3002",
   catalogItem: "\u5546\u54c1\u5e93\u5546\u54c1",
@@ -539,7 +545,8 @@ export function AdminSalesDeskClient({
       }, 0),
     [items],
   );
-  const total = Math.max(0, productTotal - (Number(discountAmount) || 0));
+  const discountValue = Number(discountAmount) || 0;
+  const total = Math.max(0, productTotal - discountValue);
   const meaningfulItems = useMemo(() => items.filter((item) => item.productId || item.sku.trim() || item.name.trim()), [items]);
   const itemLineCount = meaningfulItems.length;
   const totalQuantity = meaningfulItems.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) || 0), 0);
@@ -557,7 +564,10 @@ export function AdminSalesDeskClient({
 
     return Math.abs((Number(item.unitPrice) || 0) - product.retailPrice) >= 0.01;
   }).length;
-  const canSubmitSale = itemLineCount > 0 && total >= 0 && !loading;
+  const discountIsTooHigh = discountValue > productTotal;
+  const needsPriceAuditNote = (manualItemCount > 0 || changedPriceCount > 0 || discountValue > 0) && !priceChangeNotes.trim();
+  const auditNoteTriggerCount = manualItemCount + changedPriceCount + (discountValue > 0 ? 1 : 0);
+  const canSubmitSale = itemLineCount > 0 && total >= 0 && !discountIsTooHigh && !needsPriceAuditNote && !loading;
   const filteredProducts = useMemo(() => {
     const needle = productSearch.trim().toLowerCase();
 
@@ -785,8 +795,13 @@ export function AdminSalesDeskClient({
   }
 
   async function saveSale() {
-    if ((Number(discountAmount) || 0) > productTotal) {
+    if (discountIsTooHigh) {
       setMessage(t.discountTooHigh);
+      return;
+    }
+
+    if (needsPriceAuditNote) {
+      setMessage(t.auditNoteRequired);
       return;
     }
 
@@ -897,7 +912,7 @@ export function AdminSalesDeskClient({
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{t.saleGuardTitle}</p>
-          <StatusPill tone={itemLineCount ? "orange" : "neutral"}>{itemLineCount ? t.readyForCashier : t.needProductsFirst}</StatusPill>
+          <StatusPill tone={canSubmitSale ? "green" : itemLineCount ? "orange" : "neutral"}>{canSubmitSale ? t.readyForCashier : itemLineCount ? t.saleReadyBlocked : t.needProductsFirst}</StatusPill>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <SalesGuardCard
@@ -911,9 +926,9 @@ export function AdminSalesDeskClient({
             body={manualItemCount ? t.manualItemsNeedReview : t.noManualItems}
           />
           <SalesGuardCard
-            tone={changedPriceCount && !priceChangeNotes.trim() ? "orange" : "green"}
-            title={`${changedPriceCount} ${t.priceNotes}`}
-            body={changedPriceCount && !priceChangeNotes.trim() ? t.priceChangeNeedsNotes : t.noPriceChange}
+            tone={discountIsTooHigh || needsPriceAuditNote ? "orange" : "green"}
+            title={`${auditNoteTriggerCount} ${t.priceNotes}`}
+            body={discountIsTooHigh ? t.discountTooHigh : needsPriceAuditNote ? t.auditNoteRequired : auditNoteTriggerCount ? t.auditNoteReady : t.noPriceChange}
           />
           <SalesGuardCard
             tone="neutral"
@@ -1123,7 +1138,7 @@ export function AdminSalesDeskClient({
             </div>
             <div className="flex justify-between gap-3">
               <span>{t.discount}</span>
-              <span>{formatPhp(Number(discountAmount) || 0)}</span>
+              <span>{formatPhp(discountValue)}</span>
             </div>
             <div className="flex justify-between gap-3 border-t border-orange-200 pt-2 text-base font-black text-orange-700">
               <span>{ui.cashierReceives}</span>
