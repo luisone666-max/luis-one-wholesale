@@ -116,6 +116,11 @@ const copy = {
     noErrors: "No import errors.",
     checkImportedProducts: "Check Imported Products",
     importNextStep: "After import, open Product Management to confirm images, prices, categories, and customer visibility.",
+    csvRulesTitle: "CSV Filling Rules",
+    csvRuleStock: "Stock Status: ready_stock, for_order, low_stock, or unavailable.",
+    csvRuleActive: "Active: true/false, yes/no, or 1/0.",
+    csvRulePrices: "Price columns create wholesale tiers: 1pc, 6pcs, 12pcs, and 50pcs.",
+    csvRuleImages: "Image URL can be left blank first. You can upload images later in Product Management.",
   },
   zh: {
     caption: "从 CSV 批量导入或更新商品。保存前会先预览校验结果。",
@@ -169,6 +174,11 @@ const copy = {
     noErrors: "没有导入错误。",
     checkImportedProducts: "检查已导入商品",
     importNextStep: "导入后请打开商品管理，检查图片、价格、分类和前台显示状态。",
+    csvRulesTitle: "CSV 填写规则",
+    csvRuleStock: "库存状态：ready_stock、for_order、low_stock、unavailable。",
+    csvRuleActive: "启用状态：true/false、yes/no、1/0 都可以。",
+    csvRulePrices: "价格字段会生成批发阶梯：1pc、6pcs、12pcs、50pcs。",
+    csvRuleImages: "图片链接可以先留空，之后在商品管理里再上传图片。",
   },
 };
 
@@ -410,6 +420,16 @@ export function AdminProductBulkUploadClient() {
                 {t.skipRows}
               </label>
             </div>
+          </section>
+
+          <section className="rounded-md border border-orange-100 bg-orange-50 p-5 shadow-sm">
+            <h2 className="text-lg font-black text-zinc-950">{t.csvRulesTitle}</h2>
+            <ul className="mt-3 space-y-2 text-sm font-bold leading-6 text-orange-800">
+              <li>{t.csvRuleStock}</li>
+              <li>{t.csvRuleActive}</li>
+              <li>{t.csvRulePrices}</li>
+              <li>{t.csvRuleImages}</li>
+            </ul>
           </section>
         </div>
 
