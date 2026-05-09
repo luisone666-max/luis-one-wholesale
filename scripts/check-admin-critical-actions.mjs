@@ -258,6 +258,19 @@ function main() {
     "data.hiddenProducts",
   ]);
 
+  requireIncludes("src/components/admin/AdminOperationsGuideClient.tsx", [
+    "Handoff flow",
+    "Sales creates the slip, Cashier confirms money",
+    "member points",
+    "Do not confirm payment before receiving money.",
+    "/admin/sales-desk",
+    "/admin/cashier",
+    "/admin/cash-drawer",
+    "/admin/reports",
+    "/admin/staff",
+    "Use manual items only for offline products",
+  ]);
+
   requireIncludes("src/components/admin/AdminReportsClient.tsx", [
     "Owner Diagnosis",
     "collectionRate",
