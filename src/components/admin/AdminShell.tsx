@@ -22,6 +22,13 @@ type NavItem = {
   roles?: AdminRole[];
 };
 
+type RoleQuickAction = {
+  href: string;
+  label: { en: string; zh: string };
+  description: { en: string; zh: string };
+  roles: AdminRole[];
+};
+
 const AdminI18nContext = createContext<AdminI18nContextValue | null>(null);
 
 const navSections: Array<{
@@ -158,6 +165,57 @@ const navSections: Array<{
   },
 ];
 
+const roleQuickActions: RoleQuickAction[] = [
+  {
+    href: "/admin/sales-desk",
+    label: { en: "Create Sales Slip", zh: "\u9500\u552e\u5f00\u5355" },
+    description: { en: "For in-store sales and member points", zh: "\u7ebf\u4e0b\u9500\u552e\u4e0e\u4f1a\u5458\u79ef\u5206" },
+    roles: ["owner", "admin", "sales", "staff"],
+  },
+  {
+    href: "/admin/products",
+    label: { en: "Product / Price Lookup", zh: "\u5546\u54c1\u67e5\u4ef7" },
+    description: { en: "Check SKU, price, MOQ, and stock", zh: "\u67e5 SKU\u3001\u4ef7\u683c\u3001MOQ\u548c\u5e93\u5b58" },
+    roles: ["owner", "admin", "warehouse", "sales", "staff"],
+  },
+  {
+    href: "/admin/cashier",
+    label: { en: "Confirm Payment", zh: "\u786e\u8ba4\u6536\u6b3e" },
+    description: { en: "Cash, GCash, bank transfer", zh: "\u73b0\u91d1\u3001GCash\u3001\u94f6\u884c\u8f6c\u8d26" },
+    roles: ["owner", "admin", "cashier"],
+  },
+  {
+    href: "/admin/cash-drawer",
+    label: { en: "Cash Drawer", zh: "\u94b1\u7bb1\u65e5\u7ed3" },
+    description: { en: "Opening cash, cash out, closing", zh: "\u5f00\u7bb1\u3001\u652f\u51fa\u3001\u5173\u8d26" },
+    roles: ["owner", "admin", "cashier"],
+  },
+  {
+    href: "/admin/orders",
+    label: { en: "Online Orders", zh: "\u7ebf\u4e0a\u8ba2\u5355" },
+    description: { en: "Website orders and manual follow-up", zh: "\u7f51\u7ad9\u8ba2\u5355\u4e0e\u4eba\u5de5\u8ddf\u8fdb" },
+    roles: ["owner", "admin", "warehouse"],
+  },
+  {
+    href: "/admin/reports",
+    label: { en: "Reports", zh: "\u7ecf\u8425\u62a5\u8868" },
+    description: { en: "Monthly employee and store totals", zh: "\u5458\u5de5\u4e0e\u95e8\u5e97\u6708\u5ea6\u6570\u636e" },
+    roles: ["owner", "admin"],
+  },
+  {
+    href: "/admin/staff",
+    label: { en: "Staff Access", zh: "\u5458\u5de5\u6743\u9650" },
+    description: { en: "Create staff and assign roles", zh: "\u521b\u5efa\u5458\u5de5\u5e76\u5206\u914d\u6743\u9650" },
+    roles: ["owner", "admin"],
+  },
+  {
+    href: "/admin/help",
+    label: { en: "Daily Workflow Guide", zh: "\u6bcf\u65e5\u6d41\u7a0b\u6307\u5357" },
+    description: { en: "What each role should do", zh: "\u6bcf\u4e2a\u89d2\u8272\u8be5\u505a\u4ec0\u4e48" },
+    roles: ["owner", "admin", "staff", "sales", "cashier", "warehouse"],
+  },
+];
+
 function adminSectionTitle(section: (typeof navSections)[number], language: AdminLanguage) {
   return language === "zh" ? section.title.zh : section.title.en;
 }
@@ -168,6 +226,14 @@ function adminNavHint(item: NavItem, language: AdminLanguage) {
 
 function adminNavLabel(item: NavItem, language: AdminLanguage, t: (key: TranslationKey) => string) {
   return typeof item.label === "string" ? t(item.label) : language === "zh" ? item.label.zh : item.label.en;
+}
+
+function quickActionLabel(item: RoleQuickAction, language: AdminLanguage) {
+  return language === "zh" ? item.label.zh : item.label.en;
+}
+
+function quickActionDescription(item: RoleQuickAction, language: AdminLanguage) {
+  return language === "zh" ? item.description.zh : item.description.en;
 }
 
 export function useAdminI18n() {
@@ -260,6 +326,7 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
     }))
     .filter((section) => section.items.length > 0);
   const navItems = visibleNavSections.flatMap((section) => section.items);
+  const visibleQuickActions = roleQuickActions.filter((item) => role && item.roles.includes(role)).slice(0, role === "owner" || role === "admin" ? 6 : 4);
   const activeItem = navItems.find((item) => isActive(item.href)) ?? navItems[0] ?? navSections[0].items[0];
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
@@ -366,6 +433,36 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
                 </button>
               </div>
             </div>
+            {visibleQuickActions.length ? (
+              <div className="border-t border-zinc-100 bg-zinc-50/70 px-4 py-3 lg:px-8">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-400">
+                    {language === "zh" ? "\u4f60\u7684\u5de5\u4f5c\u5165\u53e3" : "Your Workspace"}
+                  </p>
+                  {adminProfile?.role ? (
+                    <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-orange-700 ring-1 ring-orange-100">
+                      {adminProfile.role}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {visibleQuickActions.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`min-w-[172px] shrink-0 rounded-md border px-3 py-2 text-left transition ${
+                        isActive(item.href)
+                          ? "border-orange-200 bg-orange-50 text-orange-800"
+                          : "border-zinc-200 bg-white text-zinc-700 hover:border-orange-200 hover:text-orange-700"
+                      }`}
+                    >
+                      <span className="block text-sm font-black">{quickActionLabel(item, language)}</span>
+                      <span className="mt-1 block text-[11px] font-bold leading-4 text-zinc-500">{quickActionDescription(item, language)}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <nav className="flex gap-2 overflow-x-auto border-t border-zinc-100 px-4 py-2 lg:hidden">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href} className={`shrink-0 rounded-full px-3 py-2 text-xs font-bold ${isActive(item.href) ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700"}`}>

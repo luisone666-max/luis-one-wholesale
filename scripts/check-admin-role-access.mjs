@@ -57,6 +57,15 @@ function main() {
     "priceLookupOnly",
     "canManageProducts",
   ]);
+  requireIncludes(failures, "src/components/admin/AdminShell.tsx", [
+    "roleQuickActions",
+    'roles: ["owner", "admin", "sales", "staff"]',
+    'roles: ["owner", "admin", "cashier"]',
+    'roles: ["owner", "admin", "warehouse"]',
+    'roles: ["owner", "admin", "staff", "sales", "cashier", "warehouse"]',
+    "visibleQuickActions",
+    "Your Workspace",
+  ]);
 
   requireIncludes(failures, "src/app/api/admin/pos/sales/[id]/confirm-payment/route.ts", [
     "canUseCashierCenter",
