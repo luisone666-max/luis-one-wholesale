@@ -67,6 +67,14 @@ const copy = {
     by: "By",
     reason: "Reason",
     statusChange: "Status Change",
+    cashierQueueStatus: "Cashier Queue",
+    waitingSlips: "Waiting Slips",
+    nextToCollect: "Next to Collect",
+    cashSlips: "Cash Slips",
+    transferSlips: "Transfer Slips",
+    noWaitingSlipsShort: "No waiting slips",
+    cashControlHint: "Cash payments must match the physical cash drawer.",
+    transferControlHint: "GCash / bank payments need a reference number before confirmation.",
   },
   zh: {
     caption: "这里只做线下收银确认。收银员核对销售单、收款方式和金额后，再确认收款。",
@@ -144,6 +152,14 @@ const zhCopy = {
   by: "\u64cd\u4f5c\u4eba",
   reason: "\u539f\u56e0",
   statusChange: "\u72b6\u6001\u53d8\u5316",
+  cashierQueueStatus: "\u6536\u94f6\u961f\u5217",
+  waitingSlips: "\u5f85\u6536\u5355\u6570",
+  nextToCollect: "\u4e0b\u4e00\u5f20\u5e94\u6536",
+  cashSlips: "\u73b0\u91d1\u5355",
+  transferSlips: "\u8f6c\u8d26\u5355",
+  noWaitingSlipsShort: "\u6ca1\u6709\u5f85\u6536\u5355",
+  cashControlHint: "\u73b0\u91d1\u5355\u8981\u548c\u5b9e\u9645\u94b1\u7bb1\u73b0\u91d1\u5bf9\u4e0a\u3002",
+  transferControlHint: "GCash / \u94f6\u884c\u8f6c\u8d26\u786e\u8ba4\u524d\u5fc5\u987b\u586b\u53c2\u8003\u53f7\u3002",
 } satisfies typeof copy.en;
 
 const cashierActionText = {
@@ -259,18 +275,22 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
 
           if (sale.paymentMethod === "cash") {
             summary.cash += sale.totalAmount;
+            summary.cashCount += 1;
           } else if (isTransferPayment(sale.paymentMethod)) {
             summary.transfer += sale.totalAmount;
+            summary.transferCount += 1;
           } else {
             summary.other += sale.totalAmount;
+            summary.otherCount += 1;
           }
 
           return summary;
         },
-        { total: 0, cash: 0, transfer: 0, other: 0 },
+        { total: 0, cash: 0, transfer: 0, other: 0, cashCount: 0, transferCount: 0, otherCount: 0 },
     ),
     [sales],
   );
+  const nextSale = sales[0];
 
   useEffect(() => {
     let active = true;
@@ -414,6 +434,44 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
         </div>
       </section>
       {message ? <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-800">{message}</div> : null}
+
+      <section className="sticky top-2 z-20 rounded-lg border border-zinc-200 bg-white/95 p-3 shadow-lg backdrop-blur print:hidden">
+        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-md bg-zinc-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400">{t.cashierQueueStatus}</p>
+              <p className="mt-1 text-sm font-black text-zinc-950">{sales.length ? t.waiting : t.noWaitingSlipsShort}</p>
+            </div>
+            <div className="rounded-md bg-orange-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-orange-500">{t.waitingSlips}</p>
+              <p className="mt-1 text-lg font-black text-orange-700">{sales.length}</p>
+            </div>
+            <div className="rounded-md bg-zinc-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400">{t.cashSlips}</p>
+              <p className="mt-1 text-sm font-black text-zinc-950">
+                {waitingSummary.cashCount} / {formatPhp(waitingSummary.cash)}
+              </p>
+            </div>
+            <div className="rounded-md bg-zinc-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400">{t.transferSlips}</p>
+              <p className="mt-1 text-sm font-black text-zinc-950">
+                {waitingSummary.transferCount} / {formatPhp(waitingSummary.transfer)}
+              </p>
+            </div>
+            <div className="rounded-md bg-emerald-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-600">{t.nextToCollect}</p>
+              <p className="mt-1 text-lg font-black text-emerald-700">{nextSale ? formatPhp(nextSale.totalAmount) : "-"}</p>
+            </div>
+          </div>
+          <button type="button" disabled={loading} onClick={() => void refresh()} className="h-12 rounded-md bg-zinc-950 px-5 text-sm font-black text-white disabled:opacity-50">
+            {t.refresh}
+          </button>
+        </div>
+        <div className="mt-3 grid gap-2 text-xs font-bold text-zinc-600 md:grid-cols-2">
+          <p className="rounded-md bg-zinc-50 px-3 py-2">{t.cashControlHint}</p>
+          <p className="rounded-md bg-zinc-50 px-3 py-2">{t.transferControlHint}</p>
+        </div>
+      </section>
 
       <section className="grid gap-3 md:grid-cols-4">
         <SummaryCard label={t.waitingTotal} value={formatPhp(waitingSummary.total)} tone="orange" />

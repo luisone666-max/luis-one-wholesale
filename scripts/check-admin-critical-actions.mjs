@@ -154,6 +154,11 @@ function main() {
 
   requireIncludes("src/components/admin/AdminCashierClient.tsx", [
     "/api/admin/pos/sales?status=waiting_cashier",
+    "Cashier Queue",
+    "cashierQueueStatus",
+    "waitingSummary.cashCount",
+    "waitingSummary.transferCount",
+    "nextSale",
     "confirm(sale",
     "confirm-payment",
     "return_to_sales",
