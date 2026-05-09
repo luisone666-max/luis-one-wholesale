@@ -91,6 +91,7 @@ const copy = {
     status: "Status",
     messages: "Messages",
     action: "Action",
+    stockStatus: "Stock Status",
     totalRows: "Total Rows",
     validRows: "Valid Rows",
     warningRows: "Warning Rows",
@@ -113,6 +114,8 @@ const copy = {
     update: "Update",
     skip: "Skip",
     noErrors: "No import errors.",
+    checkImportedProducts: "Check Imported Products",
+    importNextStep: "After import, open Product Management to confirm images, prices, categories, and customer visibility.",
   },
   zh: {
     caption: "从 CSV 批量导入或更新商品。保存前会先预览校验结果。",
@@ -141,6 +144,7 @@ const copy = {
     status: "状态",
     messages: "提示",
     action: "动作",
+    stockStatus: "库存状态",
     totalRows: "总行数",
     validRows: "有效行",
     warningRows: "警告行",
@@ -163,6 +167,8 @@ const copy = {
     update: "更新",
     skip: "跳过",
     noErrors: "没有导入错误。",
+    checkImportedProducts: "检查已导入商品",
+    importNextStep: "导入后请打开商品管理，检查图片、价格、分类和前台显示状态。",
   },
 };
 
@@ -460,7 +466,7 @@ export function AdminProductBulkUploadClient() {
                     <th className="px-4 py-3">{t.productName}</th>
                     <th className="px-4 py-3">{t.categoryPath}</th>
                     <th className="px-4 py-3">MOQ</th>
-                    <th className="px-4 py-3">Stock Status</th>
+                    <th className="px-4 py-3">{t.stockStatus}</th>
                     <th className="px-4 py-3">{t.priceRange}</th>
                     <th className="px-4 py-3">{t.active}</th>
                     <th className="px-4 py-3">{t.action}</th>
@@ -509,6 +515,15 @@ export function AdminProductBulkUploadClient() {
                 </div>
                 <div className="mt-4 rounded-md bg-zinc-50 p-4 text-sm font-bold text-zinc-600">
                   {importSummary.errors.length ? importSummary.errors.join(" ") : t.noErrors}
+                </div>
+                <div className="mt-4 rounded-md border border-orange-100 bg-orange-50 p-4">
+                  <p className="text-sm font-bold leading-6 text-orange-800">{t.importNextStep}</p>
+                  <Link
+                    href="/admin/products"
+                    className="mt-3 inline-flex h-10 items-center rounded-md bg-[#f65f18] px-4 text-sm font-black text-white"
+                  >
+                    {t.checkImportedProducts}
+                  </Link>
                 </div>
               </>
             ) : (
