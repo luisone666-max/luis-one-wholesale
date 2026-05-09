@@ -63,6 +63,13 @@ const copy = {
     pendingRisk: "Pending Risk",
     exceptionRate: "Correction Rate",
     staffCoverage: "Active Salespeople",
+    staffStatus: "Staff Status",
+    staffReady: "Ready",
+    staffWaiting: "Waiting cashier",
+    staffLowCollection: "Low collection",
+    staffNeedsReview: "Needs review",
+    staffWithWaiting: "Staff with waiting slips",
+    staffLowCollectionCount: "Low collection staff",
   },
   zh: {
     caption: "老板报表：线上订单、线下 POS、收银确认、收款方式、员工销售额统一查看。",
@@ -172,6 +179,13 @@ const zhCopy = {
   pendingRisk: "待处理风险",
   exceptionRate: "更正率",
   staffCoverage: "活跃销售人数",
+  staffStatus: "员工状态",
+  staffReady: "正常",
+  staffWaiting: "有待收银",
+  staffLowCollection: "收款率低",
+  staffNeedsReview: "需要复核",
+  staffWithWaiting: "有待收银员工",
+  staffLowCollectionCount: "低收款率员工",
 } satisfies typeof copy.en;
 
 function SummaryCard({ label, value, tone = "neutral", detail }: { label: string; value: string; tone?: "orange" | "green" | "neutral"; detail?: string }) {
@@ -200,6 +214,44 @@ function percent(part: number, total: number) {
   }
 
   return `${Math.round((part / total) * 100)}%`;
+}
+
+function ratio(part: number, total: number) {
+  if (total <= 0) {
+    return 0;
+  }
+
+  return part / total;
+}
+
+function staffStatus(row: EmployeeSalesReportRow, labels: typeof copy.en) {
+  const collectionRatio = ratio(row.paidTotal, row.productTotal);
+
+  if (row.waitingTotal > 0) {
+    return {
+      label: labels.staffWaiting,
+      tone: "orange" as const,
+    };
+  }
+
+  if (row.productTotal > 0 && collectionRatio < 0.6) {
+    return {
+      label: labels.staffLowCollection,
+      tone: "orange" as const,
+    };
+  }
+
+  if (row.productTotal > 0 && row.paidTotal <= 0) {
+    return {
+      label: labels.staffNeedsReview,
+      tone: "neutral" as const,
+    };
+  }
+
+  return {
+    label: labels.staffReady,
+    tone: "green" as const,
+  };
 }
 
 function FlowRow({ label, today, month }: { label: string; today: number; month: number }) {
@@ -236,6 +288,8 @@ export function AdminReportsClient({
       waitingTotal: visibleRows.reduce((total, row) => total + row.waitingTotal, 0),
       paidTotal: visibleRows.reduce((total, row) => total + row.paidTotal, 0),
       staffCount: new Set(visibleRows.map((row) => row.salesAdminUserId || "unassigned")).size,
+      staffWithWaiting: visibleRows.filter((row) => row.waitingTotal > 0).length,
+      lowCollectionStaff: visibleRows.filter((row) => row.productTotal > 0 && row.waitingTotal <= 0 && ratio(row.paidTotal, row.productTotal) < 0.6).length,
     }),
     [visibleRows],
   );
@@ -375,6 +429,8 @@ export function AdminReportsClient({
           <SummaryCard label={t.selectedPaidTotal} value={formatPhp(summary.paidTotal)} />
           <SummaryCard label={t.waitingAmount} value={formatPhp(summary.waitingTotal)} />
           <SummaryCard label={t.paidRate} value={percent(summary.paidTotal, summary.productTotal)} />
+          <SummaryCard label={t.staffWithWaiting} value={`${summary.staffWithWaiting}`} tone={summary.staffWithWaiting ? "orange" : "green"} />
+          <SummaryCard label={t.staffLowCollectionCount} value={`${summary.lowCollectionStaff}`} tone={summary.lowCollectionStaff ? "orange" : "green"} />
         </section>
 
         <TableShell>
@@ -392,29 +448,37 @@ export function AdminReportsClient({
                   <th className="px-4 py-3">{t.paidOrders}</th>
                   <th className="px-4 py-3">{t.paidTotal}</th>
                   <th className="px-4 py-3">{t.paidRate}</th>
+                  <th className="px-4 py-3">{t.staffStatus}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 bg-white">
                 {visibleRows.length ? (
-                  visibleRows.map((row) => (
-                    <tr key={`${row.month}-${row.salesAdminUserId || "unassigned"}`}>
-                      <td className="px-4 py-4 font-black text-zinc-950">{row.month}</td>
-                      <td className="px-4 py-4">
-                        <StatusPill tone={row.salesAdminUserId ? "green" : "neutral"}>{row.salesName}</StatusPill>
-                      </td>
-                      <td className="px-4 py-4 font-bold text-zinc-700">{row.orderCount}</td>
-                      <td className="px-4 py-4 font-black text-orange-700">{formatPhp(row.productTotal)}</td>
-                      <td className="px-4 py-4 font-bold text-zinc-700">{formatPhp(row.onlineTotal)}</td>
-                      <td className="px-4 py-4 font-bold text-zinc-700">{formatPhp(row.offlineTotal)}</td>
-                      <td className="px-4 py-4 font-bold text-orange-700">{formatPhp(row.waitingTotal)}</td>
-                      <td className="px-4 py-4 font-bold text-zinc-700">{row.paidOrderCount}</td>
-                      <td className="px-4 py-4 font-black text-emerald-700">{formatPhp(row.paidTotal)}</td>
-                      <td className="px-4 py-4 font-black text-zinc-900">{percent(row.paidTotal, row.productTotal)}</td>
-                    </tr>
-                  ))
+                  visibleRows.map((row) => {
+                    const currentStatus = staffStatus(row, t);
+
+                    return (
+                      <tr key={`${row.month}-${row.salesAdminUserId || "unassigned"}`}>
+                        <td className="px-4 py-4 font-black text-zinc-950">{row.month}</td>
+                        <td className="px-4 py-4">
+                          <StatusPill tone={row.salesAdminUserId ? "green" : "neutral"}>{row.salesName}</StatusPill>
+                        </td>
+                        <td className="px-4 py-4 font-bold text-zinc-700">{row.orderCount}</td>
+                        <td className="px-4 py-4 font-black text-orange-700">{formatPhp(row.productTotal)}</td>
+                        <td className="px-4 py-4 font-bold text-zinc-700">{formatPhp(row.onlineTotal)}</td>
+                        <td className="px-4 py-4 font-bold text-zinc-700">{formatPhp(row.offlineTotal)}</td>
+                        <td className="px-4 py-4 font-bold text-orange-700">{formatPhp(row.waitingTotal)}</td>
+                        <td className="px-4 py-4 font-bold text-zinc-700">{row.paidOrderCount}</td>
+                        <td className="px-4 py-4 font-black text-emerald-700">{formatPhp(row.paidTotal)}</td>
+                        <td className="px-4 py-4 font-black text-zinc-900">{percent(row.paidTotal, row.productTotal)}</td>
+                        <td className="px-4 py-4">
+                          <StatusPill tone={currentStatus.tone}>{currentStatus.label}</StatusPill>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td className="px-4 py-6 text-center text-sm font-bold text-zinc-500" colSpan={10}>
+                    <td className="px-4 py-6 text-center text-sm font-bold text-zinc-500" colSpan={11}>
                       {t.noRows}
                     </td>
                   </tr>

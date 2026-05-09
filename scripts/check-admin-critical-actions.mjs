@@ -286,6 +286,11 @@ function main() {
     "monthExceptionTotal",
     "monthTransferTotal",
     "monthPendingTotal",
+    "staffStatus",
+    "staffWithWaiting",
+    "lowCollectionStaff",
+    "Low collection staff",
+    "Staff with waiting slips",
   ]);
 
   requireIncludes("src/components/admin/AdminCustomersClient.tsx", [
