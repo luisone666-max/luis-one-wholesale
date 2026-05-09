@@ -180,6 +180,10 @@ function main() {
 
   requireIncludes("src/components/admin/AdminCashDrawerClient.tsx", [
     "Open Cash Drawer",
+    "Daily Cash Reconciliation",
+    "Physical cash formula",
+    "FormulaStep",
+    "data.transferSalesTotal",
     "Expected cash = opening cash + confirmed cash payments",
     "GCash and bank transfers are shown separately",
     "fetch(\"/api/admin/cash-drawer\"",

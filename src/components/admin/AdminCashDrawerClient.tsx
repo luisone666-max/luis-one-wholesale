@@ -54,6 +54,14 @@ const copy = {
     cashInOption: "Cash in adjustment",
     closeHint: "Expected cash = opening cash + confirmed cash payments + cash-in adjustments - cash-out entries. GCash and bank transfers are shown separately and are not added to the physical cash box.",
     scopeNote: "Cash drawer is for offline POS cashier-confirmed payments only. Online website orders stay in Online Orders / Payments.",
+    reconciliationStatus: "Daily Cash Reconciliation",
+    physicalCashFormula: "Physical cash formula",
+    transferNotInBox: "GCash / bank transfers are tracked separately and do not enter the physical cash box.",
+    plus: "plus",
+    minus: "minus",
+    equals: "equals",
+    closeReady: "Ready to close after actual cash count.",
+    countActualCash: "Count actual cash to preview the difference.",
   },
 };
 
@@ -102,6 +110,14 @@ const zhCopy = {
   cashInOption: "补入现金",
   closeHint: "系统应有现金 = 开店备用现金 + 已确认现金收款 + 补入现金 - 现金支出。GCash 和银行转账会单独显示，不加入实体钱箱现金。",
   scopeNote: "钱箱只统计线下 POS 收银员已确认的收款。网站线上订单仍在“线上订单 / 付款”里处理。",
+  reconciliationStatus: "\u6bcf\u65e5\u73b0\u91d1\u5bf9\u8d26",
+  physicalCashFormula: "\u5b9e\u4f53\u94b1\u7bb1\u516c\u5f0f",
+  transferNotInBox: "GCash / \u94f6\u884c\u8f6c\u8d26\u5355\u72ec\u7edf\u8ba1\uff0c\u4e0d\u8fdb\u5b9e\u4f53\u94b1\u7bb1\u3002",
+  plus: "\u52a0",
+  minus: "\u51cf",
+  equals: "\u7b49\u4e8e",
+  closeReady: "\u70b9\u5b8c\u5b9e\u9645\u73b0\u91d1\u540e\u53ef\u4ee5\u5173\u8d26\u3002",
+  countActualCash: "\u8bf7\u5148\u70b9\u7b97\u5b9e\u9645\u73b0\u91d1\uff0c\u518d\u9884\u89c8\u5dee\u989d\u3002",
 } satisfies typeof copy.en;
 
 type ApiResult = (CashDrawerData & { ok: true }) | { ok: false; message?: string };
@@ -130,6 +146,21 @@ function Card({ title, value, tone = "neutral" }: { title: string; value: string
     <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-400">{title}</p>
       <p className={`mt-2 text-xl font-black ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
+
+function FormulaStep({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "orange" | "green" | "neutral" }) {
+  const toneClass = {
+    green: "bg-emerald-50 text-emerald-800 ring-emerald-100",
+    neutral: "bg-white text-zinc-900 ring-zinc-200",
+    orange: "bg-orange-50 text-orange-800 ring-orange-100",
+  }[tone];
+
+  return (
+    <div className={`rounded-md px-3 py-2 ring-1 ${toneClass}`}>
+      <p className="text-[10px] font-black uppercase tracking-[0.12em] opacity-70">{label}</p>
+      <p className="mt-1 text-sm font-black">{value}</p>
     </div>
   );
 }
@@ -245,6 +276,26 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
 
       <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-black leading-6 text-emerald-900">
         {t.scopeNote}
+      </section>
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">{t.reconciliationStatus}</p>
+            <h2 className="mt-1 text-lg font-black text-zinc-950">{t.physicalCashFormula}</h2>
+            <p className="mt-1 text-xs font-bold text-zinc-500">{t.transferNotInBox}</p>
+          </div>
+          <StatusPill tone={hasActualCashInput || isClosed ? varianceTone : "orange"}>{hasActualCashInput || isClosed ? t.closeReady : t.countActualCash}</StatusPill>
+        </div>
+        <div className="mt-4 grid gap-2 md:grid-cols-3 xl:grid-cols-7">
+          <FormulaStep label={t.openingCash} value={formatPhp(session?.openingCash ?? 0)} />
+          <FormulaStep label={t.plus} value={formatPhp(data.cashSalesTotal)} tone="green" />
+          <FormulaStep label={t.plus} value={formatPhp(data.cashInAdjustmentTotal)} />
+          <FormulaStep label={t.minus} value={formatPhp(data.cashOutTotal)} tone="orange" />
+          <FormulaStep label={t.equals} value={formatPhp(data.expectedCash)} tone="green" />
+          <FormulaStep label={t.transferSales} value={formatPhp(data.transferSalesTotal)} />
+          <FormulaStep label={t.difference} value={displayedDifference === null ? "-" : formatPhp(displayedDifference)} tone={varianceTone} />
+        </div>
       </section>
 
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
