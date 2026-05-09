@@ -27,6 +27,9 @@ const copy = {
     saved: "Saved.",
     refresh: "Refresh",
     noUsers: "No staff users found.",
+    loadFailed: "Unable to load staff users.",
+    createFailed: "Unable to create staff account.",
+    updateFailed: "Unable to update staff account.",
     ownerHint: "Owner/Admin can create staff accounts. Staff users cannot create other admin users.",
     roleGuideTitle: "Role guide",
     roleGuide: [
@@ -59,6 +62,9 @@ const copy = {
     saved: "已保存。",
     refresh: "刷新",
     noUsers: "暂无员工账号。",
+    loadFailed: "无法载入员工账号。",
+    createFailed: "无法创建员工账号。",
+    updateFailed: "无法更新员工账号。",
     ownerHint: "Owner/Admin 可以创建员工账号。普通员工不能创建其他后台账号。",
     roleGuideTitle: "权限说明",
     roleGuide: [
@@ -222,11 +228,13 @@ export function AdminStaffClient({ initialUsers, initialError }: { initialUsers:
       const result = (await response.json()) as { ok?: boolean; message?: string; users?: ApiUser[] };
 
       if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Unable to load staff users.");
+        setMessage(result.message ?? t.loadFailed);
         return;
       }
 
       setUsers((result.users ?? []).map(mapUser));
+    } catch {
+      setMessage(t.loadFailed);
     } finally {
       setLoading(false);
     }
@@ -245,13 +253,15 @@ export function AdminStaffClient({ initialUsers, initialError }: { initialUsers:
       const result = (await response.json()) as { ok?: boolean; message?: string; user?: ApiUser };
 
       if (!response.ok || !result.ok || !result.user) {
-        setMessage(result.message ?? "Unable to create staff account.");
+        setMessage(result.message ?? t.createFailed);
         return;
       }
 
       setUsers((current) => [mapUser(result.user as ApiUser), ...current]);
       setDraft({ name: "", email: "", password: "", role: "staff", employeeNo: "", notes: "" });
       setMessage(t.saved);
+    } catch {
+      setMessage(t.createFailed);
     } finally {
       setLoading(false);
     }
@@ -270,13 +280,15 @@ export function AdminStaffClient({ initialUsers, initialError }: { initialUsers:
       const result = (await response.json()) as { ok?: boolean; message?: string; user?: ApiUser };
 
       if (!response.ok || !result.ok || !result.user) {
-        setMessage(result.message ?? "Unable to update staff account.");
+        setMessage(result.message ?? t.updateFailed);
         return;
       }
 
       const nextUser = mapUser(result.user);
       setUsers((current) => current.map((user) => (user.id === id ? nextUser : user)));
       setMessage(t.saved);
+    } catch {
+      setMessage(t.updateFailed);
     } finally {
       setLoading(false);
     }
