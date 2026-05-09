@@ -109,6 +109,15 @@ function main() {
     "action: \"category_deleted\"",
   ]);
 
+  requireIncludes("src/app/api/admin/auth/login/route.ts", [
+    "adminHomePath",
+    "/admin/sales-desk",
+    "/admin/cashier",
+    "/admin/orders",
+    "redirectTo: adminHomePath(adminRole)",
+    "adminLoginSuccessPage(request, data.session.access_token, data.session.expires_in, adminRole)",
+  ]);
+
   requireIncludes("src/components/admin/AdminSalesDeskClient.tsx", [
     "AdminOperationGuide",
     "Sales Desk creates the slip only",

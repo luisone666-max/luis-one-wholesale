@@ -19,8 +19,24 @@ function redirectToLogin(request: Request, error: string) {
   return NextResponse.redirect(url, 303);
 }
 
-function adminLoginSuccessPage(request: Request, accessToken: string, maxAge: number) {
-  const adminUrl = new URL("/admin", request.url).toString();
+function adminHomePath(role: string | null | undefined) {
+  if (role === "sales" || role === "staff") {
+    return "/admin/sales-desk";
+  }
+
+  if (role === "cashier") {
+    return "/admin/cashier";
+  }
+
+  if (role === "warehouse") {
+    return "/admin/orders";
+  }
+
+  return "/admin";
+}
+
+function adminLoginSuccessPage(request: Request, accessToken: string, maxAge: number, role: string | null | undefined) {
+  const adminUrl = new URL(adminHomePath(role), request.url).toString();
   const cookieValue = encodeURIComponent(accessToken);
   return new NextResponse(
     `<!doctype html>
@@ -135,14 +151,16 @@ export async function POST(request: Request) {
     return jsonError("You do not have admin access.", 403);
   }
 
+  const adminRole = (adminUser as { role: string | null }).role ?? "admin";
   const response = formRequest
-    ? adminLoginSuccessPage(request, data.session.access_token, data.session.expires_in)
+    ? adminLoginSuccessPage(request, data.session.access_token, data.session.expires_in, adminRole)
     : NextResponse.json({
         ok: true,
+        redirectTo: adminHomePath(adminRole),
         admin: {
           email: (adminUser as { email: string | null }).email ?? data.user.email ?? email,
           name: (adminUser as { name: string | null }).name ?? (adminUser as { email: string | null }).email ?? data.user.email ?? email,
-          role: (adminUser as { role: string | null }).role ?? "admin",
+          role: adminRole,
         },
       });
 
