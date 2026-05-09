@@ -50,6 +50,8 @@ const copy = {
     opened: "Open",
     closed: "Closed",
     saved: "Saved.",
+    unableLoad: "Unable to load cash drawer.",
+    unableSave: "Unable to save cash drawer.",
     cashOutOption: "Cash out / expense",
     cashInOption: "Cash in adjustment",
     closeHint: "Expected cash = opening cash + confirmed cash payments + cash-in adjustments - cash-out entries. GCash and bank transfers are shown separately and are not added to the physical cash box.",
@@ -119,6 +121,8 @@ const zhCopy = {
   opened: "进行中",
   closed: "已关账",
   saved: "已保存。",
+  unableLoad: "无法载入钱箱数据。",
+  unableSave: "无法保存钱箱。",
   cashOutOption: "现金支出 / 费用",
   cashInOption: "补入现金",
   closeHint: "系统应有现金 = 开店备用现金 + 已确认现金收款 + 补入现金 - 现金支出。GCash 和银行转账会单独显示，不加入实体钱箱现金。",
@@ -277,14 +281,14 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
       const result = (await response.json()) as ApiResult;
 
       if (!result.ok) {
-        setMessage(result.message ?? "Unable to load cash drawer.");
+        setMessage(result.message ?? t.unableLoad);
         return;
       }
 
       setData(result);
       setBusinessDate(result.businessDate);
     } catch {
-      setMessage("Unable to load cash drawer.");
+      setMessage(t.unableLoad);
     } finally {
       setLoading(false);
     }
@@ -303,7 +307,7 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
       const result = (await response.json()) as ApiResult;
 
       if (!result.ok) {
-        setMessage(result.message ?? "Unable to save cash drawer.");
+        setMessage(result.message ?? t.unableSave);
         return;
       }
 
@@ -312,7 +316,7 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
       setMessage(t.saved);
       onSuccess?.();
     } catch {
-      setMessage("Unable to save cash drawer.");
+      setMessage(t.unableSave);
     } finally {
       setLoading(false);
     }
