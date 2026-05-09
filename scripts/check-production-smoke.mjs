@@ -1,5 +1,6 @@
 const defaultBaseUrl = "https://luisonesupplyhub.com";
 const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || defaultBaseUrl).replace(/\/+$/, "");
+const canonicalHost = new URL(defaultBaseUrl).hostname;
 
 const publicChecks = [
   { path: "/", name: "home page", minLength: 1000 },
@@ -145,11 +146,18 @@ async function checkNotFound(path) {
 }
 
 function checkProductOgTags(html, label) {
+  const ogUrl = html.match(/<meta\s+property="og:url"\s+content="([^"]+)"/i)?.[1] ?? "";
+  const canonicalUrl = html.match(/<link\s+rel="canonical"\s+href="([^"]+)"/i)?.[1] ?? "";
   const title = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i)?.[1] ?? "";
   const siteName = html.match(/<meta\s+property="og:site_name"\s+content="([^"]+)"/i)?.[1] ?? "";
   const image = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i)?.[1] ?? "";
   const description = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] ?? "";
 
+  requireStatus(ogUrl.includes(canonicalHost), `${label} OG url should use ${canonicalHost}, got "${ogUrl}"`);
+  requireStatus(
+    !canonicalUrl || canonicalUrl.includes(canonicalHost),
+    `${label} canonical url should use ${canonicalHost}, got "${canonicalUrl}"`,
+  );
   requireStatus(title.length > 5, `${label} is missing an OG title`);
   requireStatus(siteName.includes("Luis One Supply Hub"), `${label} is missing Luis One Supply Hub OG site name`);
   requireStatus(title.includes("PHP") || description.includes("PHP"), `${label} OG text should include PHP pricing`);
