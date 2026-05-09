@@ -13,6 +13,7 @@
     "check:admin-pages": "node scripts/check-admin-page-protection.mjs",
     "check:admin-roles": "node scripts/check-admin-role-access.mjs",
     "check:admin-actions": "node scripts/check-admin-critical-actions.mjs",
+    "check:admin-copy": "node scripts/check-admin-copy-safety.mjs",
     "check:admin-links": "node scripts/check-admin-links.mjs",
     "check:customer-links": "node scripts/check-customer-links.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",
