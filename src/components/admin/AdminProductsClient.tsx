@@ -150,6 +150,7 @@ const text = {
     selectedImageSaveHint: "Selected image will upload automatically when you save.",
     reviewBeforeSaving: "Review product details, prices, images, and variants before saving.",
     viewOnStorefront: "Open Product Page",
+    openStoreShort: "Store",
     storefrontCheckHint: "Check the customer page to confirm image, price, variants, and visibility.",
   },
   zh: {
@@ -185,6 +186,7 @@ const text = {
     selectedImageSaveHint: "已选择的图片会在保存商品时自动上传。",
     reviewBeforeSaving: "保存前请检查商品资料、价格、图片和变体。",
     viewOnStorefront: "打开前台商品页",
+    openStoreShort: "前台",
     storefrontCheckHint: "检查客户页面的图片、价格、变体和显示状态。",
   },
 };
@@ -245,6 +247,7 @@ const productTextZh = {
   selectedImageSaveHint: "已选择的图片会在保存商品时自动上传。",
   reviewBeforeSaving: "保存前请检查商品资料、价格、图片和变体。",
   viewOnStorefront: "打开前台商品页",
+  openStoreShort: "前台",
   storefrontCheckHint: "检查客户页面的图片、价格、变体和显示状态。",
 };
 
@@ -978,6 +981,14 @@ export function AdminProductsClient({
                       <p className="truncate text-[10px] font-bold text-zinc-500">{labelForStock(t, product.stockStatus)}</p>
                     </div>
                     <div className="flex gap-1">
+                      <Link
+                        href={`/product/${product.slug}`}
+                        target="_blank"
+                        aria-label={`${copy.viewOnStorefront}: ${product.name}`}
+                        className="rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-[10px] font-black text-orange-700"
+                      >
+                        {copy.openStoreShort}
+                      </Link>
                       <button type="button" onClick={() => toggleVisibility(product)} className="rounded-md border border-zinc-200 px-2 py-1 text-[10px] font-black text-zinc-700">{product.active ? t("hide") : t("unhide")}</button>
                       <button type="button" onClick={() => deleteProduct(product)} className="rounded-md border border-red-200 px-2 py-1 text-[10px] font-black text-red-700">{t("delete")}</button>
                     </div>
