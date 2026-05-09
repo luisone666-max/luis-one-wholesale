@@ -74,6 +74,9 @@ const copy = {
     uploadBody: "Upload a .csv file encoded as UTF-8. Excel upload can be added later.",
     chooseFile: "Choose CSV File",
     selectedFile: "Selected file",
+    parsedRows: "Parsed rows",
+    resetUpload: "Reset Upload",
+    uploadReset: "Upload reset. Choose a CSV file to start again.",
     missingCategory: "Missing category handling",
     createInactive: "Create missing category as inactive",
     skipRows: "Skip rows with missing categories",
@@ -136,6 +139,9 @@ const copy = {
     uploadBody: "上传 UTF-8 编码的 .csv 文件。Excel 上传可以后面再加。",
     chooseFile: "选择 CSV 文件",
     selectedFile: "已选择文件",
+    parsedRows: "已读取行数",
+    resetUpload: "重置上传",
+    uploadReset: "已重置上传。请重新选择 CSV 文件。",
     missingCategory: "缺失分类处理",
     createInactive: "创建缺失分类并设为未启用",
     skipRows: "跳过缺失分类的行",
@@ -298,6 +304,7 @@ export function AdminProductBulkUploadClient() {
   const [importSummary, setImportSummary] = useState<BulkImportSummary | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   const hasErrors = Boolean(preview?.rows.some((row) => row.status === "error"));
   const hasWarnings = Boolean(preview?.rows.some((row) => row.status === "warning"));
@@ -318,6 +325,15 @@ export function AdminProductBulkUploadClient() {
     setPreview(null);
     setImportSummary(null);
     setMessage(t.fileParsed);
+  };
+
+  const resetUpload = () => {
+    setFileInputKey((current) => current + 1);
+    setFileName("");
+    setRows([]);
+    setPreview(null);
+    setImportSummary(null);
+    setMessage(t.uploadReset);
   };
 
   const callApi = async (mode: "preview" | "import") => {
@@ -390,6 +406,7 @@ export function AdminProductBulkUploadClient() {
             <label className="mt-4 grid cursor-pointer place-items-center rounded-md border border-dashed border-orange-300 bg-orange-50 px-4 py-8 text-center text-sm font-black text-orange-700">
               {t.chooseFile}
               <input
+                key={fileInputKey}
                 type="file"
                 accept=".csv,text/csv"
                 className="sr-only"
@@ -402,9 +419,21 @@ export function AdminProductBulkUploadClient() {
               />
             </label>
             {fileName ? (
-              <p className="mt-3 text-sm font-bold text-zinc-600">
-                {t.selectedFile}: {fileName}
-              </p>
+              <div className="mt-3 rounded-md border border-zinc-100 bg-zinc-50 p-3">
+                <p className="text-sm font-bold text-zinc-700">
+                  {t.selectedFile}: {fileName}
+                </p>
+                <p className="mt-1 text-xs font-black text-zinc-500">
+                  {t.parsedRows}: {rows.length}
+                </p>
+                <button
+                  type="button"
+                  onClick={resetUpload}
+                  className="mt-3 h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700"
+                >
+                  {t.resetUpload}
+                </button>
+              </div>
             ) : null}
           </section>
 
