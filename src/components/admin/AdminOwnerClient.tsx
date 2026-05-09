@@ -25,6 +25,15 @@ const copy = {
     noAuditLogs: "No audit logs yet.",
     auditNotReady: "Audit log table is not ready yet. Run the latest migration first.",
     open: "Open",
+    ownerPasswordFailed: "Owner password failed.",
+    passwordUpdateFailed: "Password update failed.",
+    staffAccessCaption: "Create, deactivate, and assign staff roles.",
+    reportsCaption: "See monthly employee sales totals.",
+    cashDrawerCaption: "Open and close daily cash drawer.",
+    time: "Time",
+    admin: "Admin",
+    action: "Action",
+    target: "Target",
   },
   zh: {
     caption: "老板专用页面。进入敏感操作前必须输入老板密码。",
@@ -46,6 +55,15 @@ const copy = {
     noAuditLogs: "暂无安全操作记录。",
     auditNotReady: "操作记录表还没有准备好，请先执行最新 migration。",
     open: "打开",
+    ownerPasswordFailed: "老板密码验证失败。",
+    passwordUpdateFailed: "老板密码修改失败。",
+    staffAccessCaption: "创建、停用员工账号，并分配员工权限。",
+    reportsCaption: "查看每个月每个员工的销售额。",
+    cashDrawerCaption: "打开和关闭每日收银钱箱。",
+    time: "时间",
+    admin: "管理员",
+    action: "操作",
+    target: "对象",
   },
 };
 
@@ -130,12 +148,14 @@ export function AdminOwnerClient() {
       const result = (await response.json()) as { ok?: boolean; message?: string };
 
       if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Owner password failed.");
+        setMessage(result.message ?? t.ownerPasswordFailed);
         return;
       }
 
       setUnlocked(true);
       setMessage(t.unlocked);
+    } catch {
+      setMessage(t.ownerPasswordFailed);
     } finally {
       setLoading(false);
     }
@@ -154,7 +174,7 @@ export function AdminOwnerClient() {
       const result = (await response.json()) as { ok?: boolean; message?: string };
 
       if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Password update failed.");
+        setMessage(result.message ?? t.passwordUpdateFailed);
         return;
       }
 
@@ -163,6 +183,8 @@ export function AdminOwnerClient() {
       setHighestPermissionPassword("");
       setNewPassword("");
       setMessage(result.message ?? t.unlocked);
+    } catch {
+      setMessage(t.passwordUpdateFailed);
     } finally {
       setLoading(false);
     }
@@ -208,9 +230,9 @@ export function AdminOwnerClient() {
           <section>
             <h2 className="mb-3 text-lg font-black text-zinc-950">{t.sensitiveAreas}</h2>
             <div className="grid gap-3 md:grid-cols-3">
-              <OwnerLink href="/admin/staff" title={t.staffAccess} caption="Create, deactivate, and assign staff roles." button={t.open} />
-              <OwnerLink href="/admin/reports" title={t.reports} caption="See monthly employee sales totals." button={t.open} />
-              <OwnerLink href="/admin/cash-drawer" title={t.cashDrawer} caption="Open and close daily cash drawer." button={t.open} />
+              <OwnerLink href="/admin/staff" title={t.staffAccess} caption={t.staffAccessCaption} button={t.open} />
+              <OwnerLink href="/admin/reports" title={t.reports} caption={t.reportsCaption} button={t.open} />
+              <OwnerLink href="/admin/cash-drawer" title={t.cashDrawer} caption={t.cashDrawerCaption} button={t.open} />
             </div>
           </section>
 
@@ -223,10 +245,10 @@ export function AdminOwnerClient() {
                 <table className="w-full min-w-[760px] text-left text-sm">
                   <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
                     <tr>
-                      <th className="px-3 py-2">Time</th>
-                      <th className="px-3 py-2">Admin</th>
-                      <th className="px-3 py-2">Action</th>
-                      <th className="px-3 py-2">Target</th>
+                      <th className="px-3 py-2">{t.time}</th>
+                      <th className="px-3 py-2">{t.admin}</th>
+                      <th className="px-3 py-2">{t.action}</th>
+                      <th className="px-3 py-2">{t.target}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100">
