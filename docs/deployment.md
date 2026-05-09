@@ -21,16 +21,13 @@ OWNER_MASTER_PASSWORD=
 
 ## Required Supabase Migrations
 
-Run every SQL file in `supabase/migrations` against the production Supabase project, in filename order. Current important migrations include:
+Run every SQL file in `supabase/migrations` against the production Supabase project, in filename order. The current production set covers:
 
-- `20260503000000_initial_schema.sql`
-- `20260503001000_customer_auth_rls.sql`
-- `20260503002000_cart_items.sql`
-- `20260503003000_customer_price_tier_read.sql`
-- `20260503004000_allow_single_piece_orders.sql`
-- `20260503005000_admin_users.sql`
-- `20260503006000_product_image_storage.sql`
-- `20260508001000_admin_action_audit_logs.sql`
+- Customer auth, customers, products, categories, product views, and RLS.
+- Cart items, checkout, online orders, order items, and payment records.
+- Admin users, staff roles, owner password settings, and admin action audit logs.
+- Product images, product variants, retail price, and variant price tiers.
+- Offline sales desk, cashier confirmation, cash drawer, POS correction audit logs, and loyalty points.
 
 Use either Supabase CLI `supabase db push` after linking the project, or paste each migration into Supabase SQL Editor and run it in order.
 
@@ -69,7 +66,10 @@ where email = 'admin@example.com';
 3. Set the environment variables listed above.
 4. Confirm the Supabase migrations have been applied.
 5. Deploy.
-6. After deploy, test:
+6. After deploy, run:
+   - `npm.cmd run check:maintenance`
+   - `npm.cmd run check:readiness` after any production migration change.
+7. After deploy, test:
    - Customer product listing and product detail.
    - Customer register/login.
    - Cart and checkout flow.
@@ -104,7 +104,7 @@ To connect the Facebook Page `Shop Now` button:
 
 ## Production Safety Notes
 
-- `/dev/supabase-test` is development-only and requires active admin access.
+- `/dev/supabase-test` is development-only and should return 404 in production.
 - `/admin` pages and `/api/admin/*` routes are protected by `src/proxy.ts`.
 - Supplier notes, internal cost notes, and admin notes are admin-only and must not be returned by customer-facing queries.
 - Keep `.env.local` local only. It is ignored by Git.

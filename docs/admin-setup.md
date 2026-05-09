@@ -40,7 +40,14 @@ do update set
   updated_at = now();
 ```
 
-Allowed roles are `owner`, `admin`, and `staff`.
+Allowed roles are:
+
+- `owner`: full access, owner center, reports, staff, products, categories, online orders, POS, cashier, and cash drawer.
+- `admin`: store management access without being the highest owner.
+- `staff`: limited staff access.
+- `sales`: sales desk and product price lookup.
+- `cashier`: cashier center and cash drawer.
+- `warehouse`: order/product handling role for future warehouse workflows.
 
 ## 4. Deactivate an admin
 
