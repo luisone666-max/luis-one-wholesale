@@ -110,6 +110,9 @@ function main() {
   ]);
 
   requireIncludes("src/components/admin/AdminSalesDeskClient.tsx", [
+    "AdminOperationGuide",
+    "Sales Desk creates the slip only",
+    "does not confirm payment",
     "Save and Send to Cashier",
     "Sales Slip Status",
     "sendToCashierNow",
@@ -153,6 +156,9 @@ function main() {
   ]);
 
   requireIncludes("src/components/admin/AdminCashierClient.tsx", [
+    "AdminOperationGuide",
+    "Cashier confirms money received",
+    "return the slip to Sales Desk",
     "/api/admin/pos/sales?status=waiting_cashier",
     "Cashier Queue",
     "cashierQueueStatus",
@@ -179,6 +185,9 @@ function main() {
   ]);
 
   requireIncludes("src/components/admin/AdminCashDrawerClient.tsx", [
+    "AdminOperationGuide",
+    "Daily cash drawer is for physical cash control",
+    "GCash and bank transfers are visible here",
     "Open Cash Drawer",
     "Daily Cash Reconciliation",
     "Physical cash formula",

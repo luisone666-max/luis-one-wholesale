@@ -40,6 +40,69 @@ export function TableShell({ children }: { children: ReactNode }) {
   return <div className="overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm">{children}</div>;
 }
 
+export function AdminOperationGuide({
+  label,
+  title,
+  body,
+  steps,
+  warning,
+  tone = "orange",
+}: {
+  label: string;
+  title: string;
+  body: string;
+  steps: string[];
+  warning?: string;
+  tone?: "orange" | "green" | "neutral";
+}) {
+  const toneClass = {
+    green: {
+      section: "border-emerald-200 bg-emerald-50",
+      label: "text-emerald-700",
+      title: "text-emerald-950",
+      text: "text-emerald-900",
+      step: "ring-emerald-100 text-emerald-900",
+      warning: "border-emerald-200 bg-white text-emerald-800",
+    },
+    neutral: {
+      section: "border-zinc-200 bg-zinc-50",
+      label: "text-zinc-600",
+      title: "text-zinc-950",
+      text: "text-zinc-700",
+      step: "ring-zinc-200 text-zinc-800",
+      warning: "border-zinc-200 bg-white text-zinc-700",
+    },
+    orange: {
+      section: "border-orange-200 bg-orange-50",
+      label: "text-orange-700",
+      title: "text-orange-950",
+      text: "text-orange-900",
+      step: "ring-orange-100 text-orange-900",
+      warning: "border-orange-200 bg-white text-orange-800",
+    },
+  }[tone];
+
+  return (
+    <section className={`rounded-lg border p-4 ${toneClass.section}`}>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className={`text-xs font-black uppercase tracking-[0.16em] ${toneClass.label}`}>{label}</p>
+          <h2 className={`mt-1 text-base font-black ${toneClass.title}`}>{title}</h2>
+          <p className={`mt-2 text-sm font-bold leading-6 ${toneClass.text}`}>{body}</p>
+          {warning ? <p className={`mt-3 rounded-md border px-3 py-2 text-xs font-black leading-5 ${toneClass.warning}`}>{warning}</p> : null}
+        </div>
+        <div className="grid min-w-0 gap-2 text-sm font-black sm:grid-cols-3 lg:min-w-[520px]">
+          {steps.map((step) => (
+            <span key={step} className={`rounded-md bg-white px-3 py-2 ring-1 ${toneClass.step}`}>
+              {step}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function Pager() {
   return (
     <div className="flex items-center justify-end gap-2 border-t border-zinc-100 bg-white px-4 py-3">

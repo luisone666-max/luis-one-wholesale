@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { AdminCashDrawerPrintTemplate } from "@/components/admin/AdminCashDrawerPrintTemplate";
-import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
+import { AdminOperationGuide, AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import type { CashDrawerData } from "@/lib/cash-drawer-data";
 import { formatPhp } from "@/lib/wholesale-pricing";
@@ -62,6 +62,12 @@ const copy = {
     equals: "equals",
     closeReady: "Ready to close after actual cash count.",
     countActualCash: "Count actual cash to preview the difference.",
+    roleGuideTitle: "Daily cash drawer is for physical cash control",
+    roleGuideBody: "Open the drawer with change fund, cashier confirmations update totals automatically, then count actual cash before closing.",
+    roleGuideWarning: "GCash and bank transfers are visible here for daily sales reporting, but they do not enter the physical cash box.",
+    flowStep1: "1. Open drawer",
+    flowStep2: "2. Record cash in / cash out",
+    flowStep3: "3. Count and close",
   },
 };
 
@@ -118,6 +124,12 @@ const zhCopy = {
   equals: "\u7b49\u4e8e",
   closeReady: "\u70b9\u5b8c\u5b9e\u9645\u73b0\u91d1\u540e\u53ef\u4ee5\u5173\u8d26\u3002",
   countActualCash: "\u8bf7\u5148\u70b9\u7b97\u5b9e\u9645\u73b0\u91d1\uff0c\u518d\u9884\u89c8\u5dee\u989d\u3002",
+  roleGuideTitle: "\u6bcf\u65e5\u94b1\u7bb1\u53ea\u7528\u6765\u7ba1\u5b9e\u4f53\u73b0\u91d1",
+  roleGuideBody: "\u5148\u7528\u5907\u7528\u627e\u96f6\u6253\u5f00\u94b1\u7bb1\uff0c\u6536\u94f6\u786e\u8ba4\u4f1a\u81ea\u52a8\u66f4\u65b0\u91d1\u989d\uff0c\u5173\u8d26\u524d\u8981\u70b9\u7b97\u5b9e\u9645\u73b0\u91d1\u3002",
+  roleGuideWarning: "GCash \u548c\u94f6\u884c\u8f6c\u8d26\u4f1a\u5728\u8fd9\u91cc\u663e\u793a\u65b9\u4fbf\u770b\u65e5\u9500\u552e\uff0c\u4f46\u4e0d\u8fdb\u5b9e\u4f53\u94b1\u7bb1\u3002",
+  flowStep1: "1. \u6253\u5f00\u94b1\u7bb1",
+  flowStep2: "2. \u8bb0\u5f55\u8865\u73b0\u91d1 / \u73b0\u91d1\u652f\u51fa",
+  flowStep3: "3. \u70b9\u94b1\u5e76\u5173\u8d26",
 } satisfies typeof copy.en;
 
 type ApiResult = (CashDrawerData & { ok: true }) | { ok: false; message?: string };
@@ -274,9 +286,14 @@ export function AdminCashDrawerClient({ initialData }: { initialData: CashDrawer
 
       {message ? <div className="rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-800">{message}</div> : null}
 
-      <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-black leading-6 text-emerald-900">
-        {t.scopeNote}
-      </section>
+      <AdminOperationGuide
+        label={t.status}
+        title={t.roleGuideTitle}
+        body={`${t.roleGuideBody} ${t.scopeNote}`}
+        warning={t.roleGuideWarning}
+        steps={[t.flowStep1, t.flowStep2, t.flowStep3]}
+        tone="neutral"
+      />
 
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">

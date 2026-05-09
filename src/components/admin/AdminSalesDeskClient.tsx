@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
+import { AdminOperationGuide, AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPosSalePrintTemplate } from "@/components/admin/AdminPosSalePrintTemplate";
 import type { PosProductCatalogRecord, PosSaleRecord } from "@/lib/pos-data";
@@ -102,6 +102,9 @@ const copy = {
     readyForCashier: "Ready for cashier confirmation",
     needProductsFirst: "Add at least one product or manual item.",
     sendToCashierNow: "Send to Cashier",
+    roleGuideTitle: "Sales Desk creates the slip only",
+    roleGuideBody: "Sales checks customer, products, quantities, and negotiated price here. This page does not confirm payment and does not update the cash drawer.",
+    roleGuideWarning: "After saving, the sale appears in Cashier Center. Cashier confirms the money before it becomes paid sales and member points.",
   },
   zh: {
     caption: "这里只做门店线下销售。销售员先开销售单，保存后交给收银员确认收款。",
@@ -253,6 +256,9 @@ const zhCopy = {
   readyForCashier: "\u53ef\u4ee5\u53d1\u7ed9\u6536\u94f6\u786e\u8ba4",
   needProductsFirst: "\u5148\u6dfb\u52a0\u81f3\u5c11\u4e00\u4e2a\u5546\u54c1\u6216\u624b\u52a8\u9879\u76ee\u3002",
   sendToCashierNow: "\u53d1\u7ed9\u6536\u94f6",
+  roleGuideTitle: "\u9500\u552e\u53f0\u53ea\u8d1f\u8d23\u5f00\u5355",
+  roleGuideBody: "\u9500\u552e\u5458\u5728\u8fd9\u91cc\u6838\u5bf9\u5ba2\u6237\u3001\u5546\u54c1\u3001\u6570\u91cf\u548c\u8c08\u597d\u7684\u4ef7\u683c\u3002\u8fd9\u4e2a\u9875\u9762\u4e0d\u786e\u8ba4\u6536\u6b3e\uff0c\u4e5f\u4e0d\u66f4\u65b0\u94b1\u7bb1\u3002",
+  roleGuideWarning: "\u4fdd\u5b58\u540e\u9500\u552e\u5355\u4f1a\u51fa\u73b0\u5728\u6536\u94f6\u5458\u4e2d\u5fc3\u3002\u6536\u94f6\u786e\u8ba4\u5230\u94b1\u540e\uff0c\u624d\u7b97\u5df2\u6536\u9500\u552e\u548c\u4f1a\u5458\u79ef\u5206\u3002",
 } satisfies typeof copy.en;
 
 const salesDeskFlowText = {
@@ -769,21 +775,16 @@ export function AdminSalesDeskClient({
   }
 
   return (
-    <div className="space-y-5">
-      <AdminPageTitle titleKey="salesDesk" caption={t.caption} />
-      <section className="rounded-lg border border-orange-200 bg-orange-50 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-700">{t.flowTitle}</p>
-            <p className="mt-2 text-sm font-bold text-orange-900">{t.onlineOrdersLink}</p>
-          </div>
-          <div className="grid gap-2 text-sm font-black text-orange-900 sm:grid-cols-3">
-            <span className="rounded-md bg-white px-3 py-2 ring-1 ring-orange-100">{t.flowStep1}</span>
-            <span className="rounded-md bg-white px-3 py-2 ring-1 ring-orange-100">{t.flowStep2}</span>
-            <span className="rounded-md bg-white px-3 py-2 ring-1 ring-orange-100">{t.flowStep3}</span>
-          </div>
-        </div>
-      </section>
+      <div className="space-y-5">
+        <AdminPageTitle titleKey="salesDesk" caption={t.caption} />
+        <AdminOperationGuide
+          label={t.flowTitle}
+          title={t.roleGuideTitle}
+          body={`${t.roleGuideBody} ${t.onlineOrdersLink}`}
+          warning={t.roleGuideWarning}
+          steps={[t.flowStep1, t.flowStep2, t.flowStep3]}
+          tone="orange"
+        />
       {message ? <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-800">{message}</div> : null}
       {editingSaleId ? (
         <section className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900 sm:flex-row sm:items-center sm:justify-between">

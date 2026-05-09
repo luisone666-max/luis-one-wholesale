@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
+import { AdminOperationGuide, AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import { AdminPosSalePrintTemplate } from "@/components/admin/AdminPosSalePrintTemplate";
 import type { PosSaleRecord } from "@/lib/pos-data";
@@ -75,6 +75,9 @@ const copy = {
     noWaitingSlipsShort: "No waiting slips",
     cashControlHint: "Cash payments must match the physical cash drawer.",
     transferControlHint: "GCash / bank payments need a reference number before confirmation.",
+    roleGuideTitle: "Cashier confirms money received",
+    roleGuideBody: "Confirm only after the exact amount is received. Cash updates the physical cash drawer; GCash and bank transfers are recorded separately.",
+    roleGuideWarning: "If the price, customer, or items are wrong, return the slip to Sales Desk instead of confirming payment.",
   },
   zh: {
     caption: "这里只做线下收银确认。收银员核对销售单、收款方式和金额后，再确认收款。",
@@ -160,6 +163,9 @@ const zhCopy = {
   noWaitingSlipsShort: "\u6ca1\u6709\u5f85\u6536\u5355",
   cashControlHint: "\u73b0\u91d1\u5355\u8981\u548c\u5b9e\u9645\u94b1\u7bb1\u73b0\u91d1\u5bf9\u4e0a\u3002",
   transferControlHint: "GCash / \u94f6\u884c\u8f6c\u8d26\u786e\u8ba4\u524d\u5fc5\u987b\u586b\u53c2\u8003\u53f7\u3002",
+  roleGuideTitle: "\u6536\u94f6\u5458\u53ea\u8d1f\u8d23\u786e\u8ba4\u6536\u5230\u94b1",
+  roleGuideBody: "\u53ea\u6709\u786e\u8ba4\u91d1\u989d\u5df2\u6536\u5230\u624d\u80fd\u70b9\u786e\u8ba4\u6536\u6b3e\u3002\u73b0\u91d1\u4f1a\u8fdb\u5b9e\u4f53\u94b1\u7bb1\uff1bGCash \u548c\u94f6\u884c\u8f6c\u8d26\u4f1a\u5355\u72ec\u8bb0\u5f55\u3002",
+  roleGuideWarning: "\u5982\u679c\u4ef7\u683c\u3001\u5ba2\u6237\u6216\u5546\u54c1\u6709\u9519\uff0c\u4e0d\u8981\u786e\u8ba4\u6536\u6b3e\uff0c\u8bf7\u9000\u56de\u9500\u552e\u53f0\u4fee\u6539\u3002",
 } satisfies typeof copy.en;
 
 const cashierActionText = {
@@ -418,21 +424,14 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
   return (
     <div className="space-y-5">
       <AdminPageTitle titleKey="cashierCenter" caption={t.caption} />
-      <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">{t.flowTitle}</p>
-            <p className="mt-2 text-sm font-bold text-emerald-900">{t.onlineOrdersLink}</p>
-            <p className="mt-1 text-xs font-bold text-emerald-800">{t.transferReferenceHint}</p>
-            <p className="mt-1 text-xs font-bold text-emerald-700">{t.autoRefresh}</p>
-          </div>
-          <div className="grid gap-2 text-sm font-black text-emerald-900 sm:grid-cols-3">
-            <span className="rounded-md bg-white px-3 py-2 ring-1 ring-emerald-100">{t.flowStep1}</span>
-            <span className="rounded-md bg-white px-3 py-2 ring-1 ring-emerald-100">{t.flowStep2}</span>
-            <span className="rounded-md bg-white px-3 py-2 ring-1 ring-emerald-100">{t.flowStep3}</span>
-          </div>
-        </div>
-      </section>
+      <AdminOperationGuide
+        label={t.flowTitle}
+        title={t.roleGuideTitle}
+        body={`${t.roleGuideBody} ${t.onlineOrdersLink} ${t.transferReferenceHint} ${t.autoRefresh}`}
+        warning={t.roleGuideWarning}
+        steps={[t.flowStep1, t.flowStep2, t.flowStep3]}
+        tone="green"
+      />
       {message ? <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-800">{message}</div> : null}
 
       <section className="sticky top-2 z-20 rounded-lg border border-zinc-200 bg-white/95 p-3 shadow-lg backdrop-blur print:hidden">
