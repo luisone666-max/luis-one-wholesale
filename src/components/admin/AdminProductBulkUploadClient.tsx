@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { AdminPageTitle, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import type { BulkImportPreview, BulkImportMissingCategoryMode, BulkImportSummary, BulkProductCsvRow } from "@/lib/admin-product-bulk-upload";
@@ -294,7 +294,6 @@ export function AdminProductBulkUploadClient() {
   const hasErrors = Boolean(preview?.rows.some((row) => row.status === "error"));
   const hasWarnings = Boolean(preview?.rows.some((row) => row.status === "warning"));
   const canImport = Boolean(preview && !hasErrors && preview.summary.totalRows > 0);
-  const columns = useMemo(() => bulkUploadTemplateHeaders.join(", "), []);
 
   const readFile = async (file: File) => {
     const text = await file.text();
@@ -438,7 +437,16 @@ export function AdminProductBulkUploadClient() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-black text-zinc-950">{t.previewTitle}</h2>
-                <p className="mt-1 text-sm font-bold text-zinc-500">{t.columnsTitle}: {columns}</p>
+                <div className="mt-2">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">{t.columnsTitle}</p>
+                  <div className="mt-2 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto pr-1">
+                    {bulkUploadTemplateHeaders.map((header) => (
+                      <span key={header} className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] font-black text-zinc-600">
+                        {header}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
