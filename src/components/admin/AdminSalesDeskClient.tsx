@@ -93,6 +93,15 @@ const copy = {
     reason: "Reason",
     statusChange: "Status Change",
     cashier: "Cashier",
+    salesSlipStatus: "Sales Slip Status",
+    activeSale: "Current slip",
+    itemCount: "Items",
+    totalQty: "Total Qty",
+    customerType: "Customer Type",
+    payment: "Payment",
+    readyForCashier: "Ready for cashier confirmation",
+    needProductsFirst: "Add at least one product or manual item.",
+    sendToCashierNow: "Send to Cashier",
   },
   zh: {
     caption: "这里只做门店线下销售。销售员先开销售单，保存后交给收银员确认收款。",
@@ -235,6 +244,15 @@ const zhCopy = {
   reason: "原因",
   statusChange: "状态变化",
   cashier: "收银员",
+  salesSlipStatus: "\u9500\u552e\u5355\u72b6\u6001",
+  activeSale: "\u5f53\u524d\u9500\u552e\u5355",
+  itemCount: "\u5546\u54c1\u884c",
+  totalQty: "\u603b\u6570\u91cf",
+  customerType: "\u5ba2\u6237\u7c7b\u578b",
+  payment: "\u6536\u6b3e\u65b9\u5f0f",
+  readyForCashier: "\u53ef\u4ee5\u53d1\u7ed9\u6536\u94f6\u786e\u8ba4",
+  needProductsFirst: "\u5148\u6dfb\u52a0\u81f3\u5c11\u4e00\u4e2a\u5546\u54c1\u6216\u624b\u52a8\u9879\u76ee\u3002",
+  sendToCashierNow: "\u53d1\u7ed9\u6536\u94f6",
 } satisfies typeof copy.en;
 
 const salesDeskFlowText = {
@@ -470,6 +488,10 @@ export function AdminSalesDeskClient({
     [items],
   );
   const total = Math.max(0, productTotal - (Number(discountAmount) || 0));
+  const meaningfulItems = useMemo(() => items.filter((item) => item.productId || item.sku.trim() || item.name.trim()), [items]);
+  const itemLineCount = meaningfulItems.length;
+  const totalQuantity = meaningfulItems.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) || 0), 0);
+  const canSubmitSale = itemLineCount > 0 && total >= 0 && !loading;
   const filteredProducts = useMemo(() => {
     const needle = productSearch.trim().toLowerCase();
 
@@ -774,6 +796,43 @@ export function AdminSalesDeskClient({
         </section>
       ) : null}
 
+      <section className="sticky top-2 z-20 rounded-lg border border-zinc-200 bg-white/95 p-3 shadow-lg backdrop-blur print:hidden">
+        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-md bg-zinc-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400">{t.salesSlipStatus}</p>
+              <p className="mt-1 text-sm font-black text-zinc-950">{itemLineCount ? t.readyForCashier : t.needProductsFirst}</p>
+            </div>
+            <div className="rounded-md bg-zinc-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400">{t.customerType}</p>
+              <p className="mt-1 text-sm font-black text-zinc-950">{selectedCustomer ? t.memberBadge : t.walkInBadge}</p>
+            </div>
+            <div className="rounded-md bg-zinc-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400">{t.itemCount}</p>
+              <p className="mt-1 text-sm font-black text-zinc-950">
+                {itemLineCount} / {t.totalQty} {totalQuantity}
+              </p>
+            </div>
+            <div className="rounded-md bg-zinc-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400">{t.payment}</p>
+              <p className="mt-1 text-sm font-black text-zinc-950">{paymentMethodLabel(paymentMethod, language)}</p>
+            </div>
+            <div className="rounded-md bg-orange-50 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-orange-500">{ui.cashierReceives}</p>
+              <p className="mt-1 text-lg font-black text-orange-700">{formatPhp(total)}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={!canSubmitSale}
+            onClick={() => void saveSale()}
+            className="h-12 rounded-md bg-[#f65f18] px-5 text-sm font-black text-white shadow-sm disabled:opacity-50"
+          >
+            {editingSaleId ? actionText.updateSale : t.sendToCashierNow}
+          </button>
+        </div>
+      </section>
+
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{summaryScope === "mine" ? t.myStats : t.allStats}</p>
@@ -983,7 +1042,7 @@ export function AdminSalesDeskClient({
           <button type="button" onClick={() => setItems((current) => [...current, emptyItem()])} className="rounded-md border border-zinc-200 px-4 py-2.5 text-sm font-black text-zinc-700">
             {t.addManualItem}
           </button>
-          <button type="button" disabled={loading} onClick={() => void saveSale()} className="rounded-md bg-[#f65f18] px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">
+          <button type="button" disabled={!canSubmitSale} onClick={() => void saveSale()} className="rounded-md bg-[#f65f18] px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">
             {editingSaleId ? actionText.updateSale : t.saveSale}
           </button>
         </div>

@@ -111,6 +111,10 @@ function main() {
 
   requireIncludes("src/components/admin/AdminSalesDeskClient.tsx", [
     "Save and Send to Cashier",
+    "Sales Slip Status",
+    "sendToCashierNow",
+    "meaningfulItems",
+    "canSubmitSale",
     "employeeNo",
     "customerName",
     "paymentMethod",
