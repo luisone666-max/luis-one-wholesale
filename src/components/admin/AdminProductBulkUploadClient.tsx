@@ -121,6 +121,10 @@ const copy = {
     csvRuleActive: "Active: true/false, yes/no, or 1/0.",
     csvRulePrices: "Price columns create wholesale tiers: 1pc, 6pcs, 12pcs, and 50pcs.",
     csvRuleImages: "Image URL can be left blank first. You can upload images later in Product Management.",
+    importGuardNoFile: "Choose a CSV file first.",
+    importGuardPreview: "Click Preview Import before confirming.",
+    importGuardErrors: "Fix error rows before confirming import.",
+    importGuardReady: "Ready to import. Warning rows require confirmation.",
   },
   zh: {
     caption: "从 CSV 批量导入或更新商品。保存前会先预览校验结果。",
@@ -179,6 +183,10 @@ const copy = {
     csvRuleActive: "启用状态：true/false、yes/no、1/0 都可以。",
     csvRulePrices: "价格字段会生成批发阶梯：1pc、6pcs、12pcs、50pcs。",
     csvRuleImages: "图片链接可以先留空，之后在商品管理里再上传图片。",
+    importGuardNoFile: "请先选择 CSV 文件。",
+    importGuardPreview: "请先点击预览导入，再确认导入。",
+    importGuardErrors: "请先修复错误行，再确认导入。",
+    importGuardReady: "可以导入。警告行会在确认后继续导入。",
   },
 };
 
@@ -294,6 +302,13 @@ export function AdminProductBulkUploadClient() {
   const hasErrors = Boolean(preview?.rows.some((row) => row.status === "error"));
   const hasWarnings = Boolean(preview?.rows.some((row) => row.status === "warning"));
   const canImport = Boolean(preview && !hasErrors && preview.summary.totalRows > 0);
+  const importGuardMessage = !rows.length
+    ? t.importGuardNoFile
+    : !preview
+      ? t.importGuardPreview
+      : hasErrors
+        ? t.importGuardErrors
+        : t.importGuardReady;
 
   const readFile = async (file: File) => {
     const text = await file.text();
@@ -467,6 +482,9 @@ export function AdminProductBulkUploadClient() {
                 </button>
               </div>
             </div>
+            <p className={`mt-3 rounded-md px-3 py-2 text-xs font-black ${canImport ? "bg-emerald-50 text-emerald-700" : "bg-zinc-50 text-zinc-600"}`}>
+              {importGuardMessage}
+            </p>
           </section>
 
           <section className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
