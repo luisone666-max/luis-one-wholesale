@@ -303,7 +303,10 @@ function checkCatalogFeed(csv) {
 function checkRobotsTxt(text) {
   requireStatus(text.includes("Sitemap:"), "robots.txt is missing Sitemap");
   requireStatus(text.includes("facebookexternalhit"), "robots.txt is missing facebookexternalhit allow rule");
+  requireStatus(text.includes("Googlebot"), "robots.txt is missing Googlebot allow rule");
   requireStatus(text.includes("Disallow: /admin"), "robots.txt should disallow admin pages");
+  requireStatus(text.includes("Disallow: /api/admin"), "robots.txt should disallow admin APIs");
+  requireStatus(text.includes("Disallow: /dev"), "robots.txt should disallow development pages");
   console.log("ok robots.txt rules found");
 }
 
