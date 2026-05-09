@@ -10,7 +10,7 @@ export function AdminPageTitle({ titleKey, caption }: { titleKey: TranslationKey
   return (
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">WholesaleHub</p>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Luis One Supply Hub</p>
         <h1 className="mt-1 text-2xl font-black tracking-tight text-zinc-950">{t(titleKey)}</h1>
         {caption ? <p className="mt-2 text-sm leading-6 text-zinc-500">{caption}</p> : null}
       </div>

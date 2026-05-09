@@ -343,10 +343,10 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
           } ${sidebarCollapsed ? "lg:w-20" : "lg:w-72"}`}
         >
           <div className={`flex h-16 items-center gap-3 border-b border-zinc-100 ${sidebarCollapsed ? "justify-center px-3" : "px-5"}`}>
-            <span className="grid h-10 w-10 place-items-center rounded-md bg-[#f65f18] text-lg font-black text-white">S</span>
+            <span className="grid h-10 w-10 place-items-center rounded-md bg-[#f65f18] text-lg font-black text-white">L</span>
             <div className={sidebarCollapsed ? "hidden" : ""}>
               <p className="text-base font-black text-zinc-950">Seller Centre</p>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">WholesaleHub</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">Luis One</p>
             </div>
           </div>
           <nav className="h-[calc(100vh-4rem)] space-y-4 overflow-y-auto p-3">
@@ -396,7 +396,7 @@ export function AdminShell({ children, initialAdmin = null }: { children: ReactN
                   {sidebarCollapsed ? (language === "zh" ? "\u5c55\u5f00" : "Open") : language === "zh" ? "\u6298\u53e0" : "Fold"}
                 </button>
                 <div>
-                  <p className="text-xs font-bold text-zinc-500">WholesaleHub</p>
+                  <p className="text-xs font-bold text-zinc-500">Luis One Supply Hub</p>
                   <p className="text-lg font-black text-zinc-950">{adminNavLabel(activeItem, language, value.t)}</p>
                 </div>
               </div>
