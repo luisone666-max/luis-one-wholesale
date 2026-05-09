@@ -63,6 +63,12 @@ const text = {
     noOrders: "No real orders found.",
     noPayments: "No payment records yet.",
     developmentOnly: "Real website order management. Product total, shipping fee, payments, and supplier notes are handled separately.",
+    updateFailed: "Update failed.",
+    paymentRecordFailed: "Payment record failed.",
+    pointsAwarded: "awarded to member.",
+    pointsReversed: "reversed from member.",
+    pointsNeedManualCheck: "Points need manual check:",
+    unknownError: "unknown error",
   },
   zh: {
     searchOrderNo: "按订单号搜索",
@@ -85,6 +91,12 @@ const text = {
     noOrders: "暂无真实订单。",
     noPayments: "暂无付款记录。",
     developmentOnly: "真实网站订单管理。商品总额、运费、收款和供应商备注分开处理。",
+    updateFailed: "更新失败。",
+    paymentRecordFailed: "付款记录保存失败。",
+    pointsAwarded: "已给会员增加积分。",
+    pointsReversed: "已从会员积分中扣回。",
+    pointsNeedManualCheck: "积分需要人工检查：",
+    unknownError: "未知错误",
   },
 };
 
@@ -180,60 +192,72 @@ export function AdminOrdersClient({
 
   const patchOrder = async (orderNo: string, patch: Record<string, unknown>) => {
     setMessage("");
-    const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderNo)}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(patch),
-    });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Update failed." }))) as {
-      ok?: boolean;
-      message?: string;
-      order?: Partial<AdminOrderRecord>;
-      loyalty?: LoyaltyResult | null;
-    };
 
-    if (!response.ok || !result.ok || !result.order) {
-      setMessage(result.message ?? "Update failed.");
+    try {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderNo)}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const result = (await response.json().catch(() => ({ ok: false, message: copy.updateFailed }))) as {
+        ok?: boolean;
+        message?: string;
+        order?: Partial<AdminOrderRecord>;
+        loyalty?: LoyaltyResult | null;
+      };
+
+      if (!response.ok || !result.ok || !result.order) {
+        setMessage(result.message ?? copy.updateFailed);
+        return false;
+      }
+
+      setOrders((current) => current.map((order) => (order.orderNo === orderNo ? { ...order, ...result.order } : order)));
+      const loyaltyMessage = result.loyalty?.awarded
+        ? ` ${formatLoyaltyPoints(result.loyalty.points)} ${copy.pointsAwarded}`
+        : result.loyalty?.ok && Number(result.loyalty.points ?? 0) < 0
+          ? ` ${formatLoyaltyPoints(Math.abs(Number(result.loyalty.points)))} ${copy.pointsReversed}`
+        : result.loyalty && !result.loyalty.ok
+          ? ` ${copy.pointsNeedManualCheck} ${result.loyalty.message ?? copy.unknownError}`
+          : "";
+      setMessage(`${copy.saved}${loyaltyMessage}`);
+      return true;
+    } catch {
+      setMessage(copy.updateFailed);
       return false;
     }
-
-    setOrders((current) => current.map((order) => (order.orderNo === orderNo ? { ...order, ...result.order } : order)));
-    const loyaltyMessage = result.loyalty?.awarded
-      ? ` ${formatLoyaltyPoints(result.loyalty.points)} awarded to member.`
-      : result.loyalty?.ok && Number(result.loyalty.points ?? 0) < 0
-        ? ` ${formatLoyaltyPoints(Math.abs(Number(result.loyalty.points)))} reversed from member.`
-      : result.loyalty && !result.loyalty.ok
-        ? ` Points need manual check: ${result.loyalty.message ?? "unknown error"}`
-        : "";
-    setMessage(`${copy.saved}${loyaltyMessage}`);
-    return true;
   };
 
   const addPaymentRecord = async (orderNo: string, draft: PaymentDraft) => {
     setMessage("");
-    const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderNo)}/payments`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(draft),
-    });
-    const result = (await response.json().catch(() => ({ ok: false, message: "Payment record failed." }))) as {
-      ok?: boolean;
-      message?: string;
-      payment?: AdminPaymentRecord;
-    };
 
-    if (!response.ok || !result.ok || !result.payment) {
-      setMessage(result.message ?? "Payment record failed.");
+    try {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderNo)}/payments`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(draft),
+      });
+      const result = (await response.json().catch(() => ({ ok: false, message: copy.paymentRecordFailed }))) as {
+        ok?: boolean;
+        message?: string;
+        payment?: AdminPaymentRecord;
+      };
+
+      if (!response.ok || !result.ok || !result.payment) {
+        setMessage(result.message ?? copy.paymentRecordFailed);
+        return false;
+      }
+
+      setOrders((current) =>
+        current.map((order) =>
+          order.orderNo === orderNo ? { ...order, payments: [result.payment as AdminPaymentRecord, ...order.payments] } : order,
+        ),
+      );
+      setMessage(copy.saved);
+      return true;
+    } catch {
+      setMessage(copy.paymentRecordFailed);
       return false;
     }
-
-    setOrders((current) =>
-      current.map((order) =>
-        order.orderNo === orderNo ? { ...order, payments: [result.payment as AdminPaymentRecord, ...order.payments] } : order,
-      ),
-    );
-    setMessage(copy.saved);
-    return true;
   };
 
   return (
