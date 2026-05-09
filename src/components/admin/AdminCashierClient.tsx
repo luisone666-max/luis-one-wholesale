@@ -40,6 +40,10 @@ const copy = {
     waiting: "Waiting cashier",
     noSales: "No offline sales waiting for cashier.",
     confirmed: "Payment confirmed.",
+    paymentConfirmFailed: "Payment confirmation failed.",
+    pointsAwarded: "awarded to member.",
+    pointsNeedManualCheck: "Points need manual check:",
+    unknownError: "unknown error",
     flowTitle: "Cashier checklist",
     flowStep1: "Check sale slip",
     flowStep2: "Confirm cash / GCash / bank transfer",
@@ -103,6 +107,10 @@ const copy = {
     waiting: "等待收银",
     noSales: "暂无等待收银的线下销售单。",
     confirmed: "已确认收款。",
+    paymentConfirmFailed: "收款确认失败。",
+    pointsAwarded: "已给会员增加积分。",
+    pointsNeedManualCheck: "积分需要人工检查：",
+    unknownError: "未知错误",
     flowTitle: "收银员确认步骤",
     flowStep1: "核对销售单",
     flowStep2: "确认现金 / GCash / 银行转账",
@@ -137,6 +145,10 @@ const zhCopy = {
   waiting: "等待收银",
   noSales: "暂无等待收银的线下销售单。",
   confirmed: "已确认收款。",
+  paymentConfirmFailed: "收款确认失败。",
+  pointsAwarded: "已给会员增加积分。",
+  pointsNeedManualCheck: "积分需要人工检查：",
+  unknownError: "未知错误",
   flowTitle: "收银员确认步骤",
   flowStep1: "核对销售单",
   flowStep2: "确认现金 / GCash / 银行转账",
@@ -191,11 +203,13 @@ const cashierActionText = {
     returnToSales: "Return to Sales",
     returnReasonPrompt: "Reason for returning this sale to Sales Desk?",
     returned: "Sale returned to Sales Desk for correction.",
+    returnFailed: "Unable to return sale to Sales Desk.",
   },
   zh: {
     returnToSales: "\u9000\u56de\u9500\u552e\u4fee\u6539",
     returnReasonPrompt: "\u8bf7\u8f93\u5165\u9000\u56de\u9500\u552e\u4fee\u6539\u7684\u539f\u56e0\uff1a",
     returned: "\u5df2\u9000\u56de\u9500\u552e\u5f00\u5355\u9875\u9762\u4fee\u6539\u3002",
+    returnFailed: "\u65e0\u6cd5\u9000\u56de\u9500\u552e\u5f00\u5355\u9875\u9762\u3002",
   },
 };
 
@@ -411,15 +425,15 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
       };
 
       if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Payment confirmation failed.");
+        setMessage(result.message ?? t.paymentConfirmFailed);
         return;
       }
 
       setSales((current) => current.filter((item) => item.id !== sale.id));
       const loyaltyMessage = result.loyalty?.awarded
-        ? ` ${formatLoyaltyPoints(result.loyalty.points)} awarded to member.`
+        ? ` ${formatLoyaltyPoints(result.loyalty.points)} ${t.pointsAwarded}`
         : result.loyalty && !result.loyalty.ok
-          ? ` Points need manual check: ${result.loyalty.message ?? "unknown error"}`
+          ? ` ${t.pointsNeedManualCheck} ${result.loyalty.message ?? t.unknownError}`
           : "";
       setMessage(`${t.confirmed}${loyaltyMessage} ${t.cashDrawerUpdated}${cashDrawerSummaryMessage(result.cashDrawer, language)}`);
     } finally {
@@ -446,7 +460,7 @@ export function AdminCashierClient({ initialSales, initialError }: { initialSale
       const result = (await response.json()) as { ok?: boolean; message?: string };
 
       if (!response.ok || !result.ok) {
-        setMessage(result.message ?? "Unable to return sale to Sales Desk.");
+        setMessage(result.message ?? actionText.returnFailed);
         return;
       }
 
