@@ -52,6 +52,8 @@ const copy = {
     repeatBuyer: "Repeat buyer",
     firstBuyer: "First buyer",
     prospect: "Prospect",
+    loadPointsFailed: "Unable to load points history.",
+    adjustPointsFailed: "Unable to adjust customer points.",
   },
   zh: {
     caption: "真实客户资料，包含线上注册客户和线下会员销售记录。",
@@ -123,6 +125,8 @@ const zhCopy = {
   repeatBuyer: "\u590d\u8d2d\u5ba2\u6237",
   firstBuyer: "\u9996\u6b21\u6210\u4ea4",
   prospect: "\u5f85\u8ddf\u8fdb\u5ba2\u6237",
+  loadPointsFailed: "\u65e0\u6cd5\u8f7d\u5165\u79ef\u5206\u6d41\u6c34\u3002",
+  adjustPointsFailed: "\u65e0\u6cd5\u8c03\u6574\u5ba2\u6237\u79ef\u5206\u3002",
 } satisfies typeof copy.en;
 
 type AdminCustomerLoyaltyTransaction = {
@@ -248,84 +252,95 @@ export function AdminCustomersClient({
       [customerId]: { loading: true, pointsReady, message: "", transactions: [] },
     }));
 
-    const response = await fetch(`/api/admin/customers/${customerId}/loyalty`);
-    const payload = (await response.json().catch(() => ({}))) as {
-      ok?: boolean;
-      pointsReady?: boolean;
-      message?: string;
-      transactions?: AdminCustomerLoyaltyTransaction[];
-    };
+    try {
+      const response = await fetch(`/api/admin/customers/${customerId}/loyalty`);
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        pointsReady?: boolean;
+        message?: string;
+        transactions?: AdminCustomerLoyaltyTransaction[];
+      };
 
-    setLoyaltyHistoryByCustomer((current) => ({
-      ...current,
-      [customerId]: {
-        loading: false,
-        pointsReady: Boolean(payload.pointsReady),
-        message: payload.message ?? (!response.ok ? "Unable to load points history." : ""),
-        transactions: Array.isArray(payload.transactions) ? payload.transactions : [],
-      },
-    }));
+      setLoyaltyHistoryByCustomer((current) => ({
+        ...current,
+        [customerId]: {
+          loading: false,
+          pointsReady: Boolean(payload.pointsReady),
+          message: payload.message ?? (!response.ok ? text.loadPointsFailed : ""),
+          transactions: Array.isArray(payload.transactions) ? payload.transactions : [],
+        },
+      }));
+    } catch {
+      setLoyaltyHistoryByCustomer((current) => ({
+        ...current,
+        [customerId]: { loading: false, pointsReady, message: text.loadPointsFailed, transactions: [] },
+      }));
+    }
   }
 
   async function submitPointsAdjustment(customerId: string) {
     setAdjustMessage("");
     setAdjusting(true);
 
-    const response = await fetch(`/api/admin/customers/${customerId}/loyalty`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        points: Number(adjustPoints),
-        note: adjustNote,
-      }),
-    });
-    const payload = (await response.json().catch(() => ({}))) as {
-      ok?: boolean;
-      message?: string;
-      pointsBalance?: number;
-      lifetimePoints?: number;
-      transaction?: AdminCustomerLoyaltyTransaction;
-    };
-
-    setAdjusting(false);
-
-    if (!response.ok || !payload.ok) {
-      setAdjustMessage(payload.message ?? "Unable to adjust customer points.");
-      return;
-    }
-
-    setCustomers((current) =>
-      current.map((customer) =>
-        customer.id === customerId
-          ? {
-              ...customer,
-              pointsBalance: typeof payload.pointsBalance === "number" ? payload.pointsBalance : customer.pointsBalance,
-              lifetimePoints: typeof payload.lifetimePoints === "number" ? payload.lifetimePoints : customer.lifetimePoints,
-            }
-          : customer,
-      ),
-    );
-
-    if (payload.transaction) {
-      setLoyaltyHistoryByCustomer((current) => {
-        const existing = current[customerId] ?? { loading: false, pointsReady: true, message: "", transactions: [] };
-
-        return {
-          ...current,
-          [customerId]: {
-            ...existing,
-            loading: false,
-            pointsReady: true,
-            message: "",
-            transactions: [payload.transaction!, ...existing.transactions],
-          },
-        };
+    try {
+      const response = await fetch(`/api/admin/customers/${customerId}/loyalty`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          points: Number(adjustPoints),
+          note: adjustNote,
+        }),
       });
-    }
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        message?: string;
+        pointsBalance?: number;
+        lifetimePoints?: number;
+        transaction?: AdminCustomerLoyaltyTransaction;
+      };
 
-    setAdjustPoints("");
-    setAdjustNote("");
-    setAdjustMessage(payload.message ?? text.adjustmentSaved);
+      if (!response.ok || !payload.ok) {
+        setAdjustMessage(payload.message ?? text.adjustPointsFailed);
+        return;
+      }
+
+      setCustomers((current) =>
+        current.map((customer) =>
+          customer.id === customerId
+            ? {
+                ...customer,
+                pointsBalance: typeof payload.pointsBalance === "number" ? payload.pointsBalance : customer.pointsBalance,
+                lifetimePoints: typeof payload.lifetimePoints === "number" ? payload.lifetimePoints : customer.lifetimePoints,
+              }
+            : customer,
+        ),
+      );
+
+      if (payload.transaction) {
+        setLoyaltyHistoryByCustomer((current) => {
+          const existing = current[customerId] ?? { loading: false, pointsReady: true, message: "", transactions: [] };
+
+          return {
+            ...current,
+            [customerId]: {
+              ...existing,
+              loading: false,
+              pointsReady: true,
+              message: "",
+              transactions: [payload.transaction!, ...existing.transactions],
+            },
+          };
+        });
+      }
+
+      setAdjustPoints("");
+      setAdjustNote("");
+      setAdjustMessage(payload.message ?? text.adjustmentSaved);
+    } catch {
+      setAdjustMessage(text.adjustPointsFailed);
+    } finally {
+      setAdjusting(false);
+    }
   }
 
   return (
