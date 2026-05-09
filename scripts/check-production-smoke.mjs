@@ -13,6 +13,7 @@ const publicChecks = [
   { path: "/login", name: "customer login page", minLength: 500 },
   { path: "/register", name: "customer register page", minLength: 500 },
   { path: "/wholesale-guides", name: "SEO guide index", minLength: 500 },
+  { path: "/api/health", name: "public health check", minLength: 50 },
   { path: "/admin/login", name: "admin login page", minLength: 500 },
   { path: "/meta/catalog-feed.csv", name: "Meta catalog feed", minLength: 100 },
   { path: "/share/product/1", name: "Facebook product share page", minLength: 500 },
@@ -331,6 +332,42 @@ function checkSitemap(text) {
   console.log("ok sitemap.xml core public routes found");
 }
 
+function checkHomeStructuredData(html) {
+  const requiredSnippets = [
+    '"@type":"LocalBusiness"',
+    '"@type":"WebSite"',
+    "Luis One Supply Hub",
+    "1373 Narra St",
+    "+639177126789",
+    "SearchAction",
+  ];
+
+  for (const snippet of requiredSnippets) {
+    requireStatus(html.includes(snippet), `home page structured data is missing ${snippet}`);
+  }
+
+  console.log("ok home page structured data");
+}
+
+function checkHealthPayload(payload) {
+  let data;
+
+  try {
+    data = JSON.parse(payload);
+  } catch {
+    throw new Error("public health check did not return JSON");
+  }
+
+  requireStatus(data.ok === true, "public health check should return ok=true");
+  requireStatus(data.service === "Luis One Supply Hub", `public health check has unexpected service "${data.service}"`);
+  requireStatus(
+    typeof data.siteUrl === "string" && data.siteUrl.includes(canonicalHost),
+    `public health check should use ${canonicalHost}, got "${data.siteUrl}"`,
+  );
+  requireStatus(!Number.isNaN(Date.parse(data.checkedAt)), "public health check is missing checkedAt timestamp");
+  console.log("ok public health payload");
+}
+
 function checkCustomerPageSafety(path, html) {
   const lower = html.toLowerCase();
   const leaked = adminOnlyLeakTerms.find((term) => lower.includes(term));
@@ -386,6 +423,8 @@ async function main() {
   checkCatalogFeed(pageResults.get("/meta/catalog-feed.csv") ?? "");
   checkRobotsTxt(pageResults.get("/robots.txt") ?? "");
   checkSitemap(pageResults.get("/sitemap.xml") ?? "");
+  checkHomeStructuredData(pageResults.get("/") ?? "");
+  checkHealthPayload(pageResults.get("/api/health") ?? "");
   console.log("Production smoke check passed.");
 }
 
