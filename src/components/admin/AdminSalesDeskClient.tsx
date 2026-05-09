@@ -105,6 +105,17 @@ const copy = {
     roleGuideTitle: "Sales Desk creates the slip only",
     roleGuideBody: "Sales checks customer, products, quantities, and negotiated price here. This page does not confirm payment and does not update the cash drawer.",
     roleGuideWarning: "After saving, the sale appears in Cashier Center. Cashier confirms the money before it becomes paid sales and member points.",
+    saleGuardTitle: "Sales Slip Check",
+    memberPointsWillApply: "Member selected: points will be awarded after cashier confirms payment.",
+    walkInNoMemberPoints: "Walk-in sale: no member points unless a customer account is selected.",
+    manualItemsNeedReview: "Manual item: offline-only item, not linked to website catalog.",
+    noManualItems: "All items are linked to catalog products.",
+    priceChangeNeedsNotes: "Negotiated price detected. Add price / discount notes before sending to cashier.",
+    noPriceChange: "No negotiated product price changes detected.",
+    cashierPendingNotice: "After saving, status becomes Waiting Cashier. Sales cannot mark it paid here.",
+    cashDrawerPendingNotice: "Cash drawer updates only after cashier confirms payment.",
+    catalogItem: "Catalog item",
+    manualItem: "Manual item",
   },
   zh: {
     caption: "这里只做门店线下销售。销售员先开销售单，保存后交给收银员确认收款。",
@@ -259,6 +270,17 @@ const zhCopy = {
   roleGuideTitle: "\u9500\u552e\u53f0\u53ea\u8d1f\u8d23\u5f00\u5355",
   roleGuideBody: "\u9500\u552e\u5458\u5728\u8fd9\u91cc\u6838\u5bf9\u5ba2\u6237\u3001\u5546\u54c1\u3001\u6570\u91cf\u548c\u8c08\u597d\u7684\u4ef7\u683c\u3002\u8fd9\u4e2a\u9875\u9762\u4e0d\u786e\u8ba4\u6536\u6b3e\uff0c\u4e5f\u4e0d\u66f4\u65b0\u94b1\u7bb1\u3002",
   roleGuideWarning: "\u4fdd\u5b58\u540e\u9500\u552e\u5355\u4f1a\u51fa\u73b0\u5728\u6536\u94f6\u5458\u4e2d\u5fc3\u3002\u6536\u94f6\u786e\u8ba4\u5230\u94b1\u540e\uff0c\u624d\u7b97\u5df2\u6536\u9500\u552e\u548c\u4f1a\u5458\u79ef\u5206\u3002",
+  saleGuardTitle: "\u9500\u552e\u5355\u68c0\u67e5",
+  memberPointsWillApply: "\u5df2\u9009\u4f1a\u5458\uff1a\u6536\u94f6\u786e\u8ba4\u540e\u4f1a\u7d2f\u79ef\u5206\u3002",
+  walkInNoMemberPoints: "\u6563\u5ba2\u5355\uff1a\u6ca1\u6709\u9009\u5ba2\u6237\u8d26\u53f7\u5c31\u4e0d\u7d2f\u79ef\u5206\u3002",
+  manualItemsNeedReview: "\u624b\u52a8\u5546\u54c1\uff1a\u7ebf\u4e0b\u4e34\u65f6\u5546\u54c1\uff0c\u6ca1\u6709\u5173\u8054\u7f51\u7ad9\u5546\u54c1\u5e93\u3002",
+  noManualItems: "\u6240\u6709\u5546\u54c1\u90fd\u5df2\u5173\u8054\u5546\u54c1\u5e93\u3002",
+  priceChangeNeedsNotes: "\u68c0\u6d4b\u5230\u8c08\u4ef7 / \u6539\u4ef7\u3002\u53d1\u7ed9\u6536\u94f6\u524d\u8bf7\u586b\u5199\u6539\u4ef7 / \u6298\u6263\u5907\u6ce8\u3002",
+  noPriceChange: "\u6682\u672a\u68c0\u6d4b\u5230\u5546\u54c1\u6539\u4ef7\u3002",
+  cashierPendingNotice: "\u4fdd\u5b58\u540e\u72b6\u6001\u4f1a\u53d8\u6210\u7b49\u5f85\u6536\u94f6\uff0c\u9500\u552e\u53f0\u4e0d\u80fd\u6807\u8bb0\u5df2\u6536\u6b3e\u3002",
+  cashDrawerPendingNotice: "\u53ea\u6709\u6536\u94f6\u786e\u8ba4\u540e\uff0c\u94b1\u7bb1\u624d\u4f1a\u66f4\u65b0\u3002",
+  catalogItem: "\u5546\u54c1\u5e93\u5546\u54c1",
+  manualItem: "\u624b\u52a8\u5546\u54c1",
 } satisfies typeof copy.en;
 
 const salesDeskFlowText = {
@@ -441,6 +463,29 @@ function subtractSaleFromSummary(summary: PosSalesSummary, sale: PosSaleRecord) 
   return next;
 }
 
+function SalesGuardCard({
+  title,
+  body,
+  tone,
+}: {
+  title: string;
+  body: string;
+  tone: "orange" | "green" | "neutral";
+}) {
+  const toneClass = {
+    green: "border-emerald-100 bg-emerald-50 text-emerald-800",
+    neutral: "border-zinc-100 bg-zinc-50 text-zinc-700",
+    orange: "border-orange-100 bg-orange-50 text-orange-800",
+  }[tone];
+
+  return (
+    <div className={`rounded-md border p-3 ${toneClass}`}>
+      <p className="text-xs font-black uppercase tracking-[0.12em] opacity-80">{title}</p>
+      <p className="mt-2 text-xs font-bold leading-5">{body}</p>
+    </div>
+  );
+}
+
 export function AdminSalesDeskClient({
   customers,
   products,
@@ -483,6 +528,7 @@ export function AdminSalesDeskClient({
   const [message, setMessage] = useState(initialError ?? "");
   const [loading, setLoading] = useState(false);
   const selectedCustomer = useMemo(() => customers.find((item) => item.id === customerId), [customerId, customers]);
+  const productById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
 
   const productTotal = useMemo(
     () =>
@@ -497,6 +543,20 @@ export function AdminSalesDeskClient({
   const meaningfulItems = useMemo(() => items.filter((item) => item.productId || item.sku.trim() || item.name.trim()), [items]);
   const itemLineCount = meaningfulItems.length;
   const totalQuantity = meaningfulItems.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) || 0), 0);
+  const manualItemCount = meaningfulItems.filter((item) => !item.productId).length;
+  const changedPriceCount = meaningfulItems.filter((item) => {
+    if (!item.productId) {
+      return false;
+    }
+
+    const product = productById.get(item.productId);
+
+    if (!product || product.retailPrice === null) {
+      return false;
+    }
+
+    return Math.abs((Number(item.unitPrice) || 0) - product.retailPrice) >= 0.01;
+  }).length;
   const canSubmitSale = itemLineCount > 0 && total >= 0 && !loading;
   const filteredProducts = useMemo(() => {
     const needle = productSearch.trim().toLowerCase();
@@ -836,6 +896,35 @@ export function AdminSalesDeskClient({
 
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{t.saleGuardTitle}</p>
+          <StatusPill tone={itemLineCount ? "orange" : "neutral"}>{itemLineCount ? t.readyForCashier : t.needProductsFirst}</StatusPill>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <SalesGuardCard
+            tone={selectedCustomer ? "green" : "orange"}
+            title={selectedCustomer ? t.memberBadge : t.walkInBadge}
+            body={selectedCustomer ? t.memberPointsWillApply : t.walkInNoMemberPoints}
+          />
+          <SalesGuardCard
+            tone={manualItemCount ? "orange" : "green"}
+            title={`${manualItemCount} ${t.manualItem}`}
+            body={manualItemCount ? t.manualItemsNeedReview : t.noManualItems}
+          />
+          <SalesGuardCard
+            tone={changedPriceCount && !priceChangeNotes.trim() ? "orange" : "green"}
+            title={`${changedPriceCount} ${t.priceNotes}`}
+            body={changedPriceCount && !priceChangeNotes.trim() ? t.priceChangeNeedsNotes : t.noPriceChange}
+          />
+          <SalesGuardCard
+            tone="neutral"
+            title={t.waitingCashier}
+            body={`${t.cashierPendingNotice} ${t.cashDrawerPendingNotice}`}
+          />
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">{summaryScope === "mine" ? t.myStats : t.allStats}</p>
           <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-700">POS</span>
         </div>
@@ -986,7 +1075,10 @@ export function AdminSalesDeskClient({
                         </option>
                       ))}
                     </select>
-                    <input className={`${inputClass()} mt-2`} value={item.name} onChange={(event) => setItems((current) => current.map((row, rowIndex) => (rowIndex === index ? { ...row, name: event.target.value } : row)))} />
+                    <div className="mt-2 flex items-center gap-2">
+                      <input className={inputClass()} value={item.name} onChange={(event) => setItems((current) => current.map((row, rowIndex) => (rowIndex === index ? { ...row, name: event.target.value } : row)))} />
+                      <StatusPill tone={item.productId ? "green" : "orange"}>{item.productId ? t.catalogItem : t.manualItem}</StatusPill>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <input className={inputClass()} value={item.sku} onChange={(event) => setItems((current) => current.map((row, rowIndex) => (rowIndex === index ? { ...row, sku: event.target.value } : row)))} />
