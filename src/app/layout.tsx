@@ -4,6 +4,7 @@ import { AuthHashRedirect } from "@/components/AuthHashRedirect";
 import { MetaPixel } from "@/components/MetaPixel";
 import { businessInfo } from "@/lib/business-info";
 import { getMetaPixelId } from "@/lib/meta-pixel";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -57,6 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const metaPixelId = getMetaPixelId();
+  const structuredData = [organizationJsonLd(), websiteJsonLd()];
 
   return (
     <html
@@ -64,6 +66,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        <script
+          id="site-structured-data"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         <script
           id="meta-pixel-base"
           dangerouslySetInnerHTML={{
