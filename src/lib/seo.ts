@@ -1,4 +1,4 @@
-import { getPriceRange, type Category, type Product } from "@/lib/mock-data";
+import { formatMoney, getPriceRange, type Category, type Product } from "@/lib/mock-data";
 import { businessInfo } from "@/lib/business-info";
 
 export const productionSiteUrl = "https://luisonesupplyhub.com";
@@ -61,6 +61,7 @@ export function stripText(value: string) {
 
 export function getProductPriceBounds(product: Product) {
   const prices = [
+    product.retailPrice ?? 0,
     ...product.tiers.map((tier) => tier.price),
     ...(product.variants ?? []).flatMap((variant) => variant.tiers.map((tier) => tier.price)),
   ].filter((price) => Number.isFinite(price) && price > 0);
@@ -127,7 +128,11 @@ export function productJsonLd(product: Product) {
 
 export function productSeoDescription(product: Product) {
   const priceRange = getPriceRange(product);
-  const priceText = priceRange === "Contact for quotation" ? "Price available on request" : `Price range: ${priceRange}`;
+  const priceText = priceRange === "Contact for quotation"
+    ? product.retailPrice
+      ? `Retail price: ${formatMoney(product.retailPrice)}`
+      : "Price available on request"
+    : `Price range: ${priceRange}`;
   const stockText = product.stockStatus === "Unavailable" ? "Messenger inquiry only" : product.stockStatus;
 
   return stripText(
@@ -143,6 +148,10 @@ export function productShareTitle(product: Product) {
   const priceRange = getPriceRange(product);
 
   if (priceRange === "Contact for quotation") {
+    if (product.retailPrice) {
+      return `${product.name} | ${formatMoney(product.retailPrice)}`;
+    }
+
     return `${product.name} | Ask price on Messenger`;
   }
 
