@@ -17,6 +17,7 @@
     "check:admin-links": "node scripts/check-admin-links.mjs",
     "check:customer-links": "node scripts/check-customer-links.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",
+    "check:catalog-scale": "node scripts/check-catalog-scale.mjs",
     "check:loyalty": "node scripts/check-online-order-loyalty.mjs",
     "check:pos": "node scripts/check-pos-flow.mjs",
     "check:pos:corrections": "node scripts/check-pos-corrections.mjs",

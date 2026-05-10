@@ -15,6 +15,7 @@ const suites = {
     ["lint", "ESLint"],
     ["check:pos", "Offline POS flow"],
     ["check:loyalty", "Online loyalty flow"],
+    ["check:catalog-scale", "Large catalog scale guard"],
     ["check:production", "Production smoke"],
     ["build", "Production build"],
   ],
