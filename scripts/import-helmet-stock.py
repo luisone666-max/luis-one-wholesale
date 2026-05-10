@@ -268,8 +268,14 @@ def price_tiers(cost):
     ]
 
 
-def supplier_cost_from_price(brand, price):
-    if brand.upper() == "GILLE":
+def uses_srp_discount(brand, filename):
+    upper_brand = brand.upper()
+    upper_file = filename.upper()
+    return upper_brand == "GILLE" or "SRP" in upper_file
+
+
+def supplier_cost_from_price(brand, filename, price):
+    if uses_srp_discount(brand, filename):
         return price * 0.70
     return price
 
@@ -562,7 +568,7 @@ def collect_products():
                 brand = detect_brand(filename, ws.title)
                 for product in parse_grid_sheet(ws):
                     source_price = float(product["cost"])
-                    cost = supplier_cost_from_price(brand, source_price)
+                    cost = supplier_cost_from_price(brand, filename, source_price)
                     retail_price, tiers = price_tiers(cost)
                     suffix = stable_suffix(filename, ws.title, product["row"], product["col"], product["name"])
                     base_slug = slugify(product["name"])
@@ -589,9 +595,9 @@ def collect_products():
                             "source_row": product["row"],
                             "source_col": product["col"],
                             "internal_cost_notes": (
-                                f"Imported GILLE SRP: PHP {source_price:.2f}. Supplier discount 30%; "
+                                f"Imported SRP: PHP {source_price:.2f}. Supplier discount 30%; "
                                 f"calculated cost PHP {cost:.2f}. Retail +15%, wholesale 6-12 +10%, 13+ +8%."
-                                if brand.upper() == "GILLE"
+                                if uses_srp_discount(brand, filename)
                                 else f"Imported supplier cost: PHP {cost:.2f}. Retail +15%, wholesale 6-12 +10%, 13+ +8%."
                             ),
                         }
