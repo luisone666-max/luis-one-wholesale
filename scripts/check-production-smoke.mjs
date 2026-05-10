@@ -5,7 +5,6 @@ const canonicalHost = new URL(defaultBaseUrl).hostname;
 const publicChecks = [
   { path: "/", name: "home page", minLength: 1000 },
   { path: "/category/all", name: "product listing", minLength: 1000 },
-  { path: "/product/1", name: "product detail", minLength: 1000 },
   { path: "/cart", name: "cart page", minLength: 500 },
   { path: "/checkout", name: "checkout page", minLength: 500 },
   { path: "/member", name: "member center page", minLength: 500 },
@@ -16,7 +15,6 @@ const publicChecks = [
   { path: "/api/health", name: "public health check", minLength: 50 },
   { path: "/admin/login", name: "admin login page", minLength: 500 },
   { path: "/meta/catalog-feed.csv", name: "Meta catalog feed", minLength: 100 },
-  { path: "/share/product/1", name: "Facebook product share page", minLength: 500 },
   { path: "/robots.txt", name: "robots.txt", minLength: 50 },
   { path: "/sitemap.xml", name: "sitemap.xml", minLength: 500 },
 ];
@@ -24,7 +22,6 @@ const publicChecks = [
 const customerPageChecks = new Set([
   "/",
   "/category/all",
-  "/product/1",
   "/cart",
   "/checkout",
   "/member",
@@ -32,7 +29,6 @@ const customerPageChecks = new Set([
   "/login",
   "/register",
   "/wholesale-guides",
-  "/share/product/1",
 ]);
 const adminOnlyLeakTerms = [
   "supplier_notes",
@@ -266,6 +262,10 @@ function checkCatalogFeed(csv) {
 
   const columnIndex = new Map(headers.map((column, index) => [column, index]));
   const rows = lines.slice(1);
+  const parsedRows = rows.map((row) => {
+    const cells = parseCsvLine(row);
+    return Object.fromEntries(headers.map((column, index) => [column, cells[index] ?? ""]));
+  });
   const ids = rows.map((row) => parseCsvLine(row)[columnIndex.get("id") ?? -1] ?? "");
   const duplicateIds = ids.filter((id, index) => id && ids.indexOf(id) !== index);
   const validAvailability = new Set(["in stock", "out of stock", "preorder", "available for order", "discontinued"]);
@@ -299,6 +299,7 @@ function checkCatalogFeed(csv) {
   console.log("ok Meta catalog feed required columns found");
   console.log("ok Meta catalog feed rows have valid ids, prices, links, images, and availability");
   console.log(`ok Meta catalog feed rows=${rows.length}`);
+  return parsedRows;
 }
 
 function checkRobotsTxt(text) {
@@ -315,7 +316,6 @@ function checkSitemap(text) {
   const requiredUrls = [
     `${defaultBaseUrl}/`,
     `${defaultBaseUrl}/category/all`,
-    `${defaultBaseUrl}/product/1`,
     `${defaultBaseUrl}/wholesale-guides`,
   ];
   const blockedPaths = ["/admin", "/api", "/dev"];
@@ -323,6 +323,8 @@ function checkSitemap(text) {
   for (const url of requiredUrls) {
     requireStatus(text.includes(url), `sitemap.xml is missing ${url}`);
   }
+
+  requireStatus(text.includes(`${defaultBaseUrl}/product/`), "sitemap.xml is missing product URLs");
 
   for (const blockedPath of blockedPaths) {
     requireStatus(!text.includes(`${defaultBaseUrl}${blockedPath}`), `sitemap.xml should not expose ${blockedPath} routes`);
@@ -418,9 +420,29 @@ async function main() {
     await checkSearchPage(check);
   }
 
-  checkProductOgTags(pageResults.get("/product/1") ?? "", "product page");
-  checkProductOgTags(pageResults.get("/share/product/1") ?? "", "share page");
-  checkCatalogFeed(pageResults.get("/meta/catalog-feed.csv") ?? "");
+  const catalogRows = checkCatalogFeed(pageResults.get("/meta/catalog-feed.csv") ?? "");
+  const firstCatalogLink = catalogRows[0]?.link ?? "";
+  const firstCatalogPath = firstCatalogLink ? new URL(firstCatalogLink).pathname : "";
+  const firstCatalogSlug = firstCatalogPath.match(/^\/product\/(.+)$/)?.[1] ?? "";
+
+  requireStatus(Boolean(firstCatalogSlug), `Meta catalog feed first product link is not a product URL: "${firstCatalogLink}"`);
+
+  const liveProductHtml = await checkPublicPage({
+    path: `/product/${firstCatalogSlug}`,
+    name: "live product detail",
+    minLength: 1000,
+  });
+  checkCustomerPageSafety(`/product/${firstCatalogSlug}`, liveProductHtml);
+
+  const liveShareHtml = await checkPublicPage({
+    path: `/share/product/${firstCatalogSlug}`,
+    name: "live Facebook product share page",
+    minLength: 500,
+  });
+  checkCustomerPageSafety(`/share/product/${firstCatalogSlug}`, liveShareHtml);
+
+  checkProductOgTags(liveProductHtml, "product page");
+  checkProductOgTags(liveShareHtml, "share page");
   checkRobotsTxt(pageResults.get("/robots.txt") ?? "");
   checkSitemap(pageResults.get("/sitemap.xml") ?? "");
   checkHomeStructuredData(pageResults.get("/") ?? "");
