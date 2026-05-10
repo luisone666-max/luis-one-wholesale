@@ -5,15 +5,14 @@ import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
 import { businessInfo } from "@/lib/business-info";
-import { getCatalogSnapshot } from "@/lib/catalog-data";
-import { compareRecommendedProducts } from "@/lib/product-sort";
+import { getCatalogCategoryListingPage } from "@/lib/catalog-data";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const catalog = await getCatalogSnapshot();
-  const products = [...catalog.data.products].sort(compareRecommendedProducts);
-  const visibleProducts = products.slice(0, 48);
+  const catalog = await getCatalogCategoryListingPage("all", { page: 1, pageSize: 48, sort: "popular" });
+  const visibleProducts = catalog.data.products;
+  const hasMoreProducts = catalog.data.totalProducts > catalog.data.pageSize;
 
   return (
     <>
@@ -71,7 +70,7 @@ export default async function Home() {
             </div>
           ) : null}
 
-          {products.length > 48 ? (
+          {hasMoreProducts ? (
             <div className="mt-7 flex justify-center">
               <Link href="/category/all?page=2" className="rounded-sm border border-orange-200 bg-white px-5 py-3 text-sm font-black text-orange-700 hover:bg-orange-50">
                 View More Products

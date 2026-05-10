@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
@@ -66,13 +65,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false, message: "Unsupported image type." }, { status: 400 });
     }
 
-    const publicPath = path.join(process.cwd(), "public", imageUrl);
-    const file = await readFile(publicPath);
+    const publicImageUrl = new URL(imageUrl, request.url);
+    const response = await fetch(publicImageUrl, { cache: "no-store" });
 
-    return new Response(file, {
+    if (!response.ok) {
+      return NextResponse.json({ ok: false, message: "Image could not be downloaded." }, { status: 404 });
+    }
+
+    return new Response(response.body, {
       headers: {
         "content-disposition": `attachment; filename="${requestedName}${extension}"`,
-        "content-type": contentTypeForExtension(extension),
+        "content-type": response.headers.get("content-type") || contentTypeForExtension(extension),
         "cache-control": "public, max-age=300",
       },
     });

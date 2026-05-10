@@ -79,6 +79,13 @@ type ProductVariantSearchRow = Pick<
 export const CATALOG_CACHE_SECONDS = 60;
 export const CATALOG_CACHE_TAG = "customer-catalog";
 
+const categorySelectColumns =
+  "id,name_en,name_zh,slug,parent_id,level,icon_url,image_url,active,show_on_homepage,show_in_navigation,sort_order,template_type,description,created_at,updated_at";
+const productSelectColumns =
+  "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,active,created_at";
+const variantSelectColumns =
+  "id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order,created_at,updated_at";
+
 export type CatalogResult<T> = {
   data: T;
   source: "supabase" | "mock";
@@ -562,23 +569,19 @@ async function readSupabaseCatalogUncached(): Promise<CatalogSnapshot | null> {
   const [categoriesResult, productsResult, tiersResult, imagesResult, variantsResult, variantTiersResult] = await Promise.all([
     supabase
       .from("categories")
-      .select(
-        "id,name_en,name_zh,slug,parent_id,level,icon_url,image_url,active,show_on_homepage,show_in_navigation,sort_order,template_type,description,created_at,updated_at",
-      )
+      .select(categorySelectColumns)
       .eq("active", true)
       .order("sort_order", { ascending: true }),
     supabase
       .from("customer_products")
-      .select(
-        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,active,created_at",
-      )
+      .select(productSelectColumns)
       .eq("active", true)
       .order("name", { ascending: true }),
     supabase.from("product_price_tiers").select("product_id,min_qty,max_qty,unit_price").order("min_qty", { ascending: true }),
     supabase.from("product_images").select("product_id,image_url,sort_order").order("sort_order", { ascending: true }),
     supabase
       .from("product_variants")
-      .select("id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order,created_at,updated_at")
+      .select(variantSelectColumns)
       .eq("active", true)
       .order("sort_order", { ascending: true }),
     supabase.from("product_variant_price_tiers").select("variant_id,min_qty,max_qty,unit_price").order("min_qty", { ascending: true }),
@@ -793,7 +796,13 @@ export async function getCatalogCategoryListingPage(
   const query = (options.query ?? "").trim();
   const sort = options.sort ?? "popular";
   const normalizedOptions = { page: requestedPage, pageSize, query, sort };
-  const supabase = createServerSupabaseClient();
+  const supabase = createServerSupabaseClient({
+    cache: "force-cache",
+    next: {
+      revalidate: CATALOG_CACHE_SECONDS,
+      tags: [CATALOG_CACHE_TAG],
+    },
+  });
 
   if (!supabase) {
     return getCatalogCategoryListingFromFallback(slug, normalizedOptions);
@@ -802,9 +811,7 @@ export async function getCatalogCategoryListingPage(
   try {
     const categoriesResult = await supabase
       .from("categories")
-      .select(
-        "id,name_en,name_zh,slug,parent_id,level,icon_url,image_url,active,show_on_homepage,show_in_navigation,sort_order,template_type,description,created_at,updated_at",
-      )
+      .select(categorySelectColumns)
       .eq("active", true)
       .order("sort_order", { ascending: true });
 
@@ -827,15 +834,91 @@ export async function getCatalogCategoryListingPage(
 
     let productsQuery = supabase
       .from("customer_products")
-      .select(
-        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,active,created_at",
-      )
+      .select(productSelectColumns, { count: "exact" })
       .eq("active", true);
 
     if (selectedCategory) {
       productsQuery = productsQuery.or(
         `category_id.eq.${selectedCategory.id},subcategory_id.eq.${selectedCategory.id},child_category_id.eq.${selectedCategory.id}`,
       );
+    }
+
+    const activeCategoryIdList = Array.from(activeCategoryIds);
+    if (activeCategoryIdList.length) {
+      productsQuery = productsQuery.in("category_id", activeCategoryIdList);
+    }
+
+    if (!query && (sort === "popular" || sort === "latest")) {
+      const from = (requestedPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+      const productsResult = await (sort === "latest"
+        ? productsQuery.order("created_at", { ascending: false }).order("slug", { ascending: false })
+        : productsQuery.order("name", { ascending: true }))
+        .range(from, to);
+
+      if (productsResult.error) {
+        throw productsResult.error;
+      }
+
+      const pageRows = (productsResult.data ?? []).filter(
+        (product) => product.active && product.category_id && activePathIsVisible(product, activeCategoryIds),
+      );
+      const pageProductIds = pageRows.map((product) => product.id);
+      let tierRows: PriceTierRow[] = [];
+      let imageRows: ProductImageRow[] = [];
+      let variantRows: ProductVariantRow[] = [];
+      let variantTierRows: ProductVariantPriceTierRow[] = [];
+
+      if (pageProductIds.length) {
+        const [tiersResult, imagesResult, variantsResult] = await Promise.all([
+          supabase.from("product_price_tiers").select("product_id,min_qty,max_qty,unit_price").in("product_id", pageProductIds).order("min_qty", { ascending: true }),
+          supabase.from("product_images").select("product_id,image_url,sort_order").in("product_id", pageProductIds).order("sort_order", { ascending: true }),
+          supabase
+            .from("product_variants")
+            .select(variantSelectColumns)
+            .in("product_id", pageProductIds)
+            .eq("active", true)
+            .order("sort_order", { ascending: true }),
+        ]);
+
+        tierRows = tiersResult.error ? [] : tiersResult.data ?? [];
+        imageRows = imagesResult.error ? [] : imagesResult.data ?? [];
+        variantRows = variantsResult.error ? [] : variantsResult.data ?? [];
+
+        const variantIds = variantRows.map((variant) => variant.id);
+        if (variantIds.length) {
+          const variantTiersResult = await supabase
+            .from("product_variant_price_tiers")
+            .select("variant_id,min_qty,max_qty,unit_price")
+            .in("variant_id", variantIds)
+            .order("min_qty", { ascending: true });
+
+          variantTierRows = variantTiersResult.error ? [] : variantTiersResult.data ?? [];
+        }
+      }
+
+      const totalProducts = productsResult.count ?? pageRows.length;
+      const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
+      const currentPage = Math.min(requestedPage, totalPages);
+      const mapped = mapSupabaseSnapshot(categoryRows, pageRows, tierRows, imageRows, variantRows, variantTierRows);
+      const filterCategories = categoryRows
+        .slice()
+        .sort((a, b) => a.level - b.level || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name_en.localeCompare(b.name_en))
+        .map((item) => toCategory(item));
+      const category = isAll ? null : selectedCategory ? toCategory(selectedCategory, totalProducts) : null;
+
+      return {
+        data: {
+          categories: filterCategories,
+          products: mapped.products,
+          category,
+          totalProducts,
+          totalPages,
+          currentPage,
+          pageSize,
+        },
+        source: "supabase",
+      };
     }
 
     const productsResult = await productsQuery.order("name", { ascending: true });
@@ -925,7 +1008,7 @@ export async function getCatalogCategoryListingPage(
         supabase.from("product_images").select("product_id,image_url,sort_order").in("product_id", pageProductIds).order("sort_order", { ascending: true }),
         supabase
           .from("product_variants")
-          .select("id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order,created_at,updated_at")
+          .select(variantSelectColumns)
           .in("product_id", pageProductIds)
           .eq("active", true)
           .order("sort_order", { ascending: true }),
@@ -1051,7 +1134,7 @@ export async function getCatalogCategoryPage(slug: string): Promise<CatalogResul
   };
 }
 
-export async function getCatalogProductPage(slug: string): Promise<CatalogResult<{ product: Product | null; related: Product[] }>> {
+async function getCatalogProductPageFromSnapshot(slug: string): Promise<CatalogResult<{ product: Product | null; related: Product[] }>> {
   const result = await getCatalogSnapshot();
   const product = result.data.products.find((item) => item.slug === slug) ?? (result.source === "mock" ? getMockActiveProductBySlug(slug) ?? null : null);
   const products = result.source === "mock" ? getMockActiveProducts() : result.data.products;
@@ -1062,6 +1145,119 @@ export async function getCatalogProductPage(slug: string): Promise<CatalogResult
     source: result.source,
     message: result.message,
   };
+}
+
+export async function getCatalogProductPage(slug: string): Promise<CatalogResult<{ product: Product | null; related: Product[] }>> {
+  const supabase = createServerSupabaseClient({
+    cache: "force-cache",
+    next: {
+      revalidate: CATALOG_CACHE_SECONDS,
+      tags: [CATALOG_CACHE_TAG],
+    },
+  });
+
+  if (!supabase) {
+    return getCatalogProductPageFromSnapshot(slug);
+  }
+
+  try {
+    const [categoriesResult, productResult] = await Promise.all([
+      supabase
+        .from("categories")
+        .select(categorySelectColumns)
+        .eq("active", true)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("customer_products")
+        .select(productSelectColumns)
+        .eq("active", true)
+        .eq("slug", slug)
+        .limit(1),
+    ]);
+
+    if (categoriesResult.error) {
+      throw categoriesResult.error;
+    }
+
+    if (productResult.error) {
+      throw productResult.error;
+    }
+
+    const categoryRows = categoriesResult.data ?? [];
+    const activeCategoryIds = new Set(categoryRows.map((category) => category.id));
+    const productRow = (productResult.data ?? [])[0] ?? null;
+
+    if (!productRow || !productRow.category_id || !activePathIsVisible(productRow, activeCategoryIds)) {
+      return {
+        data: { product: null, related: [] },
+        source: "supabase",
+      };
+    }
+
+    const relatedCategoryId = productRow.child_category_id ?? productRow.subcategory_id ?? productRow.category_id;
+    const relatedResult = await supabase
+      .from("customer_products")
+      .select(productSelectColumns)
+      .eq("active", true)
+      .neq("id", productRow.id)
+      .or(`category_id.eq.${relatedCategoryId},subcategory_id.eq.${relatedCategoryId},child_category_id.eq.${relatedCategoryId}`)
+      .order("name", { ascending: true })
+      .limit(24);
+    const relatedRows = (relatedResult.error ? [] : relatedResult.data ?? []).filter(
+      (product) => product.category_id && activePathIsVisible(product, activeCategoryIds),
+    );
+    const productRows = [productRow, ...relatedRows];
+    const productIds = productRows.map((product) => product.id);
+    let tierRows: PriceTierRow[] = [];
+    let imageRows: ProductImageRow[] = [];
+    let variantRows: ProductVariantRow[] = [];
+    let variantTierRows: ProductVariantPriceTierRow[] = [];
+
+    if (productIds.length) {
+      const [tiersResult, imagesResult, variantsResult] = await Promise.all([
+        supabase.from("product_price_tiers").select("product_id,min_qty,max_qty,unit_price").in("product_id", productIds).order("min_qty", { ascending: true }),
+        supabase.from("product_images").select("product_id,image_url,sort_order").in("product_id", productIds).order("sort_order", { ascending: true }),
+        supabase
+          .from("product_variants")
+          .select(variantSelectColumns)
+          .in("product_id", productIds)
+          .eq("active", true)
+          .order("sort_order", { ascending: true }),
+      ]);
+
+      tierRows = tiersResult.error ? [] : tiersResult.data ?? [];
+      imageRows = imagesResult.error ? [] : imagesResult.data ?? [];
+      variantRows = variantsResult.error ? [] : variantsResult.data ?? [];
+
+      const variantIds = variantRows.map((variant) => variant.id);
+      if (variantIds.length) {
+        const variantTiersResult = await supabase
+          .from("product_variant_price_tiers")
+          .select("variant_id,min_qty,max_qty,unit_price")
+          .in("variant_id", variantIds)
+          .order("min_qty", { ascending: true });
+
+        variantTierRows = variantTiersResult.error ? [] : variantTiersResult.data ?? [];
+      }
+    }
+
+    const mapped = mapSupabaseSnapshot(categoryRows, productRows, tierRows, imageRows, variantRows, variantTierRows);
+    const product = mapped.products.find((item) => item.slug === slug) ?? null;
+
+    return {
+      data: {
+        product,
+        related: product ? getRelatedProducts(product, mapped.products) : [],
+      },
+      source: "supabase",
+    };
+  } catch (error) {
+    const fallback = await getCatalogProductPageFromSnapshot(slug);
+    return {
+      ...fallback,
+      message: process.env.NODE_ENV === "production" ? fallbackMessage : `${fallbackMessage} ${formatCatalogError(error)}`,
+    };
+  }
 }
 
 function normalizeRelatedText(value: string) {

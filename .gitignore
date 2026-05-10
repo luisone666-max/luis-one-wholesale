@@ -33,6 +33,10 @@ dev-server*.log
 backups/
 __pycache__/
 *.py[cod]
+dev-*.log
+public/product-images/
+public/product-imports/
+tmp-imports/
 
 # env files (can opt-in for committing if needed)
 .env*
