@@ -33,7 +33,7 @@ export default async function Home() {
                 </h1>
               </div>
               <div className="w-fit rounded-sm bg-orange-50 px-3 py-2 text-xs font-black text-orange-700 ring-1 ring-orange-200">
-                Public prices / Manual order confirmation
+                Official store / J&T COD / Store pickup
               </div>
             </div>
           </Container>

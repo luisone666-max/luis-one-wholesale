@@ -69,8 +69,8 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
       <div className="hidden bg-zinc-950 text-white sm:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 text-xs sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 font-bold">
-            <Link href="/admin/login" className="hover:underline">Seller Centre</Link>
-            <span className="hidden sm:inline">Wholesale Account</span>
+            <Link href="/admin/login" className="hover:underline">Staff Login</Link>
+            <span className="hidden sm:inline">Luis One Official Store</span>
           </div>
           <div className="flex items-center gap-4 font-bold">
             <Link href="/wholesale-guides/how-to-place-wholesale-orders-online" className="hidden hover:underline sm:inline">Help</Link>
@@ -160,7 +160,7 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
               How to Order
             </Link>
             <Link href="/admin/login" onClick={() => setMobileMenuOpen(false)} className="rounded-sm bg-zinc-950 px-4 py-3 text-white">
-              Seller Centre
+              Staff Login
             </Link>
             <a href={messengerUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-sm bg-[#f1f8ff] px-4 py-3 text-[#006aff]">
               <MessengerIcon className="h-4 w-4 shrink-0" />

@@ -76,7 +76,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           </p>
 
           <div className="mt-2 flex min-h-4 items-center justify-between gap-2 text-[10px] font-semibold text-zinc-500 sm:text-[11px]">
-            <span className="truncate">Luis One</span>
+            <span className="truncate">Official Store</span>
             <span className="shrink-0 text-zinc-400">Manila</span>
           </div>
 
