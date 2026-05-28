@@ -648,6 +648,46 @@ export function CheckoutForm() {
     return formatPhp(shippingFeeAmount);
   })();
 
+  if (loading) {
+    return (
+      <main className="bg-[#f6f6f6]">
+        <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">Checkout</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Loading checkout...</h1>
+            <p className="mt-2 text-sm font-bold leading-6 text-zinc-600">
+              We are checking your cart and saved delivery details before showing the order form.
+            </p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (!items.length) {
+    return (
+      <main className="bg-[#f6f6f6]">
+        <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="rounded-sm border border-zinc-200 bg-white p-6 text-center shadow-sm">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">Checkout</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Your cart is empty</h1>
+            <p className="mx-auto mt-3 max-w-xl text-sm font-bold leading-6 text-zinc-600">
+              Add wholesale products to your cart before choosing J&T Express COD, Store Pickup, or Lalamove.
+            </p>
+            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link href="/category/all" className="rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white">
+                Continue Shopping
+              </Link>
+              <Link href="/cart" className="rounded-sm border border-zinc-200 bg-white px-5 py-3 text-center text-sm font-black text-zinc-700">
+                Back to Cart
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="bg-[#f6f6f6]">
       <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_400px] lg:px-8">

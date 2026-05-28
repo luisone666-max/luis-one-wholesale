@@ -22,7 +22,7 @@ export default function CartPage() {
   return (
     <>
       <SiteHeader />
-      <CustomerAuthGate>
+      <CustomerAuthGate redirectToLogin>
         <CartContent />
       </CustomerAuthGate>
       <SiteFooter />
@@ -40,6 +40,7 @@ function CartContent() {
     [items],
   );
   const hasBlockingCartIssue = useMemo(() => items.some((item) => Boolean(item.priceError) || item.subtotal === null), [items]);
+  const checkoutUnavailable = loading || !items.length || hasBlockingCartIssue;
   const estimatedPoints = calculateLoyaltyPoints(productTotal);
 
   const loadCart = useCallback(async () => {
@@ -265,23 +266,25 @@ function CartContent() {
                 <SummaryRow label="Amount to Confirm" value={formatPhp(productTotal)} strong />
               </div>
             </div>
-            {hasBlockingCartIssue ? (
+            {checkoutUnavailable ? (
               <div className="mt-6 space-y-3">
-                <a
-                  href={messengerUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white"
-                >
-                  <MessengerIcon className="h-4 w-4 shrink-0" />
-                  <span>Ask on Messenger</span>
-                </a>
+                {hasBlockingCartIssue ? (
+                  <a
+                    href={messengerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white"
+                  >
+                    <MessengerIcon className="h-4 w-4 shrink-0" />
+                    <span>Ask on Messenger</span>
+                  </a>
+                ) : null}
                 <button
                   type="button"
                   disabled
                   className="block w-full cursor-not-allowed rounded-sm bg-zinc-200 px-5 py-3 text-center text-sm font-black text-zinc-500"
                 >
-                  Checkout unavailable
+                  {loading ? "Loading cart..." : items.length ? "Checkout unavailable" : "Add products to checkout"}
                 </button>
               </div>
             ) : (

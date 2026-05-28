@@ -239,7 +239,6 @@ export function buildCompleteDeliveryAddress(address: CheckoutAddressDraft) {
     address.barangay,
     address.city,
     address.province,
-    address.notes,
   ]
     .map((part) => part.trim())
     .filter(Boolean)

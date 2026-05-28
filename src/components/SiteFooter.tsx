@@ -79,6 +79,8 @@ export function SiteFooter() {
             <Link href="/member" className="block hover:text-orange-700">Member Card</Link>
             <Link href="/register" className="block hover:text-orange-700">Create Account</Link>
             <Link href="/wholesale-guides" className="block hover:text-orange-700">Wholesale Guides</Link>
+            <Link href="/privacy-policy" className="block hover:text-orange-700">Privacy Policy</Link>
+            <Link href="/data-deletion" className="block hover:text-orange-700">Data Deletion</Link>
           </div>
         </div>
         <div>

@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { GoogleQuickSignInButton } from "@/components/auth/GoogleQuickSignInButton";
+import { FacebookQuickSignInButton, GoogleQuickSignInButton, isFacebookLoginEnabled } from "@/components/auth/GoogleQuickSignInButton";
 import { trackMetaEvent } from "@/components/MetaPixel";
-import { getFriendlyAuthError } from "@/lib/customer-auth";
+import { getFriendlyAuthError, normalizeCustomerRedirect } from "@/lib/customer-auth";
 
 const businessTypes = ["Reseller", "Shop Owner", "Online Seller", "Walk-in Buyer", "Other"];
 
-export function RegisterForm() {
+export function RegisterForm({ redirectPath, siteOrigin }: { redirectPath?: string; siteOrigin?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -23,6 +23,13 @@ export function RegisterForm() {
     password: "",
     confirmPassword: "",
   });
+  const normalizedRedirect = normalizeCustomerRedirect(redirectPath, "/member");
+  const isCheckoutRedirect = normalizedRedirect === "/checkout";
+  const isCartRedirect = normalizedRedirect === "/cart";
+  const loginHref = `/login?redirect=${encodeURIComponent(normalizedRedirect)}`;
+  const loginAfterRegisterHref = `/login?registered=1&redirect=${encodeURIComponent(normalizedRedirect)}`;
+  const googleButtonLabel = isCheckoutRedirect ? "Continue to Checkout with Google" : isCartRedirect ? "Return to Cart with Google" : undefined;
+  const facebookButtonLabel = isCheckoutRedirect ? "Continue to Checkout with Facebook" : isCartRedirect ? "Return to Cart with Facebook" : undefined;
 
   const updateField = (field: keyof typeof form, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -50,7 +57,7 @@ export function RegisterForm() {
         content_name: "Wholesale account registration",
         status: true,
       });
-      router.push("/login?registered=1");
+      router.push(loginAfterRegisterHref);
     } catch {
       setMessage("Unable to register right now. Please try again.");
     } finally {
@@ -64,8 +71,13 @@ export function RegisterForm() {
       <p className="mt-2 text-sm text-zinc-600">Register to place wholesale orders with Luis One Supply Hub.</p>
       <div className="mt-5 rounded-sm border border-orange-100 bg-orange-50 p-3">
         <p className="text-sm font-black text-zinc-950">Quick sign in</p>
-        <p className="mt-1 text-xs font-bold text-zinc-500">Use Google to create a customer account without setting a password.</p>
-        <GoogleQuickSignInButton className="mt-3" />
+        <p className="mt-1 text-xs font-bold text-zinc-500">
+          Use {isFacebookLoginEnabled ? "Google or Facebook" : "Google"} to create a customer account without setting a password.
+        </p>
+        <div className="mt-3 grid gap-2">
+          <GoogleQuickSignInButton redirectPath={normalizedRedirect} siteOrigin={siteOrigin} label={googleButtonLabel} />
+          <FacebookQuickSignInButton redirectPath={normalizedRedirect} siteOrigin={siteOrigin} label={facebookButtonLabel} />
+        </div>
       </div>
       <div className="my-5 flex items-center gap-3">
         <span className="h-px flex-1 bg-zinc-200" />
@@ -111,11 +123,11 @@ export function RegisterForm() {
         disabled={loading}
         className="mt-6 h-12 w-full rounded-sm bg-[#f65f18] text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-orange-300"
       >
-        {loading ? "Creating Account..." : "Register"}
+        {loading ? "Creating Account..." : isCheckoutRedirect ? "Register and Continue to Checkout" : isCartRedirect ? "Register and Return to Cart" : "Register"}
       </button>
       <p className="mt-4 text-center text-sm text-zinc-600">
         Already have an account?{" "}
-        <Link href="/login" className="font-black text-orange-700">
+        <Link href={loginHref} className="font-black text-orange-700">
           Login
         </Link>
       </p>

@@ -9,7 +9,7 @@ export default function CheckoutPage() {
   return (
     <>
       <SiteHeader />
-      <CustomerAuthGate>
+      <CustomerAuthGate redirectToLogin>
         <CheckoutForm />
       </CustomerAuthGate>
       <SiteFooter />
