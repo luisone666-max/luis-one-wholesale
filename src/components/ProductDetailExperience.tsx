@@ -6,6 +6,7 @@ import { CopyLinkIcon, FacebookIcon, MessengerIcon } from "@/components/BrandAct
 import { messengerUrl, ProductImage, StockStatusBadge } from "@/components/CustomerUi";
 import { trackMetaEvent } from "@/components/MetaPixel";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
+import { businessInfo } from "@/lib/business-info";
 import { addProductToCart } from "@/lib/customer-cart";
 import { notifyCustomerCartUpdated } from "@/lib/customer-cart-events";
 import { metaCatalogItemId } from "@/lib/meta-catalog";
@@ -225,10 +226,10 @@ export function ProductDetailExperience({ product }: { product: Product }) {
   };
 
   return (
-    <section className="overflow-hidden bg-white pb-20 shadow-sm sm:rounded-sm sm:border sm:border-zinc-200 sm:p-4">
-      <div className="grid gap-3 lg:grid-cols-[430px_1fr] lg:gap-7">
+    <section className="overflow-hidden bg-white pb-28 shadow-sm sm:rounded-sm sm:border sm:border-zinc-200 sm:p-4 lg:pb-4">
+      <div className="grid gap-3 md:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.1fr)] md:gap-5 lg:grid-cols-[430px_1fr] lg:gap-7">
         <div>
-          <div className="aspect-square bg-white p-1.5 sm:rounded-sm sm:border sm:border-zinc-200 sm:p-3">
+          <div className="aspect-[4/3] bg-white p-1.5 sm:rounded-sm sm:border sm:border-zinc-200 sm:p-3 md:aspect-square">
             <ProductImage src={selectedImage || displayProduct.image} alt={displayProduct.name} />
           </div>
           {selectedVariantImagePending ? (
@@ -323,6 +324,12 @@ export function ProductDetailExperience({ product }: { product: Product }) {
             <p className="mt-1 text-xs font-bold text-zinc-500">Public wholesale prices. Final order will be confirmed manually.</p>
           </div>
 
+          <div className="mt-2 grid gap-2 text-xs font-bold sm:grid-cols-3">
+            <InfoBadge label="J&T COD" value="Available after stock confirmation" tone="green" />
+            <InfoBadge label="Ships From" value="Luis One, Tondo Manila" tone="orange" />
+            <InfoBadge label="Pickup" value="Store pickup and Lalamove supported" tone="blue" />
+          </div>
+
           <div className="mt-3 space-y-3 text-sm sm:mt-5 sm:space-y-4">
             <DetailRow label="SKU">
               <span className="font-bold text-zinc-900">{displayProduct.sku ?? "-"}</span>
@@ -346,7 +353,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
               <div>
                 <p className="font-bold text-zinc-900">J&T Express COD / Store Pickup / Lalamove</p>
                 <p className="mt-1 text-xs font-bold text-zinc-500">
-                  Choose your receiving method at checkout. J&T Express COD can include estimated shipping when available.
+                  Ships from {businessInfo.address}. Choose your receiving method at checkout. J&T Express COD can include estimated shipping when available.
                 </p>
               </div>
             </DetailRow>
@@ -431,7 +438,7 @@ export function ProductDetailExperience({ product }: { product: Product }) {
             </DetailRow>
           </div>
 
-          <div className="mt-4 hidden grid-cols-2 gap-2 border-t border-zinc-100 pt-3 sm:mt-6 sm:flex sm:gap-3 sm:pt-5">
+          <div className="mt-4 hidden grid-cols-2 gap-2 border-t border-zinc-100 pt-3 sm:mt-6 lg:flex lg:gap-3 lg:pt-5">
             {directOrderUnavailable ? (
               <ProductInquiryButton product={inquiryProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-4 text-xs !text-white hover:!bg-[#df4f0d] sm:h-12 sm:min-w-72 sm:px-8 sm:text-sm" />
             ) : (
@@ -466,24 +473,44 @@ export function ProductDetailExperience({ product }: { product: Product }) {
           ) : null}
         </div>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-zinc-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-[0.9fr_1.1fr_1fr] gap-2 border-t border-zinc-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur lg:hidden">
         {directOrderUnavailable ? (
-          <ProductInquiryButton product={inquiryProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="col-span-2 h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+          <div className="col-span-3">
+            <ProductInquiryButton product={inquiryProduct} label={quotationOnly ? "Ask Price on Messenger" : "Ask Availability on Messenger"} className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+          </div>
         ) : (
           <>
+            <ProductInquiryButton product={inquiryProduct} label="Chat" ariaLabel="Chat on Messenger" className="h-11 w-full px-2 text-xs" />
             <button
               type="button"
               onClick={addToOrder}
               disabled={loading}
-              className="h-11 rounded-sm border border-[#f65f18] bg-orange-50 px-3 text-xs font-black text-[#f65f18] transition disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-11 rounded-sm border border-[#f65f18] bg-[#ff7a1a] px-2 text-xs font-black text-white transition hover:bg-[#f65f18] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Adding..." : "Add to Order"}
+              {loading ? "Adding..." : "Add Order"}
             </button>
-            <ProductInquiryButton product={inquiryProduct} label="Messenger" className="h-11 w-full !border-[#f65f18] !bg-[#f65f18] px-3 text-xs !text-white" />
+            <Link href="/cart" className="inline-flex h-11 items-center justify-center rounded-sm bg-[#f65f18] px-2 text-xs font-black text-white transition hover:bg-[#df4f0d]">
+              Order List
+            </Link>
           </>
         )}
       </div>
     </section>
+  );
+}
+
+function InfoBadge({ label, value, tone }: { label: string; value: string; tone: "green" | "orange" | "blue" }) {
+  const toneClass = {
+    green: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    orange: "border-orange-200 bg-orange-50 text-orange-800",
+    blue: "border-zinc-200 bg-zinc-50 text-zinc-800",
+  }[tone];
+
+  return (
+    <div className={`rounded-sm border px-3 py-2 ${toneClass}`}>
+      <p className="font-black">{label}</p>
+      <p className="mt-0.5 leading-4 opacity-80">{value}</p>
+    </div>
   );
 }
 
