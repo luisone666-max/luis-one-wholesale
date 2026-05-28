@@ -20,7 +20,7 @@ export const seoGuides: SeoGuide[] = [
     eyebrow: "Wholesale Guide",
     title: "Wholesale Supply in the Philippines for Resellers and Shops",
     description:
-      "Learn how Luis One Supply Hub helps Philippine resellers and shop owners browse public wholesale prices, build order lists, and arrange pickup, Lalamove, courier, or freight collect manually.",
+      "Learn how Luis One Supply Hub helps Philippine resellers and shop owners browse public wholesale prices, build order lists, and choose J&T Express COD, store pickup, or Lalamove.",
     keywords: ["Philippines wholesale supply", "reseller wholesale Philippines", "shop owner wholesale ordering"],
     sections: [
       {
@@ -34,7 +34,7 @@ export const seoGuides: SeoGuide[] = [
         heading: "How ordering works",
         body: [
           "Customers browse products, select quantities, and submit a wholesale order list online. Our team then confirms availability, deposit requirements, pickup options, or delivery arrangement manually.",
-          "There is no online payment on the website. This keeps the process flexible for bulk orders, special requests, freight collect, and local delivery arrangements.",
+          "There is no online payment on the website. This keeps the process flexible for bulk orders, special requests, J&T Express COD, store pickup, and Lalamove arrangements.",
         ],
       },
       {
@@ -117,23 +117,23 @@ export const seoGuides: SeoGuide[] = [
   {
     slug: "freight-collect-lalamove-courier-pickup",
     eyebrow: "Delivery Options",
-    title: "Freight Collect, Lalamove, Courier, and Store Pickup for Wholesale Orders",
+    title: "J&T Express COD, Lalamove, and Store Pickup for Wholesale Orders",
     description:
-      "Understand how shipping fee payment works for Luis One Supply Hub orders, including freight collect, prepaid shipping, Lalamove, courier shipping, and pickup.",
-    keywords: ["freight collect Philippines wholesale", "Lalamove wholesale delivery", "courier shipping wholesale order"],
+      "Understand how Luis One Supply Hub orders work with J&T Express COD, Lalamove delivery, and store pickup.",
+    keywords: ["J&T Express COD Philippines wholesale", "Lalamove wholesale delivery", "store pickup wholesale order"],
     sections: [
       {
         heading: "Shipping is arranged manually",
         body: [
           "Wholesale orders often need manual handling because quantity, box size, courier, pickup schedule, and customer location can affect the final arrangement.",
-          "Luis One Supply Hub separates product total from shipping fee so customers can clearly see that freight collect is not added to product total.",
+          "Luis One Supply Hub lets customers choose J&T Express COD, store pickup, or Lalamove at checkout so the receiving method is clear before our team confirms the order.",
         ],
       },
       {
         heading: "Available receiving methods",
         body: [
-          "Customers can choose store pickup, local delivery or Lalamove, courier shipping, or to be arranged. The best option depends on the order and customer location.",
-          "If courier shipping is selected, freight collect or paid by receiver can be used when appropriate.",
+          "Customers can choose J&T Express COD, store pickup, or Lalamove. Lalamove is not automatically booked by the website.",
+          "For Lalamove, Luis One can manually book a rider after confirmation, or the customer can book and pay their own rider.",
         ],
       },
       {

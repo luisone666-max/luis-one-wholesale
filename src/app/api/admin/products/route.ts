@@ -141,6 +141,16 @@ export async function POST(request: Request) {
       supplier_notes: payload.supplierNotes,
       internal_cost_notes: payload.internalCostNotes,
       admin_notes: payload.adminNotes,
+      weight_grams: payload.weightGrams,
+      length_cm: payload.lengthCm,
+      width_cm: payload.widthCm,
+      height_cm: payload.heightCm,
+      cod_enabled: payload.codEnabled,
+      fragile: payload.fragile,
+      contains_battery: payload.containsBattery,
+      contains_liquid: payload.containsLiquid,
+      shipping_category: payload.shippingCategory,
+      shipping_notes: payload.shippingNotes,
       active: payload.active,
     })
     .select("id")

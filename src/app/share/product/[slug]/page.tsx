@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { ShareRedirect } from "@/components/ShareRedirect";
 import { getCatalogProductPage } from "@/lib/catalog-data";
-import { absoluteUrl, getSiteUrl, productSeoDescription, productShareTitle } from "@/lib/seo";
+import { absoluteUrl, getSiteUrl, optimizedPublicImageUrl, productSeoDescription, productShareTitle } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 600;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -46,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const title = productShareTitle(product);
   const description = productSeoDescription(product);
-  const image = absoluteUrl(product.image);
+  const image = optimizedPublicImageUrl(product.image);
 
   return {
     title,

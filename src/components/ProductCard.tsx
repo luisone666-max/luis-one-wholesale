@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ViewDetailsIcon } from "@/components/BrandActionIcons";
 import { ProductImage, StockStatusBadge } from "@/components/CustomerUi";
 import { ProductInquiryButton } from "@/components/ProductInquiryButton";
 import {
@@ -23,6 +24,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const stockLabel = product.stockStatus === "In stock" ? "Ready" : product.stockStatus === "Preorder" ? "Order" : product.stockStatus;
   const productHref = `/product/${product.slug}`;
   const priceRange = getPriceRange(product);
+  const variantCount = product.optionCount ?? product.variants?.filter((variant) => variant.active).length ?? 0;
   const inquiryProduct = {
     slug: product.slug,
     name: product.name,
@@ -32,7 +34,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   };
 
   return (
-    <article className="group overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md [contain-intrinsic-size:220px_360px] [content-visibility:auto]">
+    <article className="group flex flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md [contain-intrinsic-size:220px_360px] [content-visibility:auto]">
       <Link href={productHref} className="block">
         <div className="relative aspect-square bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-0 sm:p-4">
           <ProductImage src={product.image} alt={product.name} priority={priority} quality={62} className="transition duration-200 group-hover:scale-[1.03]" />
@@ -47,7 +49,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         <div className="space-y-0.5 p-1.5 sm:space-y-2.5 sm:p-3">
           <div>
             <h3 className="line-clamp-2 min-h-[30px] text-[10px] font-black leading-[15px] text-zinc-950 group-hover:text-orange-700 sm:min-h-10 sm:text-sm sm:leading-5">{product.name}</h3>
-            <p className="mt-1 hidden truncate text-xs font-bold text-zinc-500 sm:block">{product.category}</p>
+            <p className="mt-1 hidden truncate text-xs font-bold text-zinc-500 sm:block">
+              {variantCount > 1 ? `${variantCount} options` : product.category}
+            </p>
           </div>
           <div className="min-h-[34px] sm:min-h-[48px]">
             {product.retailPrice ? (
@@ -75,16 +79,18 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           </div>
           <div className="flex items-center justify-between gap-1 text-[8px] font-bold text-zinc-500 sm:hidden">
             <span className="rounded-sm bg-orange-50 px-1.5 py-0.5 text-orange-700">MOQ {product.moq}</span>
-            <span className="truncate">{stockLabel}</span>
+            <span className="truncate">{variantCount > 1 ? `${variantCount} options` : stockLabel}</span>
           </div>
         </div>
       </Link>
 
-      <div className="hidden gap-1.5 p-3 pt-0 sm:grid sm:grid-cols-2 sm:gap-2">
-        <Link href={productHref} className="grid h-9 place-items-center rounded-sm border border-zinc-200 px-2 text-[11px] font-black leading-3 text-zinc-700 hover:border-orange-200 hover:text-orange-700 sm:h-10 sm:text-xs">
-          View Details
+      <div className="grid grid-cols-2 gap-1 p-1.5 pt-0 sm:gap-2 sm:p-3 sm:pt-0">
+        <Link href={productHref} aria-label={`View details for ${product.name}`} className="inline-flex h-8 items-center justify-center gap-1 rounded-sm border border-zinc-200 px-1 text-[10px] font-black leading-3 text-zinc-700 hover:border-orange-200 hover:text-orange-700 sm:h-10 sm:gap-1.5 sm:px-2 sm:text-xs">
+          <ViewDetailsIcon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+          <span className="sm:hidden">Details</span>
+          <span className="hidden sm:inline">View Details</span>
         </Link>
-        <ProductInquiryButton product={inquiryProduct} className="h-9 w-full px-2 text-[11px] sm:h-10 sm:text-xs" />
+        <ProductInquiryButton product={inquiryProduct} mobileLabel="Chat" className="h-8 w-full gap-1 px-1 text-[10px] sm:h-10 sm:px-2 sm:text-xs [&>svg]:h-3.5 [&>svg]:w-3.5 sm:[&>svg]:h-4 sm:[&>svg]:w-4" />
       </div>
     </article>
   );

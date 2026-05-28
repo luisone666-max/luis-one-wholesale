@@ -77,6 +77,13 @@ const navSections: Array<{
         roles: ["owner", "admin", "warehouse"],
       },
       {
+        href: "/admin/logistics",
+        label: { en: "Logistics", zh: "\u7269\u6d41" },
+        icon: "L",
+        hint: { en: "COD, waybills, J&T readiness", zh: "COD\u3001\u9762\u5355\u3001J&T \u51c6\u5907\u5ea6" },
+        roles: ["owner", "admin", "warehouse"],
+      },
+      {
         href: "/admin/customers",
         label: "customers",
         icon: "U",
@@ -194,6 +201,12 @@ const roleQuickActions: RoleQuickAction[] = [
     href: "/admin/orders",
     label: { en: "Online Orders", zh: "\u7ebf\u4e0a\u8ba2\u5355" },
     description: { en: "Website orders and manual follow-up", zh: "\u7f51\u7ad9\u8ba2\u5355\u4e0e\u4eba\u5de5\u8ddf\u8fdb" },
+    roles: ["owner", "admin", "warehouse"],
+  },
+  {
+    href: "/admin/logistics",
+    label: { en: "Logistics Readiness", zh: "\u7269\u6d41\u51c6\u5907\u5ea6" },
+    description: { en: "COD, waybills, and J&T checklist", zh: "COD\u3001\u9762\u5355\u4e0e J&T \u6e05\u5355" },
     roles: ["owner", "admin", "warehouse"],
   },
   {

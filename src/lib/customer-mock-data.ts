@@ -55,7 +55,7 @@ export const customerOrders = [
     productTotal: "₱3,500",
     orderStatus: "Waiting for Deposit",
     paymentStatus: "No Payment",
-    receivingMethod: "Courier shipping",
+    receivingMethod: "J&T Express COD",
   },
   {
     orderNo: "LO-2026-000002",
@@ -63,7 +63,7 @@ export const customerOrders = [
     productTotal: "₱1,734",
     orderStatus: "Deposit Paid",
     paymentStatus: "Deposit Verified",
-    receivingMethod: "Pick up at store",
+    receivingMethod: "Store Pickup",
   },
   {
     orderNo: "LO-2026-000003",
@@ -71,7 +71,7 @@ export const customerOrders = [
     productTotal: "₱5,880",
     orderStatus: "Sourcing Items",
     paymentStatus: "Deposit Submitted",
-    receivingMethod: "Local delivery / Lalamove",
+    receivingMethod: "Lalamove",
   },
 ];
 

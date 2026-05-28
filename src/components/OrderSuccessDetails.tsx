@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { MessengerIcon } from "@/components/BrandActionIcons";
 import { messengerUrl } from "@/components/CustomerUi";
 import { trackMetaEvent } from "@/components/MetaPixel";
 import { getCustomerOrderDetail, type CustomerOrderDetail } from "@/lib/customer-orders";
@@ -84,6 +85,26 @@ export function OrderSuccessDetails() {
     );
   }
 
+  const shippingFeeAmount = order.shippingFeeAmount ?? 0;
+  const codTotal =
+    order.shippingFeePayment === "cod_included" || order.shippingFeePayment === "prepaid"
+      ? order.productTotal + shippingFeeAmount
+      : order.productTotal;
+  const isJntCod = order.receivingMethod === "courier_shipping";
+  const isPickup = order.receivingMethod === "pickup" || order.receivingMethod === "pick_up_at_store";
+  const isLalamove = order.receivingMethod === "local_delivery" || order.receivingMethod === "local_delivery_lalamove";
+  const customerBooksLalamove = isLalamove && (order.orderNotes ?? "").includes("Customer will book");
+  const totalLabel = isJntCod ? "COD Total" : "Order Total";
+  const nextStepText = isJntCod
+    ? "We will contact you to confirm stock and J&T Express COD delivery before dispatch. Please prepare the COD total when the J&T Express courier delivers."
+    : isPickup
+      ? "We will contact you to confirm stock and pickup schedule before preparing the order."
+      : isLalamove
+        ? customerBooksLalamove
+          ? "We will contact you to confirm stock and pickup readiness. You will book and pay your own Lalamove rider."
+          : "We will contact you to confirm stock, then Luis One can manually book Lalamove. No automatic Lalamove booking is created by the website."
+        : "We will contact you to confirm stock and delivery arrangement before dispatch.";
+
   return (
     <div className="overflow-hidden rounded-sm border border-orange-100 bg-white text-center shadow-sm">
       <div className="bg-[#f65f18] px-6 py-8 text-white">
@@ -94,26 +115,30 @@ export function OrderSuccessDetails() {
       <div className="p-6 sm:p-8">
       <div className="grid gap-4 text-left sm:grid-cols-2">
         <Info label="Product Total" value={formatPhp(order.productTotal)} />
+        <Info label="Shipping Fee" value={order.shippingFeeAmount === null ? getShippingFeePaymentLabel(order.shippingFeePayment) : formatPhp(order.shippingFeeAmount)} />
+        <Info label={totalLabel} value={formatPhp(codTotal)} />
         <Info
           label="Member Points"
           value={`${formatLoyaltyPoints(calculateLoyaltyPoints(order.productTotal))} after payment confirmation`}
         />
         <Info label="Shipping Fee Payment" value={getShippingFeePaymentLabel(order.shippingFeePayment)} />
+        {isJntCod ? <Info label="Courier" value="J&T Express COD" /> : null}
         <Info label="Receiver Name" value={order.receiverName ?? ""} />
         <Info label="Receiver Phone" value={order.receiverPhone ?? ""} />
         <Info label="Receiving Method" value={getReceivingMethodLabel(order.receivingMethod)} />
         {order.completeAddress ? <Info label="Complete Address" value={order.completeAddress} /> : null}
+        {order.orderNotes ? <Info label="Order Notes" value={order.orderNotes} /> : null}
       </div>
       <p className="mt-8 rounded-sm border border-orange-200 bg-orange-50 p-4 text-sm font-bold leading-6 text-orange-700">
-        We will contact you to confirm your order. Deposit may be required to secure your items. Shipping fee will be
-        arranged manually.
+        {nextStepText}
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link href="/my-orders" className="rounded-sm bg-[#f65f18] px-5 py-3 text-sm font-black text-white">
           View My Orders
         </Link>
-        <Link href={messengerUrl} className="rounded-sm border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-black text-orange-700">
-          Chat on Messenger
+        <Link href={messengerUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-sm border border-[#cfeaff] bg-[#f1f8ff] px-5 py-3 text-sm font-black text-[#006aff]">
+          <MessengerIcon className="h-4 w-4 shrink-0" />
+          <span>Chat on Messenger</span>
         </Link>
         <Link href="/category/all" className="rounded-sm border border-zinc-200 bg-white px-5 py-3 text-sm font-black text-zinc-700">
           Continue Shopping

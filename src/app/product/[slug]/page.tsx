@@ -12,13 +12,13 @@ import {
   absoluteUrl,
   breadcrumbJsonLd,
   getSiteUrl,
+  optimizedPublicImageUrl,
   productJsonLd,
   productPageTitle,
   productSeoDescription,
 } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 600;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const title = productPageTitle(product);
   const description = productSeoDescription(product);
   const url = `${getSiteUrl()}/product/${product.slug}`;
-  const image = absoluteUrl(product.image);
+  const image = optimizedPublicImageUrl(product.image);
 
   return {
     title,

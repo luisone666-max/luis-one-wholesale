@@ -4,10 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CustomerAuthNav } from "@/components/auth/CustomerAuthNav";
+import { MessengerIcon } from "@/components/BrandActionIcons";
 import { BrandLogo } from "@/components/BrandLogo";
 import { CartIconLink } from "@/components/CartIconLink";
 import { messengerUrl } from "@/components/CustomerUi";
+import { HorizontalScrollRail } from "@/components/HorizontalScrollRail";
 import { ProductSearchForm } from "@/components/ProductSearchForm";
+import { customerNavigationCategorySlugs, customerNavigationSortIndex } from "@/lib/catalog-navigation";
 import type { Category } from "@/lib/mock-data";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -34,8 +37,7 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
           .from("categories")
           .select("slug,name_en,description,active,show_in_navigation,sort_order")
           .eq("active", true)
-          .eq("show_in_navigation", true)
-          .eq("level", 1)
+          .in("slug", [...customerNavigationCategorySlugs])
           .order("sort_order", { ascending: true });
 
         if (!active || error || !data?.length) {
@@ -43,13 +45,16 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
         }
 
         setCategories(
-          data.map((category) => ({
-            slug: category.slug,
-            name: category.name_en,
-            description: category.description ?? "Wholesale category",
-            itemCount: 0,
-            active: Boolean(category.active),
-          })),
+          data
+            .slice()
+            .sort((a, b) => customerNavigationSortIndex(a.slug) - customerNavigationSortIndex(b.slug) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
+            .map((category) => ({
+              slug: category.slug,
+              name: category.name_en,
+              description: category.description ?? "Wholesale category",
+              itemCount: 0,
+              active: Boolean(category.active),
+            })),
         );
       })();
     });
@@ -70,7 +75,10 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
           <div className="flex items-center gap-4 font-bold">
             <Link href="/wholesale-guides/how-to-place-wholesale-orders-online" className="hidden hover:underline sm:inline">Help</Link>
             <Link href="/#contact" className="hidden hover:underline sm:inline">Contact</Link>
-            <a href={messengerUrl} target="_blank" rel="noreferrer" className="hover:underline">Chat on Messenger</a>
+            <a href={messengerUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 hover:underline">
+              <MessengerIcon className="h-4 w-4 shrink-0" />
+              <span>Chat on Messenger</span>
+            </a>
           </div>
         </div>
       </div>
@@ -110,15 +118,16 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
             <Link href="/member" className="hidden hover:text-orange-600 sm:inline-flex">Member</Link>
             <Link href="/my-orders" className="hidden hover:text-orange-600 sm:inline-flex">My Orders</Link>
             <CartIconLink className="h-11 w-11" />
-            <a href={messengerUrl} target="_blank" rel="noreferrer" className="rounded-sm border border-zinc-200 bg-white px-4 py-3 font-black text-zinc-700 hover:border-orange-200 hover:text-orange-700">
-              Messenger
+            <a href={messengerUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-sm border border-[#cfeaff] bg-white px-4 py-3 font-black text-[#006aff] hover:bg-[#f1f8ff]">
+              <MessengerIcon className="h-4 w-4 shrink-0" />
+              <span>Messenger</span>
             </a>
           </nav>
         </div>
       </div>
 
       <nav className="border-t border-zinc-100 bg-white">
-        <div className="mx-auto flex max-w-7xl snap-x gap-1 overflow-x-auto px-3 py-1 text-[11px] font-black text-zinc-700 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-2 sm:px-6 sm:py-2 sm:text-sm lg:px-8 [&::-webkit-scrollbar]:hidden">
+        <HorizontalScrollRail className="mx-auto max-w-7xl px-1 py-1 sm:px-3 sm:py-2 lg:px-5" viewportClassName="gap-1 text-[11px] font-black text-zinc-700 sm:gap-2 sm:text-sm">
           <Link href="/category/all" className={`shrink-0 snap-start rounded-sm px-3 py-1.5 hover:bg-orange-50 hover:text-orange-700 sm:px-4 sm:py-2 ${pathname === "/category/all" ? "bg-[#f65f18] text-white hover:bg-[#f65f18] hover:text-white" : "bg-zinc-100"}`}>All Products</Link>
           {categories.map((category) => (
             <Link
@@ -129,7 +138,7 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
               {category.name}
             </Link>
           ))}
-        </div>
+        </HorizontalScrollRail>
       </nav>
 
       {mobileMenuOpen ? (
@@ -153,8 +162,9 @@ export function SiteHeaderClient({ initialCategories = [] }: { initialCategories
             <Link href="/admin/login" onClick={() => setMobileMenuOpen(false)} className="rounded-sm bg-zinc-950 px-4 py-3 text-white">
               Seller Centre
             </Link>
-            <a href={messengerUrl} target="_blank" rel="noreferrer" className="rounded-sm bg-orange-50 px-4 py-3 text-orange-700">
-              Chat on Messenger
+            <a href={messengerUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-sm bg-[#f1f8ff] px-4 py-3 text-[#006aff]">
+              <MessengerIcon className="h-4 w-4 shrink-0" />
+              <span>Chat on Messenger</span>
             </a>
           </div>
         </div>

@@ -11,6 +11,7 @@ import {
   type Product,
   type ProductVariant,
 } from "@/lib/mock-data";
+import { customerNavigationCategorySlugSet, customerNavigationSortIndex } from "@/lib/catalog-navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/types/database";
 
@@ -75,8 +76,9 @@ type ProductVariantSearchRow = Pick<
   Database["public"]["Tables"]["product_variants"]["Row"],
   "id" | "product_id" | "variant_name" | "variant_sku" | "model" | "fits" | "image_url" | "stock_status" | "active"
 >;
+type ProductVariantCountRow = Pick<Database["public"]["Tables"]["product_variants"]["Row"], "product_id">;
 
-export const CATALOG_CACHE_SECONDS = 60;
+export const CATALOG_CACHE_SECONDS = 600;
 export const CATALOG_CACHE_TAG = "customer-catalog";
 
 const categorySelectColumns =
@@ -152,7 +154,7 @@ function toStockStatus(status: string | null): Product["stockStatus"] {
   return "Preorder";
 }
 
-function toCategory(row: CategoryRow, itemCount = 0): Category {
+function toCategory(row: CategoryRow, itemCount = 0, parentSlug?: string): Category {
   return {
     slug: row.slug,
     name: row.name_en,
@@ -161,7 +163,13 @@ function toCategory(row: CategoryRow, itemCount = 0): Category {
     active: Boolean(row.active),
     image: row.image_url || row.icon_url || undefined,
     level: row.level,
+    parentSlug,
   };
+}
+
+function toCategories(rows: CategoryRow[], itemCountsById = new Map<string, number>()) {
+  const rowsById = new Map(rows.map((row) => [row.id, row]));
+  return rows.map((row) => toCategory(row, itemCountsById.get(row.id) ?? 0, row.parent_id ? rowsById.get(row.parent_id)?.slug : undefined));
 }
 
 function activePathIsVisible(product: ProductRow, activeCategoryIds: Set<string>) {
@@ -174,10 +182,31 @@ function normalizeCatalogSearch(value: string) {
   return value
     .toLowerCase()
     .replace(/\bbreaks?\b/g, "brake")
+    .replace(/\bspar\s*plug\b/g, "spark plug")
+    .replace(/\bsparplug\b/g, "spark plug")
+    .replace(/\bsparkplug\b/g, "spark plug")
+    .replace(/\btube\s*less\b/g, "tubeless")
+    .replace(/\btubless\b/g, "tubeless")
+    .replace(/\bhead\s*light\b/g, "headlight")
+    .replace(/\bhead\s*lamp\b/g, "headlamp")
+    .replace(/\btail\s*light\b/g, "tail light")
+    .replace(/\btail\s*lamp\b/g, "tail lamp")
+    .replace(/\bside\s*mirror\b/g, "mirror")
     .replace(/\btop\s*box\b/g, "topbox")
     .replace(/\bkey\s*set\b/g, "keyset")
     .replace(/\bn\s*max\b/g, "nmax")
+    .replace(/\bn-max\b/g, "nmax")
+    .replace(/\bx\s*max\b/g, "xmax")
+    .replace(/\bsky\s*drive\b/g, "skydrive")
+    .replace(/\bbeat\s*fi\b/g, "beatfi")
+    .replace(/\bscoopy\s*fi\b/g, "scoopyfi")
+    .replace(/\braider\s*j\s*110\b/g, "raiderj110")
+    .replace(/\bct\s*100\b/g, "ct100")
+    .replace(/\bgd\s*110\b/g, "gd110")
+    .replace(/\btmx\s*155\b/g, "tmx155")
+    .replace(/\bxrm\s*125\b/g, "xrm125")
     .replace(/\baerox\s*155\b/g, "aerox155")
+    .replace(/\bareox\b/g, "aerox")
     .replace(/\bhonda\s*click\b/g, "click")
     .replace(/&/g, " and ")
     .replace(/\+/g, " plus ")
@@ -195,44 +224,75 @@ const catalogSearchAliases: Record<string, string[]> = {
   accessory: ["accessories"],
   accessories: ["accessory"],
   absorber: ["shock", "suspension"],
-  aerox: ["yamaha"],
   automotive: ["car", "vehicle"],
+  break: ["brake"],
   box: ["topbox", "motobox"],
-  beat: ["honda"],
   bracket: ["mount", "holder"],
   brake: ["break", "lever"],
   breaks: ["brake"],
-  cable: ["wire", "charger"],
-  cables: ["wire", "charger"],
-  cap: ["helmet"],
+  bulb: ["light", "lamp", "headlight", "headlamp"],
+  cable: ["wire", "control"],
+  cables: ["wire", "control"],
+  cap: ["cover", "plug"],
+  chain: ["sprocket", "drive"],
   child: ["kids", "helmet"],
   cleaner: ["cleaning", "spray"],
-  click: ["honda"],
   coolant: ["fluid"],
+  cdi: ["electrical"],
+  disc: ["brake", "rotor"],
+  electrical: ["cdi", "relay", "regulator", "stator", "coil"],
+  filter: ["aircleaner", "air", "cleaner"],
   full: ["helmet"],
   gille: ["helmet"],
+  grip: ["handle", "accessory"],
   half: ["helmet"],
+  headlamp: ["headlight", "bulb", "light"],
+  headlight: ["headlamp", "bulb", "light"],
   helmet: ["helmets", "half", "full", "modular", "visor"],
   helmets: ["helmet"],
   hnj: ["helmet"],
+  horn: ["electrical"],
   key: ["keyset", "ignition", "switch"],
   keyset: ["key", "ignition", "switch"],
+  lamp: ["light", "bulb"],
+  lever: ["brake", "clutch"],
+  light: ["lamp", "bulb", "headlight"],
+  lights: ["lamp", "bulb", "headlight"],
   lock: ["security"],
   locks: ["security"],
-  mio: ["yamaha"],
   mob: ["helmet"],
   modular: ["helmet"],
   moto: ["motorcycle"],
   motobox: ["topbox", "box"],
   motorcycle: ["moto"],
-  nmax: ["yamaha"],
+  oil: ["lubricant", "maintenance"],
+  oilseal: ["oil", "seal"],
   phone: ["accessory", "accessories"],
+  pito: ["valve", "tubeless"],
+  plug: ["spark", "sparkplug", "sparplug"],
+  regulator: ["rectifier", "electrical"],
+  relay: ["electrical"],
+  rotor: ["disc", "brake"],
   seat: ["saddle"],
+  seal: ["oilseal", "gasket"],
   shock: ["absorber", "suspension"],
   shocks: ["shock", "absorber", "suspension"],
+  socket: ["electrical", "bulb"],
+  spark: ["plug", "sparkplug", "sparplug"],
+  sparkplug: ["spark", "plug", "sparplug"],
+  sparplug: ["spark", "plug", "sparkplug"],
+  sprocket: ["chain", "drive"],
+  stator: ["magneto", "electrical"],
   switch: ["ignition", "keyset"],
+  tire: ["tyre", "tubeless", "tube"],
+  tires: ["tyre", "tubeless", "tube"],
   topbox: ["top", "box", "bracket", "mount"],
+  tube: ["tire", "tyre"],
+  tubeless: ["tire", "tyre", "pito", "valve"],
+  tyre: ["tire", "tubeless", "tube"],
+  valve: ["pito", "tubeless"],
   visor: ["helmet", "shield"],
+  winker: ["signal", "indicator", "light"],
   zebra: ["helmet"],
 };
 
@@ -286,6 +346,16 @@ function buildVariantSearchText(variants: ProductVariantSearchRow[]) {
   return variants.map((variant) => [variant.variant_name, variant.variant_sku, variant.model, variant.fits].filter(Boolean).join(" ")).join(" ");
 }
 
+function countVariantsByProductId(variantRows: ProductVariantCountRow[]) {
+  const counts = new Map<string, number>();
+
+  for (const variant of variantRows) {
+    counts.set(variant.product_id, (counts.get(variant.product_id) ?? 0) + 1);
+  }
+
+  return counts;
+}
+
 function catalogProductSearchScore(
   product: ProductRow,
   query: string,
@@ -317,12 +387,12 @@ function catalogProductSearchScore(
   const compactHaystack = compactCatalogSearch([product.name, product.sku ?? "", categoryNames, product.description ?? "", product.slug, product.brand, product.model, variantSearchText].join(" "));
   let score = 0;
   let matchedWords = 0;
-  let originalMatchedWords = 0;
+  const matchedOriginalWords = new Set<string>();
 
   if (compactQuery && compactHaystack.includes(compactQuery)) {
     score += 90;
     matchedWords = words.length;
-    originalMatchedWords = originalWords.length;
+    originalWords.forEach((word) => matchedOriginalWords.add(word));
   }
 
   if (normalizedQuery && fields.name.includes(normalizedQuery)) {
@@ -364,13 +434,20 @@ function catalogProductSearchScore(
 
     if (matched) {
       matchedWords += 1;
-      if (originalWords.includes(word)) {
-        originalMatchedWords += 1;
+      for (const originalWord of originalWords) {
+        const singular = originalWord.endsWith("s") && originalWord.length > 3 ? originalWord.slice(0, -1) : "";
+        const aliases = catalogSearchAliases[originalWord] ?? [];
+
+        if (word === originalWord || word === singular || aliases.includes(word)) {
+          matchedOriginalWords.add(originalWord);
+        }
       }
     }
   }
 
-  if (originalWords.length > 1 && originalMatchedWords < Math.ceil(originalWords.length / 2)) {
+  const originalMatchedWords = matchedOriginalWords.size;
+
+  if (originalWords.length > 1 && originalMatchedWords < originalWords.length) {
     return 0;
   }
 
@@ -409,6 +486,7 @@ function mapSupabaseSnapshot(
   imageRows: ProductImageRow[],
   variantRows: ProductVariantRow[] = [],
   variantTierRows: ProductVariantPriceTierRow[] = [],
+  variantCountsByProductId = new Map<string, number>(),
 ): CatalogSnapshot {
   const activeCategoryRows = categoryRows.filter((category) => category.active);
   const activeCategoryIds = new Set(activeCategoryRows.map((category) => category.id));
@@ -518,6 +596,7 @@ function mapSupabaseSnapshot(
       details,
       tiers,
       variants,
+      optionCount: variantCountsByProductId.get(product.id) ?? variants.length,
       searchText: [
         product.sku,
         product.name,
@@ -866,8 +945,7 @@ export async function getCatalogCategoryListingPage(
       const pageProductIds = pageRows.map((product) => product.id);
       let tierRows: PriceTierRow[] = [];
       let imageRows: ProductImageRow[] = [];
-      let variantRows: ProductVariantRow[] = [];
-      let variantTierRows: ProductVariantPriceTierRow[] = [];
+      let variantCountsByProductId = new Map<string, number>();
 
       if (pageProductIds.length) {
         const [tiersResult, imagesResult, variantsResult] = await Promise.all([
@@ -875,41 +953,29 @@ export async function getCatalogCategoryListingPage(
           supabase.from("product_images").select("product_id,image_url,sort_order").in("product_id", pageProductIds).order("sort_order", { ascending: true }),
           supabase
             .from("product_variants")
-            .select(variantSelectColumns)
+            .select("product_id")
             .in("product_id", pageProductIds)
-            .eq("active", true)
-            .order("sort_order", { ascending: true }),
+            .eq("active", true),
         ]);
 
         tierRows = tiersResult.error ? [] : tiersResult.data ?? [];
         imageRows = imagesResult.error ? [] : imagesResult.data ?? [];
-        variantRows = variantsResult.error ? [] : variantsResult.data ?? [];
-
-        const variantIds = variantRows.map((variant) => variant.id);
-        if (variantIds.length) {
-          const variantTiersResult = await supabase
-            .from("product_variant_price_tiers")
-            .select("variant_id,min_qty,max_qty,unit_price")
-            .in("variant_id", variantIds)
-            .order("min_qty", { ascending: true });
-
-          variantTierRows = variantTiersResult.error ? [] : variantTiersResult.data ?? [];
-        }
+        variantCountsByProductId = countVariantsByProductId(variantsResult.error ? [] : variantsResult.data ?? []);
       }
 
       const totalProducts = productsResult.count ?? pageRows.length;
       const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
       const currentPage = Math.min(requestedPage, totalPages);
-      const mapped = mapSupabaseSnapshot(categoryRows, pageRows, tierRows, imageRows, variantRows, variantTierRows);
+      const mapped = mapSupabaseSnapshot(categoryRows, pageRows, tierRows, imageRows, [], [], variantCountsByProductId);
       const filterCategories = categoryRows
         .slice()
-        .sort((a, b) => a.level - b.level || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name_en.localeCompare(b.name_en))
-        .map((item) => toCategory(item));
+        .sort((a, b) => a.level - b.level || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name_en.localeCompare(b.name_en));
+      const mappedFilterCategories = toCategories(filterCategories);
       const category = isAll ? null : selectedCategory ? toCategory(selectedCategory, totalProducts) : null;
 
       return {
         data: {
-          categories: filterCategories,
+          categories: mappedFilterCategories,
           products: mapped.products,
           category,
           totalProducts,
@@ -999,8 +1065,7 @@ export async function getCatalogCategoryListingPage(
     const pageProductIds = pageRows.map((product) => product.id);
     let tierRows: PriceTierRow[] = [];
     let imageRows: ProductImageRow[] = [];
-    let variantRows: ProductVariantRow[] = [];
-    let variantTierRows: ProductVariantPriceTierRow[] = [];
+    let variantCountsByProductId = new Map<string, number>();
 
     if (pageProductIds.length) {
       const [tiersResult, imagesResult, variantsResult] = await Promise.all([
@@ -1008,38 +1073,26 @@ export async function getCatalogCategoryListingPage(
         supabase.from("product_images").select("product_id,image_url,sort_order").in("product_id", pageProductIds).order("sort_order", { ascending: true }),
         supabase
           .from("product_variants")
-          .select(variantSelectColumns)
+          .select("product_id")
           .in("product_id", pageProductIds)
-          .eq("active", true)
-          .order("sort_order", { ascending: true }),
+          .eq("active", true),
       ]);
 
       tierRows = tiersResult.error ? [] : tiersResult.data ?? [];
       imageRows = imagesResult.error ? [] : imagesResult.data ?? [];
-      variantRows = variantsResult.error ? [] : variantsResult.data ?? [];
-
-      const variantIds = variantRows.map((variant) => variant.id);
-      if (variantIds.length) {
-        const variantTiersResult = await supabase
-          .from("product_variant_price_tiers")
-          .select("variant_id,min_qty,max_qty,unit_price")
-          .in("variant_id", variantIds)
-          .order("min_qty", { ascending: true });
-
-        variantTierRows = variantTiersResult.error ? [] : variantTiersResult.data ?? [];
-      }
+      variantCountsByProductId = countVariantsByProductId(variantsResult.error ? [] : variantsResult.data ?? []);
     }
 
-    const mapped = mapSupabaseSnapshot(categoryRows, pageRows, tierRows, imageRows, variantRows, variantTierRows);
+    const mapped = mapSupabaseSnapshot(categoryRows, pageRows, tierRows, imageRows, [], [], variantCountsByProductId);
     const filterCategories = categoryRows
       .slice()
-      .sort((a, b) => a.level - b.level || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name_en.localeCompare(b.name_en))
-      .map((item) => toCategory(item, categoryIdCounts.get(item.id) ?? 0));
+      .sort((a, b) => a.level - b.level || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name_en.localeCompare(b.name_en));
+    const mappedFilterCategories = toCategories(filterCategories, categoryIdCounts);
     const category = isAll ? null : selectedCategory ? toCategory(selectedCategory, totalProducts) : null;
 
     return {
       data: {
-        categories: filterCategories,
+        categories: mappedFilterCategories,
         products: mapped.products,
         category,
         totalProducts,
@@ -1084,8 +1137,8 @@ export async function getCatalogNavigationCategories(): Promise<Category[]> {
   }
 
   return result.data.allCategoryRows
-    .filter((category) => category.level === 1 && category.active && category.show_in_navigation)
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .filter((category) => category.active && customerNavigationCategorySlugSet.has(category.slug))
+    .sort((a, b) => customerNavigationSortIndex(a.slug) - customerNavigationSortIndex(b.slug) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
     .map((category) => toCategory(category, productCountsByCategorySlug.get(category.slug) ?? 0));
 }
 
@@ -1108,10 +1161,11 @@ export async function getCatalogCategoryPage(slug: string): Promise<CatalogResul
       : result.data.categories.find((item) => item.slug === slug) ?? null;
   const filterCategories =
     result.source === "supabase"
-      ? result.data.allCategoryRows
-          .slice()
-          .sort((a, b) => (a.level - b.level) || ((a.sort_order ?? 0) - (b.sort_order ?? 0)) || a.name_en.localeCompare(b.name_en))
-          .map((item) => toCategory(item))
+      ? toCategories(
+          result.data.allCategoryRows
+            .slice()
+            .sort((a, b) => (a.level - b.level) || ((a.sort_order ?? 0) - (b.sort_order ?? 0)) || a.name_en.localeCompare(b.name_en)),
+        )
       : result.data.categories;
 
   if (!isAll && !category && result.source === "mock") {
@@ -1212,22 +1266,29 @@ export async function getCatalogProductPage(slug: string): Promise<CatalogResult
     let imageRows: ProductImageRow[] = [];
     let variantRows: ProductVariantRow[] = [];
     let variantTierRows: ProductVariantPriceTierRow[] = [];
+    let variantCountsByProductId = new Map<string, number>();
 
     if (productIds.length) {
-      const [tiersResult, imagesResult, variantsResult] = await Promise.all([
+      const [tiersResult, imagesResult, variantsResult, variantCountsResult] = await Promise.all([
         supabase.from("product_price_tiers").select("product_id,min_qty,max_qty,unit_price").in("product_id", productIds).order("min_qty", { ascending: true }),
         supabase.from("product_images").select("product_id,image_url,sort_order").in("product_id", productIds).order("sort_order", { ascending: true }),
         supabase
           .from("product_variants")
           .select(variantSelectColumns)
-          .in("product_id", productIds)
+          .eq("product_id", productRow.id)
           .eq("active", true)
           .order("sort_order", { ascending: true }),
+        supabase
+          .from("product_variants")
+          .select("product_id")
+          .in("product_id", productIds)
+          .eq("active", true),
       ]);
 
       tierRows = tiersResult.error ? [] : tiersResult.data ?? [];
       imageRows = imagesResult.error ? [] : imagesResult.data ?? [];
       variantRows = variantsResult.error ? [] : variantsResult.data ?? [];
+      variantCountsByProductId = countVariantsByProductId(variantCountsResult.error ? [] : variantCountsResult.data ?? []);
 
       const variantIds = variantRows.map((variant) => variant.id);
       if (variantIds.length) {
@@ -1241,7 +1302,7 @@ export async function getCatalogProductPage(slug: string): Promise<CatalogResult
       }
     }
 
-    const mapped = mapSupabaseSnapshot(categoryRows, productRows, tierRows, imageRows, variantRows, variantTierRows);
+    const mapped = mapSupabaseSnapshot(categoryRows, productRows, tierRows, imageRows, variantRows, variantTierRows, variantCountsByProductId);
     const product = mapped.products.find((item) => item.slug === slug) ?? null;
 
     return {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { FacebookIcon, MessengerIcon } from "@/components/BrandActionIcons";
 import { BrandLogo } from "@/components/BrandLogo";
 import { messengerUrl } from "@/components/CustomerUi";
 import { businessInfo } from "@/lib/business-info";
@@ -83,13 +84,19 @@ export function SiteFooter() {
         <div>
           <p className="font-black text-zinc-950">Contact</p>
           <div className="mt-3 space-y-2">
-            <a href={messengerUrl} target="_blank" rel="noreferrer" className="block hover:text-orange-700">Chat on Messenger</a>
-            <a href={businessInfo.facebookUrl} target="_blank" rel="noreferrer" className="block hover:text-orange-700">Facebook Page</a>
+            <a href={messengerUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-orange-700">
+              <MessengerIcon className="h-4 w-4 shrink-0" />
+              <span>Chat on Messenger</span>
+            </a>
+            <a href={businessInfo.facebookUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-orange-700">
+              <FacebookIcon className="h-4 w-4 shrink-0" />
+              <span>Facebook Page</span>
+            </a>
             <a href={`tel:${businessInfo.phoneTel}`} className="block hover:text-orange-700">{businessInfo.phoneDisplay}</a>
             <p>{businessInfo.address}</p>
             <p>{businessInfo.hours}</p>
-            <p>Pick-up / Lalamove / Courier</p>
-            <p>MOQ, deposit, and freight collect options are confirmed manually.</p>
+            <p>Store pickup / Manual Lalamove / J&T Express COD</p>
+            <p>MOQ, deposit, Lalamove booking, and delivery fees are confirmed manually.</p>
           </div>
         </div>
       </div>

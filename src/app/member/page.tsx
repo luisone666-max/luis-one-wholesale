@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CustomerAuthGate } from "@/components/auth/CustomerAuthGate";
+import { MessengerIcon } from "@/components/BrandActionIcons";
 import { messengerUrl } from "@/components/CustomerUi";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -121,8 +122,9 @@ function MemberContent() {
                     <Link href="/my-orders" className="rounded-sm border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-black text-orange-700">
                       View My Orders
                     </Link>
-                    <a href={messengerUrl} target="_blank" rel="noreferrer" className="rounded-sm border border-zinc-200 bg-white px-5 py-3 text-sm font-black text-zinc-700">
-                      Chat on Messenger
+                    <a href={messengerUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-sm border border-[#cfeaff] bg-white px-5 py-3 text-sm font-black text-[#006aff]">
+                      <MessengerIcon className="h-4 w-4 shrink-0" />
+                      <span>Chat on Messenger</span>
                     </a>
                   </div>
                 </>

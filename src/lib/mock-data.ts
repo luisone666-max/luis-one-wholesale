@@ -27,6 +27,7 @@ export type Product = {
   tiers: PriceTier[];
   searchText?: string;
   variants?: ProductVariant[];
+  optionCount?: number;
 };
 
 export type ProductVariant = {
@@ -53,6 +54,7 @@ export type Category = {
   active: boolean;
   image?: string;
   level?: number;
+  parentSlug?: string;
 };
 
 const standardTiers = (base: number): PriceTier[] => [

@@ -1,12 +1,14 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageTitle, StatusPill, TableShell } from "@/components/admin/AdminUi";
 import { useAdminI18n } from "@/components/admin/AdminShell";
 import type { TranslationKey } from "@/lib/admin-i18n";
 import type { AdminStaffUser } from "@/lib/admin-users-data";
 import type { AdminOrderRecord, AdminPaymentRecord } from "@/lib/admin-orders-data";
+import type { AdminShipmentRecord } from "@/lib/admin-shipments-data";
 import { businessInfo } from "@/lib/business-info";
 import { formatLoyaltyPoints } from "@/lib/loyalty-points";
 import { formatPhp } from "@/lib/wholesale-pricing";
@@ -17,6 +19,33 @@ type PaymentDraft = {
   referenceNo: string;
   status: string;
   proofImageUrl: string;
+};
+
+type ShipmentDraft = {
+  id: string;
+  provider: string;
+  providerService: string;
+  status: string;
+  codStatus: string;
+  codAmount: string;
+  trackingNo: string;
+  waybillNo: string;
+  packageWeightGrams: string;
+  packageLengthCm: string;
+  packageWidthCm: string;
+  packageHeightCm: string;
+  receiverName: string;
+  receiverPhone: string;
+  receiverAddress: string;
+  notes: string;
+};
+
+type JntConfigStatus = {
+  configured: boolean;
+  liveBookingEnabled: boolean;
+  mode: string;
+  missingRequired: string[];
+  missingRecommended: string[];
 };
 
 type LoyaltyResult = {
@@ -38,8 +67,10 @@ const orderStatuses = [
   "unavailable_refund",
 ];
 const paymentStatuses = ["no_payment", "deposit_submitted", "deposit_verified", "fully_paid", "rejected"];
-const receivingMethods = ["pickup", "local_delivery", "courier_shipping", "to_be_arranged"];
-const shippingFeePayments = ["freight_collect", "prepaid", "to_be_confirmed", "no_shipping_fee"];
+const receivingMethods = ["courier_shipping", "pickup", "local_delivery"];
+const shippingFeePayments = ["freight_collect", "prepaid", "cod_included", "to_be_confirmed", "no_shipping_fee"];
+const shipmentStatuses = ["draft", "ready_to_book", "booked", "in_transit", "delivered", "returning", "returned", "cancelled", "failed"];
+const codStatuses = ["not_cod", "pending_collection", "collected", "remitted", "failed", "waived"];
 
 const text = {
   en: {
@@ -51,12 +82,14 @@ const text = {
     dateRangePlaceholder: "Date range",
     shippingFeeStatus: "Shipping Fee Status",
     updateShipping: "Update Shipping Fee",
-    shippingFeeHint: "Freight collect is paid by receiver and is not added to product total.",
+    shippingFeeHint: "Receiver-paid delivery fees are not added to product total.",
     paymentFormTitle: "Add Payment Record",
     proofImageUrl: "Proof Image URL",
     saveAdminNotes: "Save Admin Notes",
     saved: "Saved.",
     printA6: "Print A6 Order Slip",
+    printWaybill: "Print Waybill",
+    printCustomerOrder: "Print Customer Order",
     salesperson: "Salesperson",
     unassignedSales: "Unassigned / Online order",
     confirmCancel: "Cancel this order?",
@@ -69,6 +102,43 @@ const text = {
     pointsReversed: "reversed from member.",
     pointsNeedManualCheck: "Points need manual check:",
     unknownError: "unknown error",
+    shipmentPanelTitle: "J&T Express COD Shipment",
+    shipmentDraftHint: "J&T API credentials are pending. Save COD and parcel details here first.",
+    saveShipment: "Save J&T Express COD Draft",
+    bookShipment: "Book J&T Order",
+    printPackageSlip: "Print COD Slip",
+    shipmentSaveFailed: "Shipment save failed.",
+    shipmentBookFailed: "J&T booking failed.",
+    noShipments: "No shipment records yet.",
+    codAmount: "COD Amount",
+    packageWeight: "Weight (g)",
+    packageSize: "Package size (cm)",
+    trackingNo: "Tracking No.",
+    waybillNo: "Waybill No.",
+    shipmentNotes: "Shipment Notes",
+    shipmentStatus: "Shipment Status",
+    codStatus: "COD Status",
+    codIncludedShipping: "J&T Express COD / Included in Total",
+    latestShipment: "Latest Shipment",
+    shipmentLabels: {
+      draft: "Draft",
+      ready_to_book: "Ready to book",
+      booked: "Booked",
+      in_transit: "In transit",
+      delivered: "Delivered",
+      returning: "Returning",
+      returned: "Returned",
+      cancelled: "Cancelled",
+      failed: "Failed",
+    },
+    codLabels: {
+      not_cod: "Not COD",
+      pending_collection: "Pending collection",
+      collected: "Collected",
+      remitted: "Remitted",
+      failed: "Failed",
+      waived: "Waived",
+    },
   },
   zh: {
     searchOrderNo: "按订单号搜索",
@@ -79,12 +149,14 @@ const text = {
     dateRangePlaceholder: "日期范围",
     shippingFeeStatus: "运费状态",
     updateShipping: "更新运费",
-    shippingFeeHint: "运费到付由收货人支付，不加入商品总额。",
+    shippingFeeHint: "到付运费由收货人或骑手收取，不加入商品总额。",
     paymentFormTitle: "添加付款记录",
     proofImageUrl: "付款凭证图片 URL",
     saveAdminNotes: "保存后台备注",
     saved: "已保存。",
     printA6: "打印 A6 订单单据",
+    printWaybill: "打印快递面单",
+    printCustomerOrder: "打印客户订单",
     salesperson: "销售员工",
     unassignedSales: "未分配 / 线上订单",
     confirmCancel: "确定取消这个订单？",
@@ -97,6 +169,43 @@ const text = {
     pointsReversed: "已从会员积分中扣回。",
     pointsNeedManualCheck: "积分需要人工检查：",
     unknownError: "未知错误",
+    shipmentPanelTitle: "J&T Express COD 物流",
+    shipmentDraftHint: "J&T API 密钥还没接入。先保存 COD 和包裹资料。",
+    saveShipment: "保存 J&T Express COD 草稿",
+    bookShipment: "预约 J&T 订单",
+    printPackageSlip: "打印 COD 包裹单",
+    shipmentSaveFailed: "物流记录保存失败。",
+    shipmentBookFailed: "J&T 预约失败。",
+    noShipments: "暂无物流记录。",
+    codAmount: "COD 金额",
+    packageWeight: "重量 (g)",
+    packageSize: "包裹尺寸 (cm)",
+    trackingNo: "追踪号",
+    waybillNo: "面单号",
+    shipmentNotes: "物流备注",
+    shipmentStatus: "物流状态",
+    codStatus: "COD 状态",
+    codIncludedShipping: "J&T Express COD / 已含运费",
+    latestShipment: "最新物流",
+    shipmentLabels: {
+      draft: "草稿",
+      ready_to_book: "待预约",
+      booked: "已预约",
+      in_transit: "运输中",
+      delivered: "已签收",
+      returning: "退回中",
+      returned: "已退回",
+      cancelled: "已取消",
+      failed: "失败",
+    },
+    codLabels: {
+      not_cod: "非 COD",
+      pending_collection: "待收款",
+      collected: "已收款",
+      remitted: "已回款",
+      failed: "失败",
+      waived: "已免收",
+    },
   },
 };
 
@@ -142,6 +251,126 @@ function labelFor(t: (key: TranslationKey) => string, map: Record<string, Transl
   return t(map[value] ?? "status");
 }
 
+type OrdersCopy = (typeof text)[keyof typeof text];
+
+function shippingPaymentLabelFor(t: (key: TranslationKey) => string, copy: OrdersCopy, value: string) {
+  if (value === "cod_included") {
+    return copy.codIncludedShipping;
+  }
+
+  return labelFor(t, shippingFeePaymentKeyByValue, value);
+}
+
+function draftNumber(value: number | null) {
+  return value === null ? "" : String(value);
+}
+
+function isJntReceivingMethod(method: string) {
+  return method === "courier_shipping";
+}
+
+function isLalamoveReceivingMethod(method: string) {
+  return method === "local_delivery" || method === "local_delivery_lalamove";
+}
+
+function estimateOrderShipmentLogistics(order: AdminOrderRecord) {
+  const knownWeightGrams = order.items.reduce((sum, item) => sum + (item.weightGrams ?? 0) * item.quantity, 0);
+  const lengthCm = Math.max(0, ...order.items.map((item) => item.lengthCm ?? 0));
+  const widthCm = Math.max(0, ...order.items.map((item) => item.widthCm ?? 0));
+  const heightCm = Math.max(0, ...order.items.map((item) => item.heightCm ?? 0));
+  const isJntOrder = isJntReceivingMethod(order.receivingMethod);
+  const flags = new Set<string>();
+  const itemNotes: string[] = [];
+
+  for (const item of order.items) {
+    if (isJntOrder && !item.codEnabled) {
+      flags.add("COD disabled item");
+    }
+
+    if (item.fragile || item.shippingCategory === "fragile") {
+      flags.add("fragile");
+    }
+
+    if (item.containsBattery) {
+      flags.add("contains battery");
+    }
+
+    if (item.containsLiquid) {
+      flags.add("contains liquid");
+    }
+
+    if (item.shippingCategory === "oversized") {
+      flags.add("oversized");
+    }
+
+    if (item.shippingCategory === "restricted") {
+      flags.add("restricted");
+    }
+
+    if (item.shippingNotes) {
+      itemNotes.push(`${item.variantSku || item.sku || item.name}: ${item.shippingNotes}`);
+    }
+  }
+
+  return {
+    packageWeightGrams: knownWeightGrams > 0 ? knownWeightGrams : null,
+    packageLengthCm: lengthCm > 0 ? lengthCm : null,
+    packageWidthCm: widthCm > 0 ? widthCm : null,
+    packageHeightCm: heightCm > 0 ? heightCm : null,
+    notes: [...flags, ...itemNotes].join("; "),
+  };
+}
+
+function getOrderLogisticsIssues(order: AdminOrderRecord) {
+  const missingWeight = order.items.filter((item) => !item.weightGrams);
+  const missingSize = order.items.filter((item) => !item.lengthCm || !item.widthCm || !item.heightCm);
+  const codDisabled = isJntReceivingMethod(order.receivingMethod) ? order.items.filter((item) => !item.codEnabled) : [];
+  const specialHandling = order.items.filter(
+    (item) => item.fragile || item.containsBattery || item.containsLiquid || item.shippingCategory === "restricted" || item.shippingCategory === "oversized",
+  );
+  const messages = [
+    missingWeight.length ? `${missingWeight.length} item(s) missing weight` : "",
+    missingSize.length ? `${missingSize.length} item(s) missing package size` : "",
+    codDisabled.length ? `${codDisabled.length} item(s) marked no COD` : "",
+    specialHandling.length ? `${specialHandling.length} item(s) need special handling check` : "",
+  ].filter(Boolean);
+
+  return {
+    missingWeight,
+    missingSize,
+    codDisabled,
+    specialHandling,
+    messages,
+    ready: messages.length === 0,
+  };
+}
+
+function createShipmentDraft(order: AdminOrderRecord): ShipmentDraft {
+  const shipment = order.shipments[0];
+  const estimate = estimateOrderShipmentLogistics(order);
+  const isLalamoveOrder = isLalamoveReceivingMethod(order.receivingMethod);
+  const customerBooksLalamove = isLalamoveOrder && order.orderNotes.includes("Customer will book");
+
+  return {
+    id: shipment?.id ?? "",
+    provider: shipment?.provider ?? (isLalamoveOrder ? "lalamove" : "jnt"),
+    providerService: shipment?.providerService ?? (isLalamoveOrder ? (customerBooksLalamove ? "customer_books" : "manual_booking") : "cod"),
+    status: shipment?.status ?? "draft",
+    codStatus: shipment?.codStatus ?? (isLalamoveOrder ? "not_cod" : "pending_collection"),
+    codAmount: shipment ? draftNumber(shipment.codAmount) : String(isLalamoveOrder ? order.productTotal : order.amountToConfirm),
+    trackingNo: shipment?.trackingNo ?? "",
+    waybillNo: shipment?.waybillNo ?? "",
+    packageWeightGrams: draftNumber(shipment?.packageWeightGrams ?? estimate.packageWeightGrams),
+    packageLengthCm: draftNumber(shipment?.packageLengthCm ?? estimate.packageLengthCm),
+    packageWidthCm: draftNumber(shipment?.packageWidthCm ?? estimate.packageWidthCm),
+    packageHeightCm: draftNumber(shipment?.packageHeightCm ?? estimate.packageHeightCm),
+    receiverName: shipment?.receiverName || order.receiverName,
+    receiverPhone: shipment?.receiverPhone || order.receiverPhone,
+    receiverAddress: shipment?.receiverAddress || order.completeAddress,
+    notes: shipment?.notes ?? estimate.notes,
+  };
+}
+
 export function AdminOrdersClient({
   initialOrders,
   initialStaffUsers,
@@ -164,7 +393,29 @@ export function AdminOrdersClient({
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState(initialError ?? "");
+  const [jntConfigStatus, setJntConfigStatus] = useState<JntConfigStatus | null>(null);
   const selectedOrder = orders.find((order) => order.orderNo === selectedOrderNo) ?? orders[0] ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetch("/api/admin/logistics/jnt/status")
+      .then((response) => response.json())
+      .then((result: { ok?: boolean; status?: JntConfigStatus }) => {
+        if (!cancelled && result.ok && result.status) {
+          setJntConfigStatus(result.status);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setJntConfigStatus(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredOrders = useMemo(() => {
     const orderNeedle = orderNoSearch.trim().toLowerCase();
@@ -260,11 +511,109 @@ export function AdminOrdersClient({
     }
   };
 
+  const saveShipmentRecord = async (orderNo: string, draft: ShipmentDraft) => {
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderNo)}/shipments`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(draft),
+      });
+      const result = (await response.json().catch(() => ({ ok: false, message: copy.shipmentSaveFailed }))) as {
+        ok?: boolean;
+        message?: string;
+        shipment?: AdminShipmentRecord;
+      };
+
+      if (!response.ok || !result.ok || !result.shipment) {
+        setMessage(result.message ?? copy.shipmentSaveFailed);
+        return null;
+      }
+
+      const shipment = result.shipment as AdminShipmentRecord;
+      setOrders((current) =>
+        current.map((order) => {
+          if (order.orderNo !== orderNo) {
+            return order;
+          }
+
+          const existingIndex = order.shipments.findIndex((item) => item.id === shipment.id);
+          const shipments =
+            existingIndex === -1
+              ? [shipment, ...order.shipments]
+              : order.shipments.map((item) => (item.id === shipment.id ? shipment : item));
+
+          return { ...order, shipments };
+        }),
+      );
+      setMessage(copy.saved);
+      return shipment;
+    } catch {
+      setMessage(copy.shipmentSaveFailed);
+      return null;
+    }
+  };
+
+  const bookShipmentRecord = async (orderNo: string, shipmentId: string) => {
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderNo)}/shipments/book`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ shipmentId }),
+      });
+      const result = (await response.json().catch(() => ({ ok: false, message: copy.shipmentBookFailed }))) as {
+        ok?: boolean;
+        message?: string;
+        shipment?: AdminShipmentRecord;
+      };
+
+      if (result.shipment) {
+        const shipment = result.shipment as AdminShipmentRecord;
+        setOrders((current) =>
+          current.map((order) => {
+            if (order.orderNo !== orderNo) {
+              return order;
+            }
+
+            const existing = order.shipments.some((item) => item.id === shipment.id);
+            return {
+              ...order,
+              shipments: existing
+                ? order.shipments.map((item) => (item.id === shipment.id ? shipment : item))
+                : [shipment, ...order.shipments],
+            };
+          }),
+        );
+      }
+
+      if (!response.ok || !result.ok || !result.shipment) {
+        setMessage(result.message ?? copy.shipmentBookFailed);
+        return null;
+      }
+
+      setMessage(result.message ?? copy.saved);
+      return result.shipment as AdminShipmentRecord;
+    } catch {
+      setMessage(copy.shipmentBookFailed);
+      return null;
+    }
+  };
+
   return (
     <>
       <div className="print:hidden">
         <AdminPageTitle titleKey="orders" caption={copy.developmentOnly} />
         {message ? <div className="mb-4 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm font-bold text-orange-700">{message}</div> : null}
+        {jntConfigStatus ? (
+          <div className={`mb-4 rounded-md border p-3 text-sm font-bold ${jntConfigStatus.configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+            {jntConfigStatus.configured
+              ? `J&T API config is ready (${jntConfigStatus.mode}; live booking ${jntConfigStatus.liveBookingEnabled ? "enabled" : "disabled"}).`
+              : `J&T API not configured yet (${jntConfigStatus.mode}). Missing: ${jntConfigStatus.missingRequired.join(", ") || "none"}.`}
+          </div>
+        ) : null}
 
         <div className="mb-4 rounded-md border border-orange-100 bg-white p-4 shadow-sm">
           <div className="flex flex-wrap gap-3">
@@ -319,7 +668,7 @@ export function AdminOrdersClient({
 
         <TableShell>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1240px] text-left text-sm">
+            <table className="w-full min-w-[1320px] text-left text-sm">
               <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
                 <tr>
                   <th className="px-4 py-3">{t("orderNo")}</th>
@@ -331,6 +680,7 @@ export function AdminOrdersClient({
                   <th className="px-4 py-3">{t("paymentStatus")}</th>
                   <th className="px-4 py-3">{t("receivingMethod")}</th>
                   <th className="px-4 py-3">{t("shippingFeePayment")}</th>
+                  <th className="px-4 py-3">Logistics</th>
                   <th className="px-4 py-3">{t("date")}</th>
                   <th className="px-4 py-3">{t("actions")}</th>
                 </tr>
@@ -346,7 +696,8 @@ export function AdminOrdersClient({
                     <td className="px-4 py-4"><StatusPill tone="orange">{labelFor(t, statusKeyByValue, order.orderStatus)}</StatusPill></td>
                     <td className="px-4 py-4"><StatusPill tone="green">{labelFor(t, statusKeyByValue, order.paymentStatus)}</StatusPill></td>
                     <td className="px-4 py-4 text-zinc-600">{labelFor(t, receivingMethodKeyByValue, order.receivingMethod)}</td>
-                    <td className="px-4 py-4 text-zinc-600">{labelFor(t, shippingFeePaymentKeyByValue, order.shippingFeePayment)}</td>
+                    <td className="px-4 py-4 text-zinc-600">{shippingPaymentLabelFor(t, copy, order.shippingFeePayment)}</td>
+                    <td className="px-4 py-4"><LogisticsStatusPill order={order} /></td>
                     <td className="px-4 py-4 text-zinc-600">{order.createdDate}</td>
                     <td className="px-4 py-4">
                       <button type="button" onClick={() => setSelectedOrderNo(order.orderNo)} className="rounded-md border border-orange-200 px-3 py-2 text-xs font-black text-orange-700">
@@ -357,7 +708,7 @@ export function AdminOrdersClient({
                 ))}
                 {!visibleOrders.length ? (
                   <tr>
-                    <td className="px-4 py-6 text-zinc-500" colSpan={11}>{copy.noOrders}</td>
+                    <td className="px-4 py-6 text-zinc-500" colSpan={12}>{copy.noOrders}</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -378,7 +729,15 @@ export function AdminOrdersClient({
         </TableShell>
 
         {selectedOrder ? (
-          <OrderDetail order={selectedOrder} staffUsers={initialStaffUsers} patchOrder={patchOrder} addPaymentRecord={addPaymentRecord} />
+          <OrderDetail
+            key={selectedOrder.orderNo}
+            order={selectedOrder}
+            staffUsers={initialStaffUsers}
+            patchOrder={patchOrder}
+            addPaymentRecord={addPaymentRecord}
+            saveShipmentRecord={saveShipmentRecord}
+            bookShipmentRecord={bookShipmentRecord}
+          />
         ) : null}
       </div>
 
@@ -418,21 +777,36 @@ function FilterSelect({
   );
 }
 
+function LogisticsStatusPill({ order }: { order: AdminOrderRecord }) {
+  const issues = getOrderLogisticsIssues(order);
+
+  return (
+    <StatusPill tone={issues.ready ? "green" : "orange"}>
+      {issues.ready ? "Ready" : `${issues.messages.length} issue(s)`}
+    </StatusPill>
+  );
+}
+
 function OrderDetail({
   order,
   staffUsers,
   patchOrder,
   addPaymentRecord,
+  saveShipmentRecord,
+  bookShipmentRecord,
 }: {
   order: AdminOrderRecord;
   staffUsers: AdminStaffUser[];
   patchOrder: (orderNo: string, patch: Record<string, unknown>) => Promise<boolean>;
   addPaymentRecord: (orderNo: string, draft: PaymentDraft) => Promise<boolean>;
+  saveShipmentRecord: (orderNo: string, draft: ShipmentDraft) => Promise<AdminShipmentRecord | null>;
+  bookShipmentRecord: (orderNo: string, shipmentId: string) => Promise<AdminShipmentRecord | null>;
 }) {
   const { t, language } = useAdminI18n();
   const copy = text[language];
   const [adminNotes, setAdminNotes] = useState(order.adminNotes);
   const [shippingFeeAmount, setShippingFeeAmount] = useState(order.shippingFeeAmount?.toString() ?? "");
+  const [shipmentDraft, setShipmentDraft] = useState<ShipmentDraft>(() => createShipmentDraft(order));
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>({
     paymentMethod: "",
     amount: "",
@@ -448,6 +822,48 @@ function OrderDetail({
       setPaymentDraft({ paymentMethod: "", amount: "", referenceNo: "", status: "pending", proofImageUrl: "" });
     }
   };
+
+  const saveShipment = async () => {
+    const shipment = await saveShipmentRecord(order.orderNo, shipmentDraft);
+
+    if (shipment) {
+      setShipmentDraft(createShipmentDraft({ ...order, shipments: [shipment, ...order.shipments.filter((item) => item.id !== shipment.id)] }));
+    }
+  };
+  const bookShipment = async () => {
+    const savedShipment = await saveShipmentRecord(order.orderNo, { ...shipmentDraft, status: "ready_to_book" });
+
+    if (!savedShipment) {
+      return;
+    }
+
+    const bookedShipment = await bookShipmentRecord(order.orderNo, savedShipment.id);
+    const nextShipment = bookedShipment ?? savedShipment;
+    setShipmentDraft(createShipmentDraft({ ...order, shipments: [nextShipment, ...order.shipments.filter((item) => item.id !== nextShipment.id)] }));
+  };
+
+  const shipmentLabel = (status: string) => copy.shipmentLabels[status as keyof typeof copy.shipmentLabels] ?? status;
+  const codLabel = (status: string) => copy.codLabels[status as keyof typeof copy.codLabels] ?? status;
+  const logisticsIssues = getOrderLogisticsIssues(order);
+  const isJntOrder = isJntReceivingMethod(order.receivingMethod);
+  const isLalamoveOrder = isLalamoveReceivingMethod(order.receivingMethod);
+  const needsDeliveryPanel = isJntOrder || isLalamoveOrder;
+  const shipmentPanelTitle = isLalamoveOrder ? (language === "zh" ? "Lalamove 人工安排" : "Lalamove Manual Coordination") : copy.shipmentPanelTitle;
+  const shipmentDraftHint = isLalamoveOrder
+    ? language === "zh"
+      ? "Lalamove 不会自动叫车。记录我们手动叫车，或客户自己叫车的资料。"
+      : "Lalamove is not booked automatically. Record whether Luis One manually books it or the customer books their own rider."
+    : copy.shipmentDraftHint;
+  const shipmentReadyText = isLalamoveOrder
+    ? language === "zh"
+      ? "Lalamove 只做人工协调；商品重量和尺寸可帮助估算费用。"
+      : "Lalamove is manual coordination only; product weight and size can help estimate the fee."
+    : "Product logistics are complete for courier booking.";
+  const shipmentReviewText = language === "zh"
+    ? `物流资料需检查：${logisticsIssues.messages.join("; ")}。`
+    : `Logistics needs review: ${logisticsIssues.messages.join("; ")}.`;
+  const saveShipmentLabel = isLalamoveOrder ? (language === "zh" ? "保存 Lalamove 记录" : "Save Lalamove Record") : copy.saveShipment;
+  const shipmentAmountLabel = isLalamoveOrder ? (language === "zh" ? "订单金额" : "Order Amount") : copy.codAmount;
 
   return (
     <section className="mt-5 space-y-5">
@@ -491,6 +907,20 @@ function OrderDetail({
             <button className="rounded-md border border-zinc-200 px-4 py-2 text-sm font-black text-zinc-700" type="button" onClick={() => window.print()}>
               {copy.printA6}
             </button>
+            <Link
+              href={`/admin/orders/${encodeURIComponent(order.orderNo)}/customer-order`}
+              target="_blank"
+              className="grid rounded-md border border-zinc-200 px-4 py-2 text-sm font-black text-zinc-700"
+            >
+              {copy.printCustomerOrder}
+            </Link>
+            <Link
+              href={`/admin/orders/${encodeURIComponent(order.orderNo)}/waybill`}
+              target="_blank"
+              className="grid rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-800"
+            >
+              {copy.printWaybill}
+            </Link>
             <button
               className="rounded-md border border-red-200 px-4 py-2 text-sm font-black text-red-700"
               type="button"
@@ -508,7 +938,7 @@ function OrderDetail({
         <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Info label={t("createdDate")} value={order.createdDate} />
           <Info label={t("productTotal")} value={formatPhp(order.productTotal)} emphasis />
-          <Info label={t("shippingFeePayment")} value={labelFor(t, shippingFeePaymentKeyByValue, order.shippingFeePayment)} />
+          <Info label={t("shippingFeePayment")} value={shippingPaymentLabelFor(t, copy, order.shippingFeePayment)} />
           <Info label={t("shippingFeeAmount")} value={order.shippingFeeAmount === null ? "0" : formatPhp(order.shippingFeeAmount)} />
           <Info label={copy.shippingFeeStatus} value={order.shippingFeeStatus} />
           <Info label={t("amountToConfirm")} value={formatPhp(order.amountToConfirm)} emphasis />
@@ -533,7 +963,7 @@ function OrderDetail({
             [t("receiverPhone"), order.receiverPhone],
             [t("receivingMethod"), labelFor(t, receivingMethodKeyByValue, order.receivingMethod)],
             [t("completeAddress"), order.completeAddress],
-            [t("shippingFeePayment"), labelFor(t, shippingFeePaymentKeyByValue, order.shippingFeePayment)],
+            [t("shippingFeePayment"), shippingPaymentLabelFor(t, copy, order.shippingFeePayment)],
             [t("orderNotes"), order.orderNotes],
           ]} />
         </Panel>
@@ -547,7 +977,7 @@ function OrderDetail({
             className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold outline-none focus:border-orange-500"
           >
             {shippingFeePayments.map((option) => (
-              <option key={option} value={option}>{labelFor(t, shippingFeePaymentKeyByValue, option)}</option>
+              <option key={option} value={option}>{shippingPaymentLabelFor(t, copy, option)}</option>
             ))}
           </select>
           <input
@@ -567,12 +997,197 @@ function OrderDetail({
         <p className="mt-3 text-xs font-bold text-orange-700">{copy.shippingFeeHint}</p>
       </Panel>
 
+      {needsDeliveryPanel ? (
+      <Panel title={shipmentPanelTitle}>
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
+          {shipmentDraftHint}
+        </div>
+        <div className={`mb-4 rounded-md border px-4 py-3 text-sm font-bold ${logisticsIssues.ready ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+          {logisticsIssues.ready ? shipmentReadyText : shipmentReviewText}
+        </div>
+        <div className="grid gap-3 lg:grid-cols-4">
+          <select
+            value={shipmentDraft.status}
+            onChange={(event) => setShipmentDraft((draft) => ({ ...draft, status: event.target.value }))}
+            className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold outline-none focus:border-orange-500"
+            aria-label={copy.shipmentStatus}
+          >
+            {shipmentStatuses.map((status) => (
+              <option key={status} value={status}>
+                {shipmentLabel(status)}
+              </option>
+            ))}
+          </select>
+          {isJntOrder ? (
+            <select
+              value={shipmentDraft.codStatus}
+              onChange={(event) => setShipmentDraft((draft) => ({ ...draft, codStatus: event.target.value }))}
+              className="h-11 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold outline-none focus:border-orange-500"
+              aria-label={copy.codStatus}
+            >
+              {codStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {codLabel(status)}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={shipmentDraft.codAmount}
+            onChange={(event) => setShipmentDraft((draft) => ({ ...draft, codAmount: event.target.value }))}
+            placeholder={shipmentAmountLabel}
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={shipmentDraft.packageWeightGrams}
+            onChange={(event) => setShipmentDraft((draft) => ({ ...draft, packageWeightGrams: event.target.value }))}
+            placeholder={copy.packageWeight}
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+          <input
+            value={shipmentDraft.trackingNo}
+            onChange={(event) => setShipmentDraft((draft) => ({ ...draft, trackingNo: event.target.value }))}
+            placeholder={copy.trackingNo}
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+          <input
+            value={shipmentDraft.waybillNo}
+            onChange={(event) => setShipmentDraft((draft) => ({ ...draft, waybillNo: event.target.value }))}
+            placeholder={copy.waybillNo}
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+          <div className="grid grid-cols-3 gap-2">
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={shipmentDraft.packageLengthCm}
+              onChange={(event) => setShipmentDraft((draft) => ({ ...draft, packageLengthCm: event.target.value }))}
+              placeholder="L"
+              className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+              aria-label={`${copy.packageSize} length`}
+            />
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={shipmentDraft.packageWidthCm}
+              onChange={(event) => setShipmentDraft((draft) => ({ ...draft, packageWidthCm: event.target.value }))}
+              placeholder="W"
+              className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+              aria-label={`${copy.packageSize} width`}
+            />
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={shipmentDraft.packageHeightCm}
+              onChange={(event) => setShipmentDraft((draft) => ({ ...draft, packageHeightCm: event.target.value }))}
+              placeholder="H"
+              className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+              aria-label={`${copy.packageSize} height`}
+            />
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <button type="button" onClick={saveShipment} className="h-11 rounded-md bg-[#f65f18] px-4 text-sm font-black text-white">
+            {saveShipmentLabel}
+          </button>
+          {isJntOrder ? (
+            <button type="button" onClick={bookShipment} className="h-11 rounded-md border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-800">
+              {copy.bookShipment}
+            </button>
+          ) : null}
+          <Link
+            href={`/admin/orders/${encodeURIComponent(order.orderNo)}/waybill`}
+            target="_blank"
+            className="grid h-11 place-items-center rounded-md border border-emerald-200 bg-white px-4 text-sm font-black text-emerald-800"
+          >
+            {copy.printWaybill}
+          </Link>
+          <Link
+            href={`/admin/orders/${encodeURIComponent(order.orderNo)}/package-slip`}
+            target="_blank"
+            className="grid h-11 place-items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-black text-zinc-800"
+          >
+            {copy.printPackageSlip}
+          </Link>
+        </div>
+        <div className="mt-3 grid gap-3 lg:grid-cols-3">
+          <input
+            value={shipmentDraft.receiverName}
+            onChange={(event) => setShipmentDraft((draft) => ({ ...draft, receiverName: event.target.value }))}
+            placeholder={t("receiverName")}
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+          <input
+            value={shipmentDraft.receiverPhone}
+            onChange={(event) => setShipmentDraft((draft) => ({ ...draft, receiverPhone: event.target.value }))}
+            placeholder={t("receiverPhone")}
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+          <input
+            value={shipmentDraft.receiverAddress}
+            onChange={(event) => setShipmentDraft((draft) => ({ ...draft, receiverAddress: event.target.value }))}
+            placeholder={t("completeAddress")}
+            className="h-11 rounded-md border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-orange-500"
+          />
+        </div>
+        <textarea
+          value={shipmentDraft.notes}
+          onChange={(event) => setShipmentDraft((draft) => ({ ...draft, notes: event.target.value }))}
+          placeholder={copy.shipmentNotes}
+          className="mt-3 min-h-20 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700"
+        />
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
+              <tr>
+                <th className="px-4 py-3">{copy.latestShipment}</th>
+                <th className="px-4 py-3">{copy.shipmentStatus}</th>
+                <th className="px-4 py-3">{copy.codStatus}</th>
+                <th className="px-4 py-3">{shipmentAmountLabel}</th>
+                <th className="px-4 py-3">{copy.trackingNo}</th>
+                <th className="px-4 py-3">{copy.waybillNo}</th>
+                <th className="px-4 py-3">{t("date")}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {order.shipments.length ? (
+                order.shipments.map((shipment) => (
+                  <tr key={shipment.id}>
+                    <td className="px-4 py-3 font-black uppercase text-zinc-900">{shipment.provider}</td>
+                    <td className="px-4 py-3"><StatusPill tone="orange">{shipmentLabel(shipment.status)}</StatusPill></td>
+                    <td className="px-4 py-3"><StatusPill tone="green">{codLabel(shipment.codStatus)}</StatusPill></td>
+                    <td className="px-4 py-3 font-black text-orange-700">{shipment.codAmount === null ? "-" : formatPhp(shipment.codAmount)}</td>
+                    <td className="px-4 py-3 text-zinc-600">{shipment.trackingNo || "-"}</td>
+                    <td className="px-4 py-3 text-zinc-600">{shipment.waybillNo || "-"}</td>
+                    <td className="px-4 py-3 text-zinc-600">{shipment.createdDate || "-"}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-4 py-5 text-zinc-500" colSpan={7}>{copy.noShipments}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+      ) : null}
+
       <Panel title={t("productItems")}>
         <div className="mb-3 rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-700">
           {t("supplierNotesAdminOnly")}
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-left text-sm">
+          <table className="w-full min-w-[1120px] text-left text-sm">
             <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
               <tr>
                 <th className="px-4 py-3">{t("productImage")}</th>
@@ -582,6 +1197,7 @@ function OrderDetail({
                 <th className="px-4 py-3">{t("unitPriceSnapshot")}</th>
                 <th className="px-4 py-3">{t("subtotal")}</th>
                 <th className="px-4 py-3">{t("stockStatus")}</th>
+                <th className="px-4 py-3">Logistics</th>
                 <th className="px-4 py-3">{t("supplierNotesSnapshot")}</th>
               </tr>
             </thead>
@@ -605,6 +1221,17 @@ function OrderDetail({
                   <td className="px-4 py-3 text-zinc-600">{formatPhp(item.unitPrice)}</td>
                   <td className="px-4 py-3 font-black text-orange-700">{formatPhp(item.subtotal)}</td>
                   <td className="px-4 py-3"><StatusPill tone="orange">{labelFor(t, statusKeyByValue, item.stockStatus)}</StatusPill></td>
+                  <td className="px-4 py-3 text-xs font-bold text-zinc-600">
+                    <span className="block">{item.weightGrams ? `${item.weightGrams}g` : "No weight"}</span>
+                    <span className="block">
+                      {item.lengthCm && item.widthCm && item.heightCm ? `${item.lengthCm} x ${item.widthCm} x ${item.heightCm}cm` : "No size"}
+                    </span>
+                    <span className="mt-1 block text-zinc-500">
+                      {[item.shippingCategory, item.codEnabled ? "COD" : "No COD", item.fragile ? "fragile" : "", item.containsBattery ? "battery" : "", item.containsLiquid ? "liquid" : ""]
+                        .filter(Boolean)
+                        .join(" / ")}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-zinc-600">{item.supplierNotesSnapshot}</td>
                 </tr>
               ))}
@@ -670,9 +1297,9 @@ function OrderDetail({
 function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: TranslationKey) => string }) {
   const shippingFee =
     order.shippingFeePayment === "freight_collect"
-      ? "Freight Collect / Paid by Receiver"
+      ? "Paid to Rider / Receiver"
       : order.shippingFeeAmount === null
-        ? labelFor(t, shippingFeePaymentKeyByValue, order.shippingFeePayment)
+        ? shippingPaymentLabelFor(t, text.en, order.shippingFeePayment)
         : formatPhp(order.shippingFeeAmount);
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const recordedPayments = order.payments.filter((payment) => payment.status !== "rejected");
@@ -810,7 +1437,7 @@ function PrintOrderTemplate({ order, t }: { order: AdminOrderRecord; t: (key: Tr
             <A6Check label="Items picked / packed" />
             <A6Check label="Deposit / payment checked" />
             <A6Check label="Pickup / delivery arranged" />
-            <p className="mt-1 text-[7px] text-zinc-600">Freight collect is not added to product total.</p>
+            <p className="mt-1 text-[7px] text-zinc-600">Confirm receiving method and delivery fee before release.</p>
           </A6Box>
           <A6Box title="Total">
             <A6Total label="Product" value={formatPhp(order.productTotal)} />

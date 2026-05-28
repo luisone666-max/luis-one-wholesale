@@ -1,4 +1,4 @@
-import { absoluteUrl, getProductPriceBounds, getSiteUrl, stripText } from "@/lib/seo";
+import { getProductPriceBounds, getSiteUrl, optimizedPublicImageUrl, stripText } from "@/lib/seo";
 import type { Product, ProductVariant } from "@/lib/mock-data";
 
 export type MetaCatalogRow = {
@@ -100,7 +100,7 @@ export function productToMetaCatalogRows(product: Product): MetaCatalogRow[] {
       condition: "new",
       price: metaPrice(productPrice(product, variant)),
       link: productUrl,
-      image_link: absoluteUrl(variant.image || product.image),
+      image_link: optimizedPublicImageUrl(variant.image || product.image),
       brand: "Luis One Supply Hub",
       mpn: variant.sku || product.sku || variant.id,
       item_group_id: groupId,
@@ -116,7 +116,7 @@ export function productToMetaCatalogRows(product: Product): MetaCatalogRow[] {
       condition: "new",
       price: metaPrice(productPrice(product)),
       link: productUrl,
-      image_link: absoluteUrl(product.image),
+      image_link: optimizedPublicImageUrl(product.image),
       brand: "Luis One Supply Hub",
       mpn: product.sku || product.id || product.slug,
       item_group_id: groupId,

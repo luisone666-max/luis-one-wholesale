@@ -8,6 +8,7 @@ import { useAdminI18n } from "@/components/admin/AdminShell";
 import { formatImageBytes, prepareAdminUploadImage } from "@/lib/admin-image-compression";
 import type { TranslationKey } from "@/lib/admin-i18n";
 import type { AdminCategoryOption, AdminProductRecord, AdminProductsSummary, AdminProductTier, AdminProductVariant } from "@/lib/admin-products-data";
+import { shippingCategoryValues, type ShippingCategory } from "@/lib/product-logistics";
 
 type EditorMode = "view" | "create" | "edit";
 type ProductDraft = {
@@ -30,6 +31,16 @@ type ProductDraft = {
   supplierNotes: string;
   internalCostNotes: string;
   adminNotes: string;
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  codEnabled: boolean;
+  fragile: boolean;
+  containsBattery: boolean;
+  containsLiquid: boolean;
+  shippingCategory: ShippingCategory;
+  shippingNotes: string;
   tiers: AdminProductTier[];
   variants: AdminProductVariant[];
 };
@@ -47,6 +58,12 @@ type ProductsListResponse = {
 
 const defaultPageSize = 24;
 const stockStatuses = ["ready_stock", "for_order", "low_stock", "unavailable"];
+const shippingCategoryLabels: Record<ShippingCategory, string> = {
+  standard: "Standard parcel",
+  oversized: "Oversized",
+  fragile: "Fragile",
+  restricted: "Restricted / special handling",
+};
 const productTabs: TranslationKey[] = ["basicInfo", "imagesTab", "wholesalePricesTab", "variantsTab", "supplierNotesTab", "adminNotesTab"];
 const bulkUploadTemplateHeaders = [
   "SKU",
@@ -57,6 +74,7 @@ const bulkUploadTemplateHeaders = [
   "Brand",
   "Model",
   "MOQ",
+  "Cost Price",
   "Retail Price",
   "Stock Status",
   "Lead Time",
@@ -64,10 +82,18 @@ const bulkUploadTemplateHeaders = [
   "Description",
   "Price 1pc",
   "Price 6pcs",
-  "Price 12pcs",
-  "Price 50pcs",
   "Supplier Notes",
   "Internal Cost Notes",
+  "Weight (g)",
+  "Length (cm)",
+  "Width (cm)",
+  "Height (cm)",
+  "COD Enabled",
+  "Fragile",
+  "Contains Battery",
+  "Contains Liquid",
+  "Shipping Category",
+  "Shipping Notes",
   "Active",
 ];
 const bulkUploadTemplateSample = [
@@ -79,17 +105,26 @@ const bulkUploadTemplateSample = [
   "Sample Brand",
   "Universal",
   "1",
+  "100",
   "180",
   "for_order",
   "3-7 days",
   "/products/flat-seat.svg",
   "Sample CSV product description.",
-  "135",
-  "125",
-  "118",
-  "110",
+  "",
+  "",
   "Admin-only supplier note",
   "Admin-only cost note",
+  "500",
+  "20",
+  "15",
+  "10",
+  "true",
+  "false",
+  "false",
+  "false",
+  "standard",
+  "Default parcel data for COD courier booking",
   "true",
 ];
 
@@ -482,6 +517,16 @@ function productToDraft(product: AdminProductRecord): ProductDraft {
     supplierNotes: product.supplierNotes,
     internalCostNotes: product.internalCostNotes,
     adminNotes: product.adminNotes,
+    weightGrams: product.weightGrams,
+    lengthCm: product.lengthCm,
+    widthCm: product.widthCm,
+    heightCm: product.heightCm,
+    codEnabled: product.codEnabled,
+    fragile: product.fragile,
+    containsBattery: product.containsBattery,
+    containsLiquid: product.containsLiquid,
+    shippingCategory: product.shippingCategory,
+    shippingNotes: product.shippingNotes,
     tiers: product.tiers,
     variants: product.variants.map((variant) => ({
       ...variant,
@@ -512,6 +557,16 @@ function blankDraft(categories: AdminCategoryOption[]): ProductDraft {
     supplierNotes: "",
     internalCostNotes: "",
     adminNotes: "",
+    weightGrams: null,
+    lengthCm: null,
+    widthCm: null,
+    heightCm: null,
+    codEnabled: true,
+    fragile: false,
+    containsBattery: false,
+    containsLiquid: false,
+    shippingCategory: "standard",
+    shippingNotes: "",
     tiers: [],
     variants: [],
   };
@@ -527,6 +582,19 @@ function slugifyProduct(value: string) {
 
 function labelForStock(t: (key: TranslationKey) => string, value: string) {
   return t(stockStatusKeyByValue[value] ?? "forOrder");
+}
+
+function numberInputValue(value: number | null) {
+  return value === null ? "" : String(value);
+}
+
+function parseOptionalNumber(value: string) {
+  if (value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function escapeTemplateCsvCell(value: string) {
@@ -1183,6 +1251,16 @@ function ProductEditor({
           leadTime: current.leadTime,
           active: true,
           sortOrder: current.variants.length,
+          weightGrams: current.weightGrams,
+          lengthCm: current.lengthCm,
+          widthCm: current.widthCm,
+          heightCm: current.heightCm,
+          codEnabled: current.codEnabled,
+          fragile: current.fragile,
+          containsBattery: current.containsBattery,
+          containsLiquid: current.containsLiquid,
+          shippingCategory: current.shippingCategory,
+          shippingNotes: current.shippingNotes,
           tiers: current.tiers.length ? current.tiers.map((tier) => ({ ...tier, id: undefined })) : [],
         },
       ],
@@ -1532,6 +1610,51 @@ function ProductEditor({
                 <Input label={t("leadTime")} value={draft.leadTime} onChange={(value) => updateDraft({ leadTime: value })} disabled={disabled} />
               </div>
             </details>
+
+            <section className="rounded-md border border-sky-100 bg-sky-50/50 p-4">
+              <div className="mb-4 flex flex-col gap-1">
+                <h3 className="text-sm font-black uppercase tracking-[0.12em] text-sky-800">COD / Shipping logistics</h3>
+                <p className="text-xs font-bold text-sky-700">Used by order review and future J&T waybill creation.</p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Input label="Weight (g)" type="number" value={numberInputValue(draft.weightGrams)} onChange={(value) => updateDraft({ weightGrams: parseOptionalNumber(value) })} disabled={disabled} />
+                <Input label="Length (cm)" type="number" value={numberInputValue(draft.lengthCm)} onChange={(value) => updateDraft({ lengthCm: parseOptionalNumber(value) })} disabled={disabled} />
+                <Input label="Width (cm)" type="number" value={numberInputValue(draft.widthCm)} onChange={(value) => updateDraft({ widthCm: parseOptionalNumber(value) })} disabled={disabled} />
+                <Input label="Height (cm)" type="number" value={numberInputValue(draft.heightCm)} onChange={(value) => updateDraft({ heightCm: parseOptionalNumber(value) })} disabled={disabled} />
+                <label className="text-sm font-bold text-zinc-700">
+                  Shipping category
+                  <select
+                    disabled={disabled}
+                    value={draft.shippingCategory}
+                    onChange={(event) => updateDraft({ shippingCategory: event.target.value as ShippingCategory })}
+                    className="mt-2 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-700"
+                  >
+                    {shippingCategoryValues.map((category) => (
+                      <option key={category} value={category}>
+                        {shippingCategoryLabels[category]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-700">
+                  <input type="checkbox" checked={draft.codEnabled} disabled={disabled} onChange={(event) => updateDraft({ codEnabled: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                  COD enabled
+                </label>
+                <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-700">
+                  <input type="checkbox" checked={draft.fragile} disabled={disabled} onChange={(event) => updateDraft({ fragile: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                  Fragile
+                </label>
+                <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-700">
+                  <input type="checkbox" checked={draft.containsBattery} disabled={disabled} onChange={(event) => updateDraft({ containsBattery: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                  Contains battery
+                </label>
+                <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-700">
+                  <input type="checkbox" checked={draft.containsLiquid} disabled={disabled} onChange={(event) => updateDraft({ containsLiquid: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                  Contains liquid
+                </label>
+                <Textarea label="Shipping notes" value={draft.shippingNotes} onChange={(value) => updateDraft({ shippingNotes: value })} disabled={disabled} wide />
+              </div>
+            </section>
           </div>
         ) : null}
 
@@ -1648,6 +1771,50 @@ function ProductEditor({
                   </div>
                 </div>
                 <p className="mt-3 text-xs font-bold text-zinc-500">Variant image URL overrides the main product image after customer selection.</p>
+                <div className="mt-4 border-t border-zinc-100 pt-4">
+                  <div className="mb-3 flex flex-col gap-1">
+                    <h5 className="text-sm font-black text-zinc-800">Variant shipping override</h5>
+                    <p className="text-xs font-bold text-zinc-500">Use this when the variant has a different package size, weight, or COD rule.</p>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <Input label="Weight (g)" type="number" value={numberInputValue(variant.weightGrams)} onChange={(value) => updateVariant(variantIndex, { weightGrams: parseOptionalNumber(value) })} disabled={disabled} />
+                    <Input label="Length (cm)" type="number" value={numberInputValue(variant.lengthCm)} onChange={(value) => updateVariant(variantIndex, { lengthCm: parseOptionalNumber(value) })} disabled={disabled} />
+                    <Input label="Width (cm)" type="number" value={numberInputValue(variant.widthCm)} onChange={(value) => updateVariant(variantIndex, { widthCm: parseOptionalNumber(value) })} disabled={disabled} />
+                    <Input label="Height (cm)" type="number" value={numberInputValue(variant.heightCm)} onChange={(value) => updateVariant(variantIndex, { heightCm: parseOptionalNumber(value) })} disabled={disabled} />
+                    <label className="text-sm font-bold text-zinc-700">
+                      Shipping category
+                      <select
+                        disabled={disabled}
+                        value={variant.shippingCategory}
+                        onChange={(event) => updateVariant(variantIndex, { shippingCategory: event.target.value as ShippingCategory })}
+                        className="mt-2 h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-700"
+                      >
+                        {shippingCategoryValues.map((category) => (
+                          <option key={category} value={category}>
+                            {shippingCategoryLabels[category]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-700">
+                      <input type="checkbox" checked={variant.codEnabled} disabled={disabled} onChange={(event) => updateVariant(variantIndex, { codEnabled: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                      COD enabled
+                    </label>
+                    <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-700">
+                      <input type="checkbox" checked={variant.fragile} disabled={disabled} onChange={(event) => updateVariant(variantIndex, { fragile: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                      Fragile
+                    </label>
+                    <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-700">
+                      <input type="checkbox" checked={variant.containsBattery} disabled={disabled} onChange={(event) => updateVariant(variantIndex, { containsBattery: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                      Contains battery
+                    </label>
+                    <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-700">
+                      <input type="checkbox" checked={variant.containsLiquid} disabled={disabled} onChange={(event) => updateVariant(variantIndex, { containsLiquid: event.target.checked })} className="h-4 w-4 accent-[#f65f18]" />
+                      Contains liquid
+                    </label>
+                    <Textarea label="Shipping notes" value={variant.shippingNotes} onChange={(value) => updateVariant(variantIndex, { shippingNotes: value })} disabled={disabled} wide />
+                  </div>
+                </div>
                 <div className="mt-4">
                   <WholesalePriceEditor
                     disabled={disabled}

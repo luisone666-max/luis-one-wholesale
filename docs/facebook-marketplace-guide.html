@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Facebook / Marketplace 商品发布操作方法</title>
+    <style>
+      :root {
+        color: #172033;
+        background: #f5f7fb;
+        font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 32px;
+      }
+      main {
+        max-width: 1060px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 36px;
+      }
+      h2 {
+        margin: 34px 0 14px;
+        font-size: 25px;
+      }
+      p {
+        line-height: 1.7;
+        font-size: 17px;
+      }
+      .notice {
+        border: 1px solid #f0b2b2;
+        background: #fff1f1;
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin: 20px 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #d9e0ea;
+        border-radius: 12px;
+        padding: 16px;
+        min-height: 160px;
+      }
+      .card strong {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+      .mock {
+        margin-top: 12px;
+        border: 1px solid #cfd8e3;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .top {
+        height: 30px;
+        background: #172033;
+      }
+      .line {
+        height: 18px;
+        background: #eef2f7;
+        border-radius: 5px;
+        margin: 12px;
+      }
+      .line.short {
+        width: 56%;
+      }
+      .button {
+        width: 140px;
+        height: 28px;
+        margin: 12px;
+        border-radius: 6px;
+        background: #1877f2;
+      }
+      code {
+        background: #eef2f7;
+        border: 1px solid #d4dce8;
+        border-radius: 6px;
+        padding: 2px 6px;
+      }
+      img {
+        max-width: 100%;
+        border: 1px solid #d9e0ea;
+        border-radius: 14px;
+        background: #fff;
+      }
+      @media (max-width: 800px) {
+        body {
+          padding: 18px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Facebook / Marketplace 商品发布操作方法</h1>
+      <p>
+        目标是把 Luis One Supply Hub 网站商品更快推到 Facebook。正确做法是：
+        Meta Catalog 用官方 feed 自动同步；Marketplace 用脚本生成发布包，然后人工粘贴发布。
+      </p>
+
+      <div class="notice">
+        <strong>不要做自动登录 Facebook 自动发 Marketplace 的脚本。</strong>
+        这种模拟点击不稳定，也容易触发 Facebook 风控。我们只做正规同步和低风险辅助发布。
+      </div>
+
+      <h2>总流程图</h2>
+      <img src="./facebook-marketplace-workflow.svg" alt="Facebook Marketplace workflow" />
+
+      <h2>方案 A：Meta Catalog 官方同步</h2>
+      <div class="grid">
+        <section class="card">
+          <strong>1. 使用网站 feed</strong>
+          网站自动输出 CSV：<br />
+          <code>https://luisonesupplyhub.com/meta/catalog-feed.csv</code>
+          <div class="mock">
+            <div class="top"></div>
+            <div class="line"></div>
+            <div class="line short"></div>
+            <div class="button"></div>
+          </div>
+        </section>
+        <section class="card">
+          <strong>2. 打开 Commerce Manager</strong>
+          进入 Catalog → Data sources → Data feed → Scheduled feed。
+          <div class="mock">
+            <div class="top"></div>
+            <div class="line"></div>
+            <div class="button"></div>
+          </div>
+        </section>
+        <section class="card">
+          <strong>3. 看 Diagnostics</strong>
+          同步后检查 Meta 是否拒绝商品，重点看图片、价格、标题和库存。
+          <div class="mock">
+            <div class="top"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line short"></div>
+          </div>
+        </section>
+      </div>
+
+      <h2>方案 B：Marketplace 发布包</h2>
+      <div class="grid">
+        <section class="card">
+          <strong>1. 批量导出</strong>
+          脚本生成 <code>facebook-marketplace-posts.csv</code>，每个商品一行。
+          <div class="mock">
+            <div class="top"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line short"></div>
+          </div>
+        </section>
+        <section class="card">
+          <strong>2. 复制资料</strong>
+          复制标题、零售价、描述、图片链接、网站链接、Messenger 话术。
+          <div class="mock">
+            <div class="top"></div>
+            <div class="line"></div>
+            <div class="line short"></div>
+            <div class="button"></div>
+          </div>
+        </section>
+        <section class="card">
+          <strong>3. 人工发布</strong>
+          在 Marketplace 新建 listing，分类选 Vehicle Parts & Accessories，地点选 Manila。
+          <div class="mock">
+            <div class="top"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="button"></div>
+          </div>
+        </section>
+      </div>
+
+      <h2>我建议做到网站后台</h2>
+      <p>
+        后台加两个功能：一个是批量导出 Marketplace CSV；一个是每个商品旁边有
+        <strong>Copy for Marketplace</strong> 按钮。这样你可以快速人工发布，不需要冒险自动发帖。
+      </p>
+    </main>
+  </body>
+</html>

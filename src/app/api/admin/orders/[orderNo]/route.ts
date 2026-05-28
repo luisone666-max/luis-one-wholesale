@@ -15,7 +15,7 @@ const orderStatuses = new Set([
   "unavailable_refund",
 ]);
 const paymentStatuses = new Set(["no_payment", "deposit_submitted", "deposit_verified", "fully_paid", "rejected"]);
-const shippingFeePayments = new Set(["freight_collect", "prepaid", "to_be_confirmed", "no_shipping_fee"]);
+const shippingFeePayments = new Set(["freight_collect", "prepaid", "cod_included", "to_be_confirmed", "no_shipping_fee"]);
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
@@ -30,6 +30,10 @@ function getShippingFeeStatus(paymentMethod: string) {
     return "no_shipping_fee";
   }
 
+  if (paymentMethod === "cod_included") {
+    return "cod_included";
+  }
+
   return "to_be_confirmed";
 }
 
@@ -39,6 +43,14 @@ function normalizeOrderStatus(value: string | null) {
   }
 
   return value ?? "pending_confirmation";
+}
+
+function getAmountToConfirm(productTotal: number, shippingFeePayment: string, shippingFeeAmount: number | null) {
+  if ((shippingFeePayment === "cod_included" || shippingFeePayment === "prepaid") && shippingFeeAmount !== null) {
+    return productTotal + shippingFeeAmount;
+  }
+
+  return productTotal;
 }
 
 async function reverseOnlineOrderLoyaltyPoints({
@@ -298,7 +310,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ or
     order: {
       orderNo: row.order_no,
       productTotal: Number(row.product_total ?? 0),
-      amountToConfirm: Number(row.product_total ?? 0),
+      amountToConfirm: getAmountToConfirm(
+        Number(row.product_total ?? 0),
+        row.shipping_fee_payment_method ?? "to_be_confirmed",
+        row.shipping_fee_amount === null ? null : Number(row.shipping_fee_amount),
+      ),
       orderStatus: normalizeOrderStatus(row.order_status),
       paymentStatus: row.payment_status ?? "no_payment",
       shippingFeePayment: row.shipping_fee_payment_method ?? "to_be_confirmed",

@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1800" viewBox="0 0 1400 1800">
+  <defs>
+    <style>
+      .bg { fill: #f5f7fb; }
+      .title { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; font-size: 46px; font-weight: 800; fill: #172033; }
+      .subtitle { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; font-size: 24px; fill: #526071; }
+      .section { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; font-size: 30px; font-weight: 800; fill: #172033; }
+      .small { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; font-size: 20px; fill: #526071; }
+      .body { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; font-size: 23px; fill: #253044; }
+      .body-bold { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; font-size: 23px; fill: #172033; font-weight: 700; }
+      .label { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; font-size: 19px; fill: #667085; }
+      .card { fill: #ffffff; stroke: #d9e0ea; stroke-width: 2; }
+      .card-blue { fill: #f0f7ff; stroke: #acd2ff; stroke-width: 2; }
+      .card-green { fill: #f0fbf5; stroke: #a9dfbf; stroke-width: 2; }
+      .card-yellow { fill: #fff8df; stroke: #ead07a; stroke-width: 2; }
+      .card-red { fill: #fff1f1; stroke: #f0b2b2; stroke-width: 2; }
+      .pill { fill: #172033; }
+      .pill-text { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; font-size: 20px; fill: #ffffff; font-weight: 700; }
+      .num { font-family: "Segoe UI", Arial, sans-serif; font-size: 28px; font-weight: 800; fill: #ffffff; }
+      .arrow { stroke: #9aa7b7; stroke-width: 5; fill: none; marker-end: url(#arrowHead); }
+      .line { stroke: #d6dde8; stroke-width: 2; }
+      .screen { fill: #ffffff; stroke: #cfd8e3; stroke-width: 2; }
+      .screen-top { fill: #172033; }
+      .button { fill: #1877f2; }
+      .button-green { fill: #16a34a; }
+      .muted-box { fill: #eef2f7; stroke: #d4dce8; stroke-width: 1.5; }
+    </style>
+    <marker id="arrowHead" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#9aa7b7"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1400" height="1800"/>
+
+  <text class="title" x="70" y="86">Facebook / Marketplace 商品发布操作图</text>
+  <text class="subtitle" x="70" y="128">推荐做法：网站商品数据自动整理，Meta Catalog 正规同步，Marketplace 使用发布包人工粘贴。</text>
+
+  <rect class="card-red" x="70" y="165" width="1260" height="86" rx="14"/>
+  <text class="body-bold" x="100" y="203">重要限制</text>
+  <text class="body" x="220" y="203">不要用脚本模拟登录 Facebook 自动发 Marketplace。风险是账号限流、功能限制、甚至封号。</text>
+  <text class="small" x="220" y="232">脚本可以做“准备发布资料”和“同步官方商品目录”，不建议做违规自动点击发帖。</text>
+
+  <text class="section" x="70" y="315">方案 A：Meta Catalog 官方目录同步</text>
+  <text class="small" x="70" y="348">适合 Facebook Shop、Instagram Shop、目录广告。网站更新后，Meta 可按计划读取 feed。</text>
+
+  <rect class="card-blue" x="70" y="385" width="1260" height="430" rx="16"/>
+
+  <circle cx="125" cy="450" r="25" fill="#1877f2"/>
+  <text class="num" x="117" y="460">1</text>
+  <text class="body-bold" x="170" y="445">网站生成商品 feed</text>
+  <text class="body" x="170" y="478">你的站点已经有可给 Meta 读取的 CSV：</text>
+  <rect class="muted-box" x="170" y="500" width="645" height="50" rx="8"/>
+  <text class="small" x="192" y="532">https://luisonesupplyhub.com/meta/catalog-feed.csv</text>
+
+  <rect class="screen" x="865" y="420" width="385" height="145" rx="10"/>
+  <rect class="screen-top" x="865" y="420" width="385" height="36" rx="10"/>
+  <text class="pill-text" x="890" y="445">Website Feed</text>
+  <rect class="muted-box" x="890" y="477" width="330" height="22" rx="5"/>
+  <rect class="muted-box" x="890" y="510" width="245" height="22" rx="5"/>
+  <rect class="button-green" x="890" y="535" width="145" height="18" rx="4"/>
+
+  <line class="arrow" x1="270" y1="585" x2="270" y2="640"/>
+
+  <circle cx="125" cy="690" r="25" fill="#1877f2"/>
+  <text class="num" x="116" y="700">2</text>
+  <text class="body-bold" x="170" y="685">进入 Commerce Manager</text>
+  <text class="body" x="170" y="718">Catalog → Data sources → Data feed → Scheduled feed。</text>
+
+  <rect class="screen" x="865" y="625" width="385" height="145" rx="10"/>
+  <rect class="screen-top" x="865" y="625" width="385" height="36" rx="10"/>
+  <text class="pill-text" x="890" y="650">Commerce Manager</text>
+  <rect class="muted-box" x="890" y="682" width="120" height="20" rx="4"/>
+  <rect class="button" x="890" y="713" width="180" height="26" rx="5"/>
+  <text class="pill-text" x="910" y="733">Add data feed</text>
+
+  <line class="arrow" x1="560" y1="690" x2="825" y2="690"/>
+
+  <circle cx="655" cy="770" r="25" fill="#1877f2"/>
+  <text class="num" x="646" y="780">3</text>
+  <text class="body-bold" x="700" y="765">粘贴 feed URL 并设置每天同步</text>
+  <text class="body" x="700" y="798">同步后看 Diagnostics，修正被拒商品。</text>
+
+  <text class="section" x="70" y="890">方案 B：Marketplace 发布包</text>
+  <text class="small" x="70" y="923">适合本地 Marketplace 手动发布。脚本只帮你整理标题、价格、图片、描述和链接。</text>
+
+  <rect class="card-green" x="70" y="960" width="1260" height="600" rx="16"/>
+
+  <circle cx="125" cy="1030" r="25" fill="#16a34a"/>
+  <text class="num" x="116" y="1040">1</text>
+  <text class="body-bold" x="170" y="1025">运行导出脚本或后台批量导出</text>
+  <text class="body" x="170" y="1058">生成每个商品的 Marketplace 文案、价格、图片链接、网站链接。</text>
+  <rect class="muted-box" x="170" y="1082" width="500" height="46" rx="8"/>
+  <text class="small" x="192" y="1111">tmp-imports/facebook-marketplace-posts.csv</text>
+
+  <rect class="screen" x="780" y="1010" width="440" height="175" rx="10"/>
+  <rect class="screen-top" x="780" y="1010" width="440" height="36" rx="10"/>
+  <text class="pill-text" x="805" y="1035">Marketplace Post Pack</text>
+  <line class="line" x1="805" y1="1068" x2="1195" y2="1068"/>
+  <text class="label" x="805" y="1096">title</text>
+  <text class="label" x="955" y="1096">price</text>
+  <text class="label" x="1070" y="1096">image</text>
+  <rect class="muted-box" x="805" y="1112" width="130" height="22" rx="4"/>
+  <rect class="muted-box" x="955" y="1112" width="85" height="22" rx="4"/>
+  <rect class="muted-box" x="1070" y="1112" width="105" height="22" rx="4"/>
+  <rect class="muted-box" x="805" y="1144" width="185" height="22" rx="4"/>
+  <rect class="muted-box" x="1010" y="1144" width="85" height="22" rx="4"/>
+  <rect class="muted-box" x="1120" y="1144" width="75" height="22" rx="4"/>
+
+  <line class="arrow" x1="270" y1="1150" x2="270" y2="1215"/>
+
+  <circle cx="125" cy="1265" r="25" fill="#16a34a"/>
+  <text class="num" x="116" y="1275">2</text>
+  <text class="body-bold" x="170" y="1260">打开 Facebook Marketplace 新建 listing</text>
+  <text class="body" x="170" y="1293">分类建议：Vehicle Parts &amp; Accessories。地点：Manila。</text>
+
+  <rect class="screen" x="780" y="1235" width="440" height="190" rx="10"/>
+  <rect class="screen-top" x="780" y="1235" width="440" height="36" rx="10"/>
+  <text class="pill-text" x="805" y="1260">New Listing</text>
+  <rect class="muted-box" x="805" y="1295" width="180" height="26" rx="5"/>
+  <text class="label" x="820" y="1315">Title</text>
+  <rect class="muted-box" x="805" y="1335" width="115" height="26" rx="5"/>
+  <text class="label" x="820" y="1355">Price</text>
+  <rect class="muted-box" x="805" y="1375" width="340" height="30" rx="5"/>
+  <text class="label" x="820" y="1396">Description / Website Link / Messenger CTA</text>
+
+  <line class="arrow" x1="560" y1="1265" x2="740" y2="1265"/>
+
+  <circle cx="125" cy="1465" r="25" fill="#16a34a"/>
+  <text class="num" x="116" y="1475">3</text>
+  <text class="body-bold" x="170" y="1460">复制粘贴，不自动点击发布</text>
+  <text class="body" x="170" y="1493">人工检查标题、价格、图片和适配车型，再发布。</text>
+
+  <rect class="card-yellow" x="70" y="1615" width="1260" height="125" rx="16"/>
+  <text class="body-bold" x="100" y="1660">推荐下一步</text>
+  <text class="body" x="250" y="1660">我给后台加 “Copy for Marketplace” 和批量导出 CSV。</text>
+  <text class="small" x="250" y="1692">每个商品一键复制：英文标题、零售价、6pcs 价格、图片链接、产品链接、Messenger 话术。</text>
+</svg>

@@ -16,7 +16,7 @@ export default function RegisterPage() {
               Use your real contact details so our team can confirm product availability, deposit instructions, pick-up, Lalamove, or courier arrangements.
             </p>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {["No online payment", "Freight collect", "Messenger support"].map((item) => (
+              {["No online payment", "J&T / Pickup / Lalamove", "Messenger support"].map((item) => (
                 <div key={item} className="rounded-sm bg-white/12 p-4 text-sm font-black ring-1 ring-white/25">{item}</div>
               ))}
             </div>

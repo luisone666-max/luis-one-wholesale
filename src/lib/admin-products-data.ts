@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { isShippingCategory, type ShippingCategory } from "@/lib/product-logistics";
 
 type CategoryRow = {
   id: string;
@@ -29,6 +30,16 @@ type ProductRow = {
   supplier_notes: string | null;
   internal_cost_notes: string | null;
   admin_notes: string | null;
+  weight_grams: number | string | null;
+  length_cm: number | string | null;
+  width_cm: number | string | null;
+  height_cm: number | string | null;
+  cod_enabled: boolean | null;
+  fragile: boolean | null;
+  contains_battery: boolean | null;
+  contains_liquid: boolean | null;
+  shipping_category: string | null;
+  shipping_notes: string | null;
   active: boolean | null;
   created_at: string | null;
 };
@@ -55,7 +66,19 @@ type VariantRow = {
   lead_time: string | null;
   active: boolean | null;
   sort_order: number | null;
+  weight_grams: number | string | null;
+  length_cm: number | string | null;
+  width_cm: number | string | null;
+  height_cm: number | string | null;
+  cod_enabled: boolean | null;
+  fragile: boolean | null;
+  contains_battery: boolean | null;
+  contains_liquid: boolean | null;
+  shipping_category: string | null;
+  shipping_notes: string | null;
 };
+
+type SupabaseAdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
 
 export type AdminCategoryOption = {
   id: string;
@@ -85,6 +108,16 @@ export type AdminProductVariant = {
   leadTime: string;
   active: boolean;
   sortOrder: number;
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  codEnabled: boolean;
+  fragile: boolean;
+  containsBattery: boolean;
+  containsLiquid: boolean;
+  shippingCategory: ShippingCategory;
+  shippingNotes: string;
   tiers: AdminProductTier[];
 };
 
@@ -110,6 +143,16 @@ export type AdminProductRecord = {
   supplierNotes: string;
   internalCostNotes: string;
   adminNotes: string;
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  codEnabled: boolean;
+  fragile: boolean;
+  containsBattery: boolean;
+  containsLiquid: boolean;
+  shippingCategory: ShippingCategory;
+  shippingNotes: string;
   active: boolean;
   priceRange: string;
   tiers: AdminProductTier[];
@@ -206,6 +249,12 @@ const emptyAdminProductsSummary: AdminProductsSummary = {
   hidden: 0,
 };
 
+const adminCatalogPageSize = 1000;
+const productSelectColumns =
+  "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,supplier_notes,internal_cost_notes,admin_notes,weight_grams,length_cm,width_cm,height_cm,cod_enabled,fragile,contains_battery,contains_liquid,shipping_category,shipping_notes,active,created_at";
+const variantSelectColumns =
+  "id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order,weight_grams,length_cm,width_cm,height_cm,cod_enabled,fragile,contains_battery,contains_liquid,shipping_category,shipping_notes";
+
 function emptyAdminProductsResult(error?: string): AdminProductsResult {
   return {
     products: [],
@@ -217,6 +266,52 @@ function emptyAdminProductsResult(error?: string): AdminProductsResult {
     categoryProductCounts: {},
     error,
   };
+}
+
+async function fetchAllAdminProductRows(supabase: SupabaseAdminClient) {
+  const rows: ProductRow[] = [];
+
+  for (let offset = 0; ; offset += adminCatalogPageSize) {
+    const result = await supabase
+      .from("products")
+      .select(productSelectColumns)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + adminCatalogPageSize - 1);
+
+    if (result.error) {
+      return { rows, error: result.error.message };
+    }
+
+    const batch = (result.data ?? []) as ProductRow[];
+    rows.push(...batch);
+
+    if (batch.length < adminCatalogPageSize) {
+      return { rows, error: "" };
+    }
+  }
+}
+
+async function fetchAllAdminVariantRows(supabase: SupabaseAdminClient) {
+  const rows: VariantRow[] = [];
+
+  for (let offset = 0; ; offset += adminCatalogPageSize) {
+    const result = await supabase
+      .from("product_variants")
+      .select(variantSelectColumns)
+      .order("sort_order", { ascending: true })
+      .range(offset, offset + adminCatalogPageSize - 1);
+
+    if (result.error) {
+      return { rows, error: result.error.message };
+    }
+
+    const batch = (result.data ?? []) as VariantRow[];
+    rows.push(...batch);
+
+    if (batch.length < adminCatalogPageSize) {
+      return { rows, error: "" };
+    }
+  }
 }
 
 function normalizeAdminProductSearch(value: string) {
@@ -234,6 +329,19 @@ function normalizeAdminProductSearch(value: string) {
     .replace(/([0-9])([a-z])/g, "$1 $2")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function nullableNumber(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function normalizeShippingCategory(value: string | null | undefined): ShippingCategory {
+  return value && isShippingCategory(value) ? value : "standard";
 }
 
 function productRowMatchesSearch(product: ProductRow, variants: VariantRow[], categoriesById: Map<string, AdminCategoryOption>, query: string) {
@@ -313,21 +421,13 @@ export async function getAdminProducts(query: AdminProductsQuery = {}): Promise<
   const pageSize = Math.min(Math.max(1, Math.floor(query.pageSize ?? 24)), 96);
   const requestedPage = Math.max(1, Math.floor(query.page ?? 1));
   const [productsResult, categoriesResult, variantsResult] = await Promise.all([
-    supabase
-      .from("products")
-      .select(
-        "id,sku,name,slug,category_id,subcategory_id,child_category_id,brand,model,moq,retail_price,stock_status,lead_time,image_url,description,supplier_notes,internal_cost_notes,admin_notes,active,created_at",
-      )
-      .order("created_at", { ascending: false }),
+    fetchAllAdminProductRows(supabase),
     supabase.from("categories").select("id,name_en,slug,parent_id,level,active,sort_order").order("sort_order", { ascending: true }),
-    supabase
-      .from("product_variants")
-      .select("id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order")
-      .order("sort_order", { ascending: true }),
+    fetchAllAdminVariantRows(supabase),
   ]);
 
   if (productsResult.error) {
-    return emptyAdminProductsResult(productsResult.error.message);
+    return emptyAdminProductsResult(productsResult.error);
   }
 
   if (categoriesResult.error) {
@@ -343,11 +443,11 @@ export async function getAdminProducts(query: AdminProductsQuery = {}): Promise<
     active: Boolean(category.active),
   }));
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
-  const allProductRows = (productsResult.data ?? []) as ProductRow[];
+  const allProductRows = productsResult.rows;
   const variantsByProductId = new Map<string, VariantRow[]>();
 
   if (!variantsResult.error) {
-    for (const variant of (variantsResult.data ?? []) as VariantRow[]) {
+    for (const variant of variantsResult.rows) {
       variantsByProductId.set(variant.product_id, [...(variantsByProductId.get(variant.product_id) ?? []), variant]);
     }
   }
@@ -395,7 +495,7 @@ export async function getAdminProducts(query: AdminProductsQuery = {}): Promise<
       supabase.from("order_items").select("product_id").in("product_id", pageProductIds),
       supabase
         .from("product_variants")
-        .select("id,product_id,variant_name,variant_sku,model,fits,image_url,moq,stock_status,lead_time,active,sort_order")
+        .select(variantSelectColumns)
         .in("product_id", pageProductIds)
         .order("sort_order", { ascending: true }),
     ]);
@@ -470,6 +570,16 @@ export async function getAdminProducts(query: AdminProductsQuery = {}): Promise<
           leadTime: variant.lead_time ?? "",
           active: Boolean(variant.active),
           sortOrder: variant.sort_order ?? 0,
+          weightGrams: nullableNumber(variant.weight_grams),
+          lengthCm: nullableNumber(variant.length_cm),
+          widthCm: nullableNumber(variant.width_cm),
+          heightCm: nullableNumber(variant.height_cm),
+          codEnabled: variant.cod_enabled ?? true,
+          fragile: Boolean(variant.fragile),
+          containsBattery: Boolean(variant.contains_battery),
+          containsLiquid: Boolean(variant.contains_liquid),
+          shippingCategory: normalizeShippingCategory(variant.shipping_category),
+          shippingNotes: variant.shipping_notes ?? "",
           tiers: tiersByVariantId.get(variant.id) ?? [],
         },
       ]);
@@ -503,6 +613,16 @@ export async function getAdminProducts(query: AdminProductsQuery = {}): Promise<
       supplierNotes: product.supplier_notes ?? "",
       internalCostNotes: product.internal_cost_notes ?? "",
       adminNotes: product.admin_notes ?? "",
+      weightGrams: nullableNumber(product.weight_grams),
+      lengthCm: nullableNumber(product.length_cm),
+      widthCm: nullableNumber(product.width_cm),
+      heightCm: nullableNumber(product.height_cm),
+      codEnabled: product.cod_enabled ?? true,
+      fragile: Boolean(product.fragile),
+      containsBattery: Boolean(product.contains_battery),
+      containsLiquid: Boolean(product.contains_liquid),
+      shippingCategory: normalizeShippingCategory(product.shipping_category),
+      shippingNotes: product.shipping_notes ?? "",
       active: Boolean(product.active),
       priceRange: getPriceRange(allPriceTiers),
       tiers,

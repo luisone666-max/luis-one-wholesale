@@ -1,7 +1,22 @@
+import { isShippingCategory, type ShippingCategory } from "@/lib/product-logistics";
+
 export type ProductTierInput = {
   minQty: number;
   maxQty: number | null;
   unitPrice: number;
+};
+
+export type ProductLogisticsInput = {
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  codEnabled: boolean;
+  fragile: boolean;
+  containsBattery: boolean;
+  containsLiquid: boolean;
+  shippingCategory: ShippingCategory;
+  shippingNotes: string | null;
 };
 
 export type ProductPayload = {
@@ -23,6 +38,16 @@ export type ProductPayload = {
   supplierNotes: string | null;
   internalCostNotes: string | null;
   adminNotes: string | null;
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  codEnabled: boolean;
+  fragile: boolean;
+  containsBattery: boolean;
+  containsLiquid: boolean;
+  shippingCategory: ShippingCategory;
+  shippingNotes: string | null;
   tiers: ProductTierInput[];
   variants: ProductVariantInput[];
 };
@@ -39,6 +64,16 @@ export type ProductVariantInput = {
   leadTime: string | null;
   active: boolean;
   sortOrder: number;
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  codEnabled: boolean;
+  fragile: boolean;
+  containsBattery: boolean;
+  containsLiquid: boolean;
+  shippingCategory: ShippingCategory;
+  shippingNotes: string | null;
   tiers: ProductTierInput[];
 };
 
@@ -73,6 +108,39 @@ function slugifyProduct(value: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "product";
+}
+
+function parseLogisticsInput(raw: Record<string, unknown>): ProductLogisticsInput {
+  const shippingCategory = clean(raw.shippingCategory) || "standard";
+
+  return {
+    weightGrams: optionalPositiveNumber(raw.weightGrams),
+    lengthCm: optionalPositiveNumber(raw.lengthCm),
+    widthCm: optionalPositiveNumber(raw.widthCm),
+    heightCm: optionalPositiveNumber(raw.heightCm),
+    codEnabled: raw.codEnabled === undefined ? true : Boolean(raw.codEnabled),
+    fragile: Boolean(raw.fragile),
+    containsBattery: Boolean(raw.containsBattery),
+    containsLiquid: Boolean(raw.containsLiquid),
+    shippingCategory: isShippingCategory(shippingCategory) ? shippingCategory : "standard",
+    shippingNotes: nullableText(raw.shippingNotes),
+  };
+}
+
+function validateLogisticsInput(logistics: ProductLogisticsInput, label: string) {
+  if (Number.isNaN(logistics.weightGrams)) {
+    return `${label} weight must be greater than 0.`;
+  }
+
+  if (Number.isNaN(logistics.lengthCm) || Number.isNaN(logistics.widthCm) || Number.isNaN(logistics.heightCm)) {
+    return `${label} package dimensions must be greater than 0.`;
+  }
+
+  if (!isShippingCategory(logistics.shippingCategory)) {
+    return `${label} shipping category is invalid.`;
+  }
+
+  return "";
 }
 
 export function validateTierRules(tiers: ProductTierInput[]) {
@@ -116,6 +184,7 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
   const stockStatus = clean(raw.stockStatus) || "for_order";
   const moq = toNumber(raw.moq);
   const retailPrice = optionalPositiveNumber(raw.retailPrice);
+  const productLogistics = parseLogisticsInput(raw);
   const tiers = Array.isArray(raw.tiers)
     ? raw.tiers.map((tier) => {
         const item = tier as Record<string, unknown>;
@@ -157,6 +226,7 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
           leadTime: nullableText(item.leadTime),
           active: Boolean(item.active),
           sortOrder: Number.isInteger(Number(item.sortOrder)) ? Number(item.sortOrder) : index,
+          ...parseLogisticsInput(item),
           tiers: variantTiers,
         };
       })
@@ -188,6 +258,12 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
     return { error: "Invalid stock status." };
   }
 
+  const logisticsError = validateLogisticsInput(productLogistics, "Product");
+
+  if (logisticsError) {
+    return { error: logisticsError };
+  }
+
   const active = Boolean(raw.active);
 
   if (active && !tiers.length) {
@@ -211,6 +287,12 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
 
     if (!stockStatuses.has(variant.stockStatus)) {
       return { error: "Invalid variant stock status." };
+    }
+
+    const variantLogisticsError = validateLogisticsInput(variant, `Variant ${variant.name}`);
+
+    if (variantLogisticsError) {
+      return { error: variantLogisticsError };
     }
 
     if (variant.active && !variant.tiers.length) {
@@ -244,6 +326,7 @@ export function parseProductPayload(raw: Record<string, unknown>): { value: Prod
       supplierNotes: nullableText(raw.supplierNotes),
       internalCostNotes: nullableText(raw.internalCostNotes),
       adminNotes: nullableText(raw.adminNotes),
+      ...productLogistics,
       tiers,
       variants,
     },

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CustomerAuthGate } from "@/components/auth/CustomerAuthGate";
+import { MessengerIcon } from "@/components/BrandActionIcons";
 import { messengerUrl } from "@/components/CustomerUi";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -79,9 +80,17 @@ function CartContent() {
   };
 
   const saveQuantity = async (itemId: string, quantity: number) => {
+    const item = items.find((cartItem) => cartItem.id === itemId);
+    const nextQuantity = Math.max(item?.moq ?? 1, Math.floor(quantity) || 1);
+
+    if (!item) {
+      return;
+    }
+
+    setLocalQuantity(itemId, nextQuantity);
     setActionLoadingId(itemId);
-    setMessage("");
-    const result = await updateCartItemQuantity(itemId, quantity);
+    setMessage("Updating cart quantity...");
+    const result = await updateCartItemQuantity(itemId, nextQuantity);
     setActionLoadingId(null);
 
     if (!result.ok) {
@@ -96,7 +105,7 @@ function CartContent() {
 
   const removeItem = async (itemId: string) => {
     setActionLoadingId(itemId);
-    setMessage("");
+    setMessage("Removing item from order cart...");
     const result = await removeCartItem(itemId);
     setActionLoadingId(null);
     setMessage(result.message);
@@ -110,7 +119,7 @@ function CartContent() {
           <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">Wholesale order cart</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Review items before checkout</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">
-            Quantity changes update the applied wholesale unit price. Product total and shipping fee are confirmed separately.
+            Quantity changes update the applied wholesale unit price. Choose J&T Express COD, Store Pickup, or Lalamove at checkout.
           </p>
         </div>
 
@@ -165,9 +174,10 @@ function CartContent() {
                             href={messengerUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-3 inline-flex rounded-sm bg-[#f65f18] px-3 py-2 text-xs font-black text-white hover:bg-[#df4f0d]"
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-sm bg-[#f65f18] px-3 py-2 text-xs font-black text-white hover:bg-[#df4f0d]"
                           >
-                            Ask on Messenger
+                            <MessengerIcon className="h-4 w-4 shrink-0" />
+                            <span>Ask on Messenger</span>
                           </a>
                         ) : null}
                       </div>
@@ -175,14 +185,15 @@ function CartContent() {
                         <button
                           type="button"
                           onClick={() => saveQuantity(item.id, item.quantity - 1)}
-                          disabled={actionLoadingId === item.id || itemNeedsMessenger}
+                          disabled={actionLoadingId === item.id || itemNeedsMessenger || item.quantity <= item.moq}
                           className="h-11 w-10 border-r border-zinc-200 text-lg font-black text-zinc-600 disabled:text-zinc-300"
+                          title={item.quantity <= item.moq ? `Minimum order is ${item.moq} pc` : "Decrease quantity"}
                         >
                           -
                         </button>
                         <input
                           type="number"
-                          min={1}
+                          min={item.moq}
                           value={item.quantity}
                           disabled={itemNeedsMessenger}
                           onChange={(event) => setLocalQuantity(item.id, Number(event.target.value) || 1)}
@@ -194,10 +205,14 @@ function CartContent() {
                           onClick={() => saveQuantity(item.id, item.quantity + 1)}
                           disabled={actionLoadingId === item.id || itemNeedsMessenger}
                           className="h-11 w-10 border-l border-zinc-200 text-lg font-black text-zinc-600 disabled:text-zinc-300"
+                          title="Increase quantity"
                         >
                           +
                         </button>
                       </div>
+                      {actionLoadingId === item.id ? (
+                        <p className="text-xs font-black text-orange-700 lg:hidden">Updating...</p>
+                      ) : null}
                       <p className="font-black text-orange-700">
                         {item.appliedUnitPrice === null ? "Contact us" : formatPhp(item.appliedUnitPrice)}
                       </p>
@@ -210,7 +225,7 @@ function CartContent() {
                         disabled={actionLoadingId === item.id}
                         className="h-10 rounded-md border border-red-200 px-3 text-sm font-black text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Remove
+                        {actionLoadingId === item.id ? "Working..." : "Remove"}
                       </button>
                     </div>
                   );
@@ -234,9 +249,9 @@ function CartContent() {
             <h2 className="text-xl font-black text-zinc-950">Order Summary</h2>
             <div className="mt-5 space-y-3 text-sm">
               <SummaryRow label="Product Total" value={formatPhp(productTotal)} />
-              <SummaryRow label="Shipping Fee" value="To be confirmed / Freight Collect" />
+              <SummaryRow label="Receiving Method" value="Choose at Checkout" />
               <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-xs font-bold leading-5 text-orange-700">
-                If shipping is freight collect, shipping fee is paid by receiver and is not added to product total.
+                Checkout supports J&T Express COD, Store Pickup, and Lalamove. J&T Express COD can include an estimated shipping fee when your area is supported.
               </div>
               <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-700">
                 Member points estimate: {formatLoyaltyPoints(estimatedPoints)} after payment is confirmed. Every PHP 100 = 1 point.
@@ -256,9 +271,10 @@ function CartContent() {
                   href={messengerUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white"
+                  className="flex items-center justify-center gap-2 rounded-sm bg-[#f65f18] px-5 py-3 text-center text-sm font-black text-white"
                 >
-                  Ask on Messenger
+                  <MessengerIcon className="h-4 w-4 shrink-0" />
+                  <span>Ask on Messenger</span>
                 </a>
                 <button
                   type="button"

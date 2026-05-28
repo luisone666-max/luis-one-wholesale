@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getCurrentCustomerSession, logoutCustomer, type CustomerProfile } from "@/lib/customer-auth";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function CustomerAuthNav() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<CustomerProfile | null>(null);
   const [fallbackName, setFallbackName] = useState("");
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -39,9 +42,12 @@ export function CustomerAuthNav() {
   }, []);
 
   const handleLogout = async () => {
+    setLogoutLoading(true);
     await logoutCustomer();
     setCustomer(null);
     setFallbackName("");
+    setLogoutLoading(false);
+    router.refresh();
   };
 
   if (loading) {
@@ -65,8 +71,8 @@ export function CustomerAuthNav() {
   return (
     <>
       <span className="max-w-40 truncate font-black text-zinc-950">{customer?.name ?? fallbackName}</span>
-      <button type="button" onClick={handleLogout} className="font-bold text-zinc-500 hover:text-orange-600">
-        Logout
+      <button type="button" onClick={handleLogout} disabled={logoutLoading} className="font-bold text-zinc-500 hover:text-orange-600 disabled:cursor-wait disabled:opacity-60">
+        {logoutLoading ? "Logging out..." : "Logout"}
       </button>
     </>
   );

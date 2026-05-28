@@ -20,6 +20,7 @@ const copy = {
     back: "Back to Store",
     centerTitle: "Choose your work centre",
     centerHint: "This is only a guide. After login, the system opens the correct centre based on your account role.",
+    previewHint: "The cards below are previews only. Enter email and password on the left, then press login.",
     accessRule: "Owner and admin can manage everything. Sales, cashier, warehouse, and staff accounts only see their own work tools.",
     selected: "Selected",
     centres: {
@@ -59,6 +60,7 @@ const copy = {
     back: "\u8fd4\u56de\u5546\u57ce",
     centerTitle: "\u9009\u62e9\u4f60\u8981\u8fdb\u7684\u5de5\u4f5c\u4e2d\u5fc3",
     centerHint: "\u8fd9\u91cc\u53ea\u662f\u5e2e\u4f60\u770b\u6e05\u6d41\u7a0b\u3002\u767b\u5f55\u540e\uff0c\u7cfb\u7edf\u4f1a\u6309\u8d26\u53f7\u6743\u9650\u81ea\u52a8\u8fdb\u5165\u5bf9\u5e94\u540e\u53f0\u3002",
+    previewHint: "\u4e0b\u9762\u7684\u5361\u7247\u53ea\u662f\u9884\u89c8\uff0c\u4e0d\u4f1a\u76f4\u63a5\u6253\u5f00\u540e\u53f0\u3002\u8bf7\u5148\u5728\u5de6\u8fb9\u8f93\u5165\u90ae\u7bb1\u548c\u5bc6\u7801\uff0c\u518d\u70b9\u51fb\u767b\u5f55\u3002",
     accessRule: "\u8001\u677f\u548c\u7ba1\u7406\u5458\u770b\u5168\u90e8\uff1b\u9500\u552e\u3001\u6536\u94f6\u3001\u4ed3\u5e93\u3001\u5458\u5de5\u53ea\u770b\u81ea\u5df1\u7684\u5de5\u4f5c\u5de5\u5177\u3002",
     selected: "\u5df2\u9009",
     centres: {
@@ -194,6 +196,9 @@ function AdminLoginFormInner() {
               <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Luis One Supply Hub</p>
               <h1 className="mt-2 text-2xl font-black text-zinc-950">{t.centerTitle}</h1>
               <p className="mt-2 text-sm font-bold leading-relaxed text-zinc-500">{t.centerHint}</p>
+              <p className="mt-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-black leading-relaxed text-orange-700">
+                {t.previewHint}
+              </p>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">

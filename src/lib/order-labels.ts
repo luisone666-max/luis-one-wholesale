@@ -1,18 +1,19 @@
 export type ReceivingMethod = "pickup" | "local_delivery" | "courier_shipping" | "to_be_arranged";
-export type ShippingFeePayment = "freight_collect" | "prepaid" | "to_be_confirmed" | "no_shipping_fee";
+export type ShippingFeePayment = "freight_collect" | "prepaid" | "cod_included" | "to_be_confirmed" | "no_shipping_fee";
 
 export const receivingMethodLabels: Record<ReceivingMethod, string> = {
-  pickup: "Pick up at store",
-  local_delivery: "Local delivery / Lalamove",
-  courier_shipping: "Courier shipping",
-  to_be_arranged: "To be arranged",
+  pickup: "Store Pickup",
+  local_delivery: "Lalamove",
+  courier_shipping: "J&T Express COD",
+  to_be_arranged: "Legacy / To be arranged",
 };
 
 export const shippingFeePaymentLabels: Record<ShippingFeePayment, string> = {
-  freight_collect: "Freight Collect / Paid by Receiver",
+  freight_collect: "Paid to Rider / Receiver",
   prepaid: "Prepaid Shipping",
+  cod_included: "J&T Express COD / Included in Total",
   to_be_confirmed: "To be Confirmed",
-  no_shipping_fee: "Pick-up / No Shipping Fee",
+  no_shipping_fee: "Store Pickup / No Shipping Fee",
 };
 
 export const orderStatusLabels: Record<string, string> = {
@@ -35,10 +36,22 @@ export const paymentStatusLabels: Record<string, string> = {
 };
 
 export function getReceivingMethodLabel(value: string | null | undefined) {
+  if (value === "local_delivery_lalamove") {
+    return receivingMethodLabels.local_delivery;
+  }
+
+  if (value === "pick_up_at_store") {
+    return receivingMethodLabels.pickup;
+  }
+
   return receivingMethodLabels[value as ReceivingMethod] ?? value ?? "To be arranged";
 }
 
 export function getShippingFeePaymentLabel(value: string | null | undefined) {
+  if (value === "pickup_no_shipping_fee") {
+    return shippingFeePaymentLabels.no_shipping_fee;
+  }
+
   return shippingFeePaymentLabels[value as ShippingFeePayment] ?? value ?? "To be Confirmed";
 }
 

@@ -26,17 +26,26 @@ const sampleTemplateRow = [
   "Sample Brand",
   "Universal",
   "1",
+  "100",
   "180",
   "for_order",
   "3-7 days",
   "/products/flat-seat.svg",
   "Sample CSV product description.",
-  "135",
-  "125",
-  "118",
-  "110",
+  "",
+  "",
   "Admin-only supplier note",
   "Admin-only cost note",
+  "500",
+  "20",
+  "15",
+  "10",
+  "true",
+  "false",
+  "false",
+  "false",
+  "standard",
+  "Default parcel data for COD courier booking",
   "true",
 ];
 
@@ -49,6 +58,7 @@ const bulkUploadTemplateHeaders = [
   "Brand",
   "Model",
   "MOQ",
+  "Cost Price",
   "Retail Price",
   "Stock Status",
   "Lead Time",
@@ -56,10 +66,18 @@ const bulkUploadTemplateHeaders = [
   "Description",
   "Price 1pc",
   "Price 6pcs",
-  "Price 12pcs",
-  "Price 50pcs",
   "Supplier Notes",
   "Internal Cost Notes",
+  "Weight (g)",
+  "Length (cm)",
+  "Width (cm)",
+  "Height (cm)",
+  "COD Enabled",
+  "Fragile",
+  "Contains Battery",
+  "Contains Liquid",
+  "Shipping Category",
+  "Shipping Notes",
   "Active",
 ];
 
@@ -122,8 +140,9 @@ const copy = {
     csvRulesTitle: "CSV Filling Rules",
     csvRuleStock: "Stock Status: ready_stock, for_order, low_stock, or unavailable.",
     csvRuleActive: "Active: true/false, yes/no, or 1/0.",
-    csvRulePrices: "Price columns create wholesale tiers: 1pc, 6pcs, 12pcs, and 50pcs.",
+    csvRulePrices: "Cost Price auto-fills 1-5 pcs at +20% and 6+ pcs at +12%. Manual Price 1pc or Price 6pcs values override the auto prices.",
     csvRuleImages: "Image URL can be left blank first. You can upload images later in Product Management.",
+    csvRuleLogistics: "COD logistics: fill Weight (g), Length/Width/Height (cm), COD Enabled, and Shipping Category for J&T readiness.",
     importGuardNoFile: "Choose a CSV file first.",
     importGuardPreview: "Click Preview Import before confirming.",
     importGuardErrors: "Fix error rows before confirming import.",
@@ -189,6 +208,7 @@ const copy = {
     csvRuleActive: "启用状态：true/false、yes/no、1/0 都可以。",
     csvRulePrices: "价格字段会生成批发阶梯：1pc、6pcs、12pcs、50pcs。",
     csvRuleImages: "图片链接可以先留空，之后在商品管理里再上传图片。",
+    csvRuleLogistics: "COD 物流：填写 Weight (g)、Length/Width/Height (cm)、COD Enabled、Shipping Category，方便后续 J&T 出单。",
     importGuardNoFile: "请先选择 CSV 文件。",
     importGuardPreview: "请先点击预览导入，再确认导入。",
     importGuardErrors: "请先修复错误行，再确认导入。",
@@ -475,6 +495,7 @@ export function AdminProductBulkUploadClient() {
               <li>{t.csvRuleActive}</li>
               <li>{t.csvRulePrices}</li>
               <li>{t.csvRuleImages}</li>
+              <li>{t.csvRuleLogistics}</li>
             </ul>
           </section>
         </div>
@@ -536,7 +557,7 @@ export function AdminProductBulkUploadClient() {
 
           <TableShell>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1120px] text-left text-sm">
+              <table className="w-full min-w-[1240px] text-left text-sm">
                 <thead className="bg-zinc-50 text-xs uppercase tracking-[0.14em] text-zinc-500">
                   <tr>
                     <th className="px-4 py-3">{t.row}</th>
@@ -546,6 +567,7 @@ export function AdminProductBulkUploadClient() {
                     <th className="px-4 py-3">MOQ</th>
                     <th className="px-4 py-3">{t.stockStatus}</th>
                     <th className="px-4 py-3">{t.priceRange}</th>
+                    <th className="px-4 py-3">Logistics</th>
                     <th className="px-4 py-3">{t.active}</th>
                     <th className="px-4 py-3">{t.action}</th>
                     <th className="px-4 py-3">{t.status}</th>
@@ -562,6 +584,7 @@ export function AdminProductBulkUploadClient() {
                       <td className="px-4 py-3 text-zinc-600">{row.moq ?? "-"}</td>
                       <td className="px-4 py-3 text-zinc-600">{row.stockStatus}</td>
                       <td className="px-4 py-3 font-black text-orange-700">{row.priceRange}</td>
+                      <td className="px-4 py-3 text-xs font-bold text-zinc-600">{row.logisticsSummary}</td>
                       <td className="px-4 py-3 text-zinc-600">{row.active === null ? "-" : String(row.active)}</td>
                       <td className="px-4 py-3 text-zinc-600">{t[row.action]}</td>
                       <td className="px-4 py-3">
@@ -572,7 +595,7 @@ export function AdminProductBulkUploadClient() {
                   ))}
                   {!preview?.rows.length ? (
                     <tr>
-                      <td className="px-4 py-6 text-zinc-500" colSpan={11}>{t.noPreview}</td>
+                      <td className="px-4 py-6 text-zinc-500" colSpan={12}>{t.noPreview}</td>
                     </tr>
                   ) : null}
                 </tbody>

@@ -55,6 +55,23 @@ export function absoluteUrl(pathOrUrl: string | undefined) {
   return `${getSiteUrl()}${value.startsWith("/") ? value : `/${value}`}`;
 }
 
+export function optimizedPublicImageUrl(pathOrUrl: string | undefined, width = 1200, quality = 75) {
+  const absoluteImageUrl = absoluteUrl(pathOrUrl);
+
+  try {
+    const imageUrl = new URL(absoluteImageUrl);
+    const usesSupabaseStorage = imageUrl.hostname.endsWith(".supabase.co") && imageUrl.pathname.startsWith("/storage/v1/object/public/");
+
+    if (usesSupabaseStorage) {
+      return `${getSiteUrl()}/_next/image?url=${encodeURIComponent(absoluteImageUrl)}&w=${width}&q=${quality}`;
+    }
+  } catch {
+    return absoluteImageUrl;
+  }
+
+  return absoluteImageUrl;
+}
+
 export function stripText(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -95,7 +112,7 @@ function stockAvailability(product: Product) {
 export function productJsonLd(product: Product) {
   const url = `${getSiteUrl()}/product/${product.slug}`;
   const { lowPrice, highPrice } = getProductPriceBounds(product);
-  const images = Array.from(new Set([product.image, ...(product.gallery ?? [])].map(absoluteUrl)));
+  const images = Array.from(new Set([product.image, ...(product.gallery ?? [])].map((image) => optimizedPublicImageUrl(image))));
 
   const structuredProduct: Record<string, unknown> = {
     "@context": "https://schema.org",

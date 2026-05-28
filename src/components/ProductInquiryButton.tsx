@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MessengerIcon } from "@/components/BrandActionIcons";
 import { messengerUrl } from "@/components/CustomerUi";
 
 export type ProductInquiryDetails = {
@@ -14,15 +15,19 @@ export type ProductInquiryDetails = {
 export function ProductInquiryButton({
   product,
   label = "Messenger",
+  mobileLabel,
   className = "",
 }: {
   product: ProductInquiryDetails;
   label?: string;
+  mobileLabel?: string;
   className?: string;
 }) {
   const [message, setMessage] = useState("");
+  const [needsManualOpen, setNeedsManualOpen] = useState(false);
 
   const openInquiry = async () => {
+    const messengerWindow = window.open(messengerUrl, "_blank", "noopener,noreferrer");
     const productLink = `${window.location.origin}/product/${product.slug}`;
     const inquiry = [
       "Hi, I want to inquire about this product:",
@@ -35,24 +40,37 @@ export function ProductInquiryButton({
 
     try {
       await navigator.clipboard?.writeText(inquiry);
-      setMessage("Product details copied. Opening Messenger...");
+      setMessage(messengerWindow ? "Product details copied. Messenger opened in a new tab." : "Product details copied. Tap Open Messenger to continue.");
     } catch {
-      setMessage("Opening Messenger...");
+      setMessage(messengerWindow ? "Messenger opened in a new tab." : "Tap Open Messenger to continue.");
     }
 
-    window.open(messengerUrl, "_blank", "noopener,noreferrer");
+    setNeedsManualOpen(!messengerWindow);
   };
 
   return (
     <div className="space-y-2">
       <button
         type="button"
+        aria-label={label}
         onClick={openInquiry}
-        className={`inline-flex items-center justify-center rounded-sm border border-orange-200 bg-white px-3 text-xs font-black text-orange-700 transition hover:bg-orange-50 ${className}`}
+        className={`inline-flex items-center justify-center gap-1.5 rounded-sm border border-[#cfeaff] bg-white px-3 text-xs font-black text-[#006aff] transition hover:bg-[#f1f8ff] ${className}`}
       >
-        {label}
+        <MessengerIcon className="h-4 w-4 shrink-0" />
+        <span className={mobileLabel ? "hidden sm:inline" : undefined}>{label}</span>
+        {mobileLabel ? <span className="sm:hidden">{mobileLabel}</span> : null}
       </button>
-      {message ? <p className="text-[11px] font-bold leading-4 text-orange-700">{message}</p> : null}
+      {message ? (
+        <div className="text-[11px] font-bold leading-4 text-orange-700">
+          <p>{message}</p>
+          {needsManualOpen ? (
+            <a href={messengerUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 font-black underline">
+              <MessengerIcon className="h-3.5 w-3.5 shrink-0" />
+              <span>Open Messenger</span>
+            </a>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

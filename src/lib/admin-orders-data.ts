@@ -1,5 +1,13 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { AdminStaffUser } from "@/lib/admin-users-data";
+import {
+  adminShipmentSelect,
+  isMissingOrderShipmentsTableError,
+  mapAdminShipment,
+  type AdminShipmentRecord,
+  type AdminShipmentRow,
+} from "@/lib/admin-shipments-data";
+import { isShippingCategory, type ShippingCategory } from "@/lib/product-logistics";
 
 type OrderRow = {
   id: string;
@@ -51,12 +59,32 @@ type ProductRow = {
   id: string;
   image_url: string | null;
   stock_status: string | null;
+  weight_grams: number | string | null;
+  length_cm: number | string | null;
+  width_cm: number | string | null;
+  height_cm: number | string | null;
+  cod_enabled: boolean | null;
+  fragile: boolean | null;
+  contains_battery: boolean | null;
+  contains_liquid: boolean | null;
+  shipping_category: string | null;
+  shipping_notes: string | null;
 };
 
 type ProductVariantRow = {
   id: string;
   image_url: string | null;
   stock_status: string | null;
+  weight_grams: number | string | null;
+  length_cm: number | string | null;
+  width_cm: number | string | null;
+  height_cm: number | string | null;
+  cod_enabled: boolean | null;
+  fragile: boolean | null;
+  contains_battery: boolean | null;
+  contains_liquid: boolean | null;
+  shipping_category: string | null;
+  shipping_notes: string | null;
 };
 
 type PaymentRecordRow = {
@@ -83,6 +111,16 @@ export type AdminOrderItem = {
   subtotal: number;
   stockStatus: string;
   supplierNotesSnapshot: string;
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  codEnabled: boolean;
+  fragile: boolean;
+  containsBattery: boolean;
+  containsLiquid: boolean;
+  shippingCategory: ShippingCategory;
+  shippingNotes: string;
 };
 
 export type AdminPaymentRecord = {
@@ -121,6 +159,7 @@ export type AdminOrderRecord = {
   salesName: string;
   items: AdminOrderItem[];
   payments: AdminPaymentRecord[];
+  shipments: AdminShipmentRecord[];
   adminNotes: string;
 };
 
@@ -168,6 +207,27 @@ function normalizeOrderStatus(value: string | null) {
 
 function normalizeStockStatus(value: string | null) {
   return value ?? "for_order";
+}
+
+function getAmountToConfirm(productTotal: number, shippingFeePayment: string, shippingFeeAmount: number | null) {
+  if ((shippingFeePayment === "cod_included" || shippingFeePayment === "prepaid") && shippingFeeAmount !== null) {
+    return productTotal + shippingFeeAmount;
+  }
+
+  return productTotal;
+}
+
+function nullableNumber(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function normalizeShippingCategory(value: string | null | undefined): ShippingCategory {
+  return value && isShippingCategory(value) ? value : "standard";
 }
 
 export async function getAdminOrders(): Promise<AdminOrdersResult> {
@@ -220,7 +280,7 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
   const orderIds = orders.map((order) => order.id);
   const customerIds = [...new Set(orders.map((order) => order.customer_id).filter((id): id is string => Boolean(id)))];
 
-  const [customersResult, itemsResult, paymentsResult] = await Promise.all([
+  const [customersResult, itemsResult, paymentsResult, shipmentsResult] = await Promise.all([
     customerIds.length
       ? supabase.from("customers").select("id,name,phone,facebook_name,messenger_link,location,business_type").in("id", customerIds)
       : Promise.resolve({ data: [], error: null }),
@@ -232,6 +292,9 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
       : Promise.resolve({ data: [], error: null }),
     orderIds.length
       ? supabase.from("payment_records").select("id,order_id,payment_method,amount,reference_no,proof_image_url,status,created_at").in("order_id", orderIds)
+      : Promise.resolve({ data: [], error: null }),
+    orderIds.length
+      ? supabase.from("order_shipments").select(adminShipmentSelect).in("order_id", orderIds).order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -247,15 +310,34 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
     return { orders: [], staffUsers, error: paymentsResult.error.message };
   }
 
+  const shipmentsData =
+    shipmentsResult.error && isMissingOrderShipmentsTableError(shipmentsResult.error)
+      ? []
+      : ((shipmentsResult.data ?? []) as AdminShipmentRow[]);
+
+  if (shipmentsResult.error && !isMissingOrderShipmentsTableError(shipmentsResult.error)) {
+    return { orders: [], staffUsers, error: shipmentsResult.error.message };
+  }
+
   const orderItems = (itemsResult.data ?? []) as OrderItemRow[];
   const productIds = [...new Set(orderItems.map((item) => item.product_id).filter((id): id is string => Boolean(id)))];
   const variantIds = [...new Set(orderItems.map((item) => item.variant_id).filter((id): id is string => Boolean(id)))];
   const [productsResult, variantsResult] = await Promise.all([
     productIds.length
-      ? supabase.from("products").select("id,image_url,stock_status").in("id", productIds)
+      ? supabase
+          .from("products")
+          .select(
+            "id,image_url,stock_status,weight_grams,length_cm,width_cm,height_cm,cod_enabled,fragile,contains_battery,contains_liquid,shipping_category,shipping_notes",
+          )
+          .in("id", productIds)
       : Promise.resolve({ data: [], error: null }),
     variantIds.length
-      ? supabase.from("product_variants").select("id,image_url,stock_status").in("id", variantIds)
+      ? supabase
+          .from("product_variants")
+          .select(
+            "id,image_url,stock_status,weight_grams,length_cm,width_cm,height_cm,cod_enabled,fragile,contains_battery,contains_liquid,shipping_category,shipping_notes",
+          )
+          .in("id", variantIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -272,6 +354,7 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
   const variantsById = new Map(((variantsResult.data ?? []) as ProductVariantRow[]).map((variant) => [variant.id, variant]));
   const itemsByOrderId = new Map<string, OrderItemRow[]>();
   const paymentsByOrderId = new Map<string, PaymentRecordRow[]>();
+  const shipmentsByOrderId = new Map<string, AdminShipmentRecord[]>();
 
   for (const item of orderItems) {
     if (!item.order_id) {
@@ -289,11 +372,21 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
     paymentsByOrderId.set(payment.order_id, [...(paymentsByOrderId.get(payment.order_id) ?? []), payment]);
   }
 
+  for (const shipment of shipmentsData) {
+    if (!shipment.order_id) {
+      continue;
+    }
+
+    shipmentsByOrderId.set(shipment.order_id, [...(shipmentsByOrderId.get(shipment.order_id) ?? []), mapAdminShipment(shipment)]);
+  }
+
   return {
     staffUsers,
     orders: orders.map((order) => {
       const customer = order.customer_id ? customersById.get(order.customer_id) : undefined;
       const productTotal = Number(order.product_total ?? 0);
+      const shippingFeePayment = normalizeShippingFeePayment(order.shipping_fee_payment_method);
+      const shippingFeeAmount = order.shipping_fee_amount === null ? null : Number(order.shipping_fee_amount);
 
       return {
         id: order.id,
@@ -309,12 +402,12 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
         receiverPhone: order.receiver_phone ?? "",
         receivingMethod: normalizeReceivingMethod(order.receiving_method),
         completeAddress: order.complete_address ?? "",
-        shippingFeePayment: normalizeShippingFeePayment(order.shipping_fee_payment_method),
-        shippingFeeAmount: order.shipping_fee_amount === null ? null : Number(order.shipping_fee_amount),
+        shippingFeePayment,
+        shippingFeeAmount,
         shippingFeeStatus: order.shipping_fee_status ?? "to_be_confirmed",
         orderNotes: order.order_notes ?? "",
         productTotal,
-        amountToConfirm: productTotal,
+        amountToConfirm: getAmountToConfirm(productTotal, shippingFeePayment, shippingFeeAmount),
         orderStatus: normalizeOrderStatus(order.order_status),
         paymentStatus: order.payment_status ?? "no_payment",
         salesAdminUserId: order.sales_admin_user_id ?? "",
@@ -323,6 +416,10 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
         items: (itemsByOrderId.get(order.id) ?? []).map((item) => {
           const product = item.product_id ? productsById.get(item.product_id) : undefined;
           const variant = item.variant_id ? variantsById.get(item.variant_id) : undefined;
+          const weightGrams = nullableNumber(variant?.weight_grams ?? product?.weight_grams);
+          const lengthCm = nullableNumber(variant?.length_cm ?? product?.length_cm);
+          const widthCm = nullableNumber(variant?.width_cm ?? product?.width_cm);
+          const heightCm = nullableNumber(variant?.height_cm ?? product?.height_cm);
 
           return {
             id: item.id,
@@ -337,6 +434,16 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
             subtotal: Number(item.subtotal),
             stockStatus: normalizeStockStatus(variant?.stock_status ?? product?.stock_status ?? null),
             supplierNotesSnapshot: item.supplier_notes_snapshot ?? "",
+            weightGrams,
+            lengthCm,
+            widthCm,
+            heightCm,
+            codEnabled: variant?.cod_enabled ?? product?.cod_enabled ?? true,
+            fragile: Boolean(variant?.fragile ?? product?.fragile),
+            containsBattery: Boolean(variant?.contains_battery ?? product?.contains_battery),
+            containsLiquid: Boolean(variant?.contains_liquid ?? product?.contains_liquid),
+            shippingCategory: normalizeShippingCategory(variant?.shipping_category ?? product?.shipping_category),
+            shippingNotes: variant?.shipping_notes ?? product?.shipping_notes ?? "",
           };
         }),
         payments: (paymentsByOrderId.get(order.id) ?? []).map((payment) => ({
@@ -348,6 +455,7 @@ export async function getAdminOrders(): Promise<AdminOrdersResult> {
           date: formatDate(payment.created_at),
           proofImageUrl: payment.proof_image_url,
         })),
+        shipments: shipmentsByOrderId.get(order.id) ?? [],
       };
     }),
   };

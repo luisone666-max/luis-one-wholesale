@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_META_PIXEL_ID: process.env.NEXT_PUBLIC_META_PIXEL_ID,
   },
   images: {
-    minimumCacheTTL: 86400,
+    minimumCacheTTL: 604800,
+    qualities: [62, 70, 75],
     remotePatterns: [
       {
         protocol: "https",

@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { isShippingCategory, type ShippingCategory } from "@/lib/product-logistics";
 
 export type BulkProductCsvRow = {
   rowNumber: number;
@@ -17,6 +18,7 @@ export type BulkImportPreviewRow = {
   moq: number | null;
   stockStatus: string;
   priceRange: string;
+  logisticsSummary: string;
   active: boolean | null;
   status: BulkImportRowStatus;
   action: "create" | "update" | "skip";
@@ -71,6 +73,7 @@ type ParsedBulkRow = {
   brand: string | null;
   model: string | null;
   moq: number | null;
+  costPrice: number | null;
   retailPrice: number | null;
   stockStatus: string;
   leadTime: string | null;
@@ -79,6 +82,16 @@ type ParsedBulkRow = {
   prices: Array<{ minQty: number; maxQty: number | null; unitPrice: number }>;
   supplierNotes: string | null;
   internalCostNotes: string | null;
+  weightGrams: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  codEnabled: boolean;
+  fragile: boolean;
+  containsBattery: boolean;
+  containsLiquid: boolean;
+  shippingCategory: ShippingCategory;
+  shippingNotes: string | null;
   active: boolean | null;
   messages: string[];
   errors: string[];
@@ -106,9 +119,7 @@ const requiredHeaders = [
 
 const priceColumns = [
   { header: "Price 1pc", minQty: 1, maxQty: 5 },
-  { header: "Price 6pcs", minQty: 6, maxQty: 11 },
-  { header: "Price 12pcs", minQty: 12, maxQty: 49 },
-  { header: "Price 50pcs", minQty: 50, maxQty: null },
+  { header: "Price 6pcs", minQty: 6, maxQty: null },
 ];
 
 export const bulkUploadTemplateHeaders = [
@@ -120,6 +131,7 @@ export const bulkUploadTemplateHeaders = [
   "Brand",
   "Model",
   "MOQ",
+  "Cost Price",
   "Retail Price",
   "Stock Status",
   "Lead Time",
@@ -127,10 +139,18 @@ export const bulkUploadTemplateHeaders = [
   "Description",
   "Price 1pc",
   "Price 6pcs",
-  "Price 12pcs",
-  "Price 50pcs",
   "Supplier Notes",
   "Internal Cost Notes",
+  "Weight (g)",
+  "Length (cm)",
+  "Width (cm)",
+  "Height (cm)",
+  "COD Enabled",
+  "Fragile",
+  "Contains Battery",
+  "Contains Liquid",
+  "Shipping Category",
+  "Shipping Notes",
   "Active",
 ];
 
@@ -153,6 +173,10 @@ function parsePositiveNumber(value: string) {
   return Number.isFinite(number) && number > 0 ? number : null;
 }
 
+function priceFromCost(costPrice: number, markupRate: number) {
+  return Math.ceil(costPrice * (1 + markupRate));
+}
+
 function parseBoolean(value: string) {
   const normalized = normalize(value);
 
@@ -169,6 +193,21 @@ function parseBoolean(value: string) {
   }
 
   return null;
+}
+
+function parseOptionalBoolean(value: string, fallback: boolean) {
+  const normalized = normalize(value);
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  return parseBoolean(value);
+}
+
+function parseShippingCategory(value: string) {
+  const normalized = normalize(value).replace(/\s+/g, "_");
+  return isShippingCategory(normalized) ? normalized : null;
 }
 
 function slugify(value: string) {
@@ -192,6 +231,19 @@ function priceRange(prices: ParsedBulkRow["prices"]) {
 
   const values = prices.map((price) => price.unitPrice);
   return `₱${Math.min(...values).toLocaleString("en-US")} - ₱${Math.max(...values).toLocaleString("en-US")}`;
+}
+
+function logisticsSummary(row: ParsedBulkRow) {
+  const size = row.lengthCm && row.widthCm && row.heightCm ? `${row.lengthCm}x${row.widthCm}x${row.heightCm}cm` : "no size";
+  const flags = [
+    row.codEnabled ? "COD" : "no COD",
+    row.fragile ? "fragile" : "",
+    row.containsBattery ? "battery" : "",
+    row.containsLiquid ? "liquid" : "",
+    row.shippingCategory === "standard" ? "" : row.shippingCategory,
+  ].filter(Boolean);
+
+  return `${row.weightGrams ? `${row.weightGrams}g` : "no weight"} / ${size}${flags.length ? ` / ${flags.join(", ")}` : ""}`;
 }
 
 function getCategoryPath(row: ParsedBulkRow) {
@@ -223,11 +275,27 @@ function parseRows(rows: BulkProductCsvRow[]) {
     const moqValue = clean(row.data["MOQ"]);
     const moqNumber = Number(moqValue);
     const moq = Number.isInteger(moqNumber) && moqNumber > 0 ? moqNumber : null;
+    const costPriceValue = clean(row.data["Cost Price"]);
+    const costPrice = costPriceValue ? parsePositiveNumber(costPriceValue) : null;
     const retailPriceValue = clean(row.data["Retail Price"]);
-    const retailPrice = retailPriceValue ? parsePositiveNumber(retailPriceValue) : null;
+    const manualRetailPrice = retailPriceValue ? parsePositiveNumber(retailPriceValue) : null;
+    const retailPrice = manualRetailPrice ?? (costPrice === null ? null : priceFromCost(costPrice, 0.2));
     const stockStatus = clean(row.data["Stock Status"]) || "for_order";
     const active = parseBoolean(clean(row.data["Active"]));
-    const prices = priceColumns.flatMap((column) => {
+    const weightValue = clean(row.data["Weight (g)"]);
+    const lengthValue = clean(row.data["Length (cm)"]);
+    const widthValue = clean(row.data["Width (cm)"]);
+    const heightValue = clean(row.data["Height (cm)"]);
+    const weightGrams = weightValue ? parsePositiveNumber(weightValue) : null;
+    const lengthCm = lengthValue ? parsePositiveNumber(lengthValue) : null;
+    const widthCm = widthValue ? parsePositiveNumber(widthValue) : null;
+    const heightCm = heightValue ? parsePositiveNumber(heightValue) : null;
+    const codEnabled = parseOptionalBoolean(clean(row.data["COD Enabled"]), true);
+    const fragile = parseOptionalBoolean(clean(row.data["Fragile"]), false);
+    const containsBattery = parseOptionalBoolean(clean(row.data["Contains Battery"]), false);
+    const containsLiquid = parseOptionalBoolean(clean(row.data["Contains Liquid"]), false);
+    const shippingCategory = parseShippingCategory(clean(row.data["Shipping Category"]) || "standard");
+    const parsedPrices = priceColumns.flatMap((column) => {
       const value = clean(row.data[column.header]);
 
       if (!value) {
@@ -243,6 +311,13 @@ function parseRows(rows: BulkProductCsvRow[]) {
 
       return [{ minQty: column.minQty, maxQty: column.maxQty, unitPrice }];
     });
+    const hasManualOnePiecePrice = parsedPrices.some((price) => price.minQty === 1);
+    const hasManualSixPiecePrice = parsedPrices.some((price) => price.minQty === 6);
+    const prices = [
+      ...parsedPrices,
+      ...(hasManualOnePiecePrice || retailPrice === null ? [] : [{ minQty: 1, maxQty: 5, unitPrice: retailPrice }]),
+      ...(hasManualSixPiecePrice || costPrice === null ? [] : [{ minQty: 6, maxQty: null, unitPrice: priceFromCost(costPrice, 0.12) }]),
+    ].sort((a, b) => a.minQty - b.minQty);
 
     if (!sku) {
       errors.push("SKU is required.");
@@ -264,6 +339,10 @@ function parseRows(rows: BulkProductCsvRow[]) {
       errors.push("Retail Price must be a valid number.");
     }
 
+    if (costPriceValue && costPrice === null) {
+      errors.push("Cost Price must be a valid number.");
+    }
+
     if (!stockStatuses.has(stockStatus)) {
       errors.push("Stock Status must be ready_stock, for_order, low_stock, or unavailable.");
     }
@@ -272,12 +351,52 @@ function parseRows(rows: BulkProductCsvRow[]) {
       errors.push("Active must be true, false, yes, no, 1, or 0.");
     }
 
+    if (weightValue && weightGrams === null) {
+      errors.push("Weight (g) must be a valid number.");
+    }
+
+    if (lengthValue && lengthCm === null) {
+      errors.push("Length (cm) must be a valid number.");
+    }
+
+    if (widthValue && widthCm === null) {
+      errors.push("Width (cm) must be a valid number.");
+    }
+
+    if (heightValue && heightCm === null) {
+      errors.push("Height (cm) must be a valid number.");
+    }
+
+    if (codEnabled === null) {
+      errors.push("COD Enabled must be true, false, yes, no, 1, or 0.");
+    }
+
+    if (fragile === null) {
+      errors.push("Fragile must be true, false, yes, no, 1, or 0.");
+    }
+
+    if (containsBattery === null) {
+      errors.push("Contains Battery must be true, false, yes, no, 1, or 0.");
+    }
+
+    if (containsLiquid === null) {
+      errors.push("Contains Liquid must be true, false, yes, no, 1, or 0.");
+    }
+
+    if (!shippingCategory) {
+      errors.push("Shipping Category must be standard, oversized, fragile, or restricted.");
+    }
+
     if (childCategoryName && !subcategoryName) {
       errors.push("Child Category requires a Subcategory.");
     }
 
     if (active === true && !prices.length) {
       errors.push("At least one price tier is required for active products.");
+    }
+
+    if (active === true && !prices.some((price) => price.minQty === 6)) {
+      errors.push("Price 6pcs is required for active products unless Cost Price is provided.");
     }
 
     if (prices.length) {
@@ -301,6 +420,7 @@ function parseRows(rows: BulkProductCsvRow[]) {
       brand: nullableText(row.data["Brand"]),
       model: nullableText(row.data["Model"]),
       moq,
+      costPrice,
       retailPrice,
       stockStatus,
       leadTime: nullableText(row.data["Lead Time"]),
@@ -308,7 +428,17 @@ function parseRows(rows: BulkProductCsvRow[]) {
       description: nullableText(row.data["Description"]),
       prices,
       supplierNotes: nullableText(row.data["Supplier Notes"]),
-      internalCostNotes: nullableText(row.data["Internal Cost Notes"]),
+      internalCostNotes: nullableText(row.data["Internal Cost Notes"]) ?? (costPrice === null ? null : `Cost: PHP ${costPrice}`),
+      weightGrams,
+      lengthCm,
+      widthCm,
+      heightCm,
+      codEnabled: codEnabled ?? true,
+      fragile: fragile ?? false,
+      containsBattery: containsBattery ?? false,
+      containsLiquid: containsLiquid ?? false,
+      shippingCategory: shippingCategory ?? "standard",
+      shippingNotes: nullableText(row.data["Shipping Notes"]),
       active,
       messages,
       errors,
@@ -463,6 +593,7 @@ function toPreview(rows: ResolvedBulkRow[]): BulkImportPreview {
     moq: row.moq,
     stockStatus: row.stockStatus,
     priceRange: priceRange(row.prices),
+    logisticsSummary: logisticsSummary(row),
     active: row.active,
     status: row.errors.length ? "error" : row.status,
     action: row.action,
@@ -692,6 +823,16 @@ export async function importBulkProductRows(
             description: row.description,
             supplier_notes: row.supplierNotes,
             internal_cost_notes: row.internalCostNotes,
+            weight_grams: row.weightGrams,
+            length_cm: row.lengthCm,
+            width_cm: row.widthCm,
+            height_cm: row.heightCm,
+            cod_enabled: row.codEnabled,
+            fragile: row.fragile,
+            contains_battery: row.containsBattery,
+            contains_liquid: row.containsLiquid,
+            shipping_category: row.shippingCategory,
+            shipping_notes: row.shippingNotes,
             active: Boolean(row.active),
           })
           .eq("id", row.existingProductId);
@@ -722,6 +863,16 @@ export async function importBulkProductRows(
             description: row.description,
             supplier_notes: row.supplierNotes,
             internal_cost_notes: row.internalCostNotes,
+            weight_grams: row.weightGrams,
+            length_cm: row.lengthCm,
+            width_cm: row.widthCm,
+            height_cm: row.heightCm,
+            cod_enabled: row.codEnabled,
+            fragile: row.fragile,
+            contains_battery: row.containsBattery,
+            contains_liquid: row.containsLiquid,
+            shipping_category: row.shippingCategory,
+            shipping_notes: row.shippingNotes,
             active: Boolean(row.active),
           })
           .select("id")

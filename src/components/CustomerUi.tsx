@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { MessengerIcon } from "@/components/BrandActionIcons";
 import { formatMoney, type Category, type PriceTier, type Product } from "@/lib/mock-data";
 import { businessInfo } from "@/lib/business-info";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-labels";
@@ -41,9 +42,10 @@ export function MessengerButton({ label = "Chat on Messenger", className = "" }:
       href={messengerUrl}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex items-center justify-center rounded-sm border border-orange-200 bg-white px-5 py-3 text-sm font-black text-orange-700 transition hover:bg-orange-50 ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-sm border border-[#cfeaff] bg-white px-5 py-3 text-sm font-black text-[#006aff] transition hover:bg-[#f1f8ff] ${className}`}
     >
-      {label}
+      <MessengerIcon className="h-4 w-4 shrink-0" />
+      <span>{label}</span>
     </a>
   );
 }
@@ -125,11 +127,14 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
         <Link key={category.slug} href={`/category/${category.slug}`} className="group overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-lg">
           <div className="relative aspect-[4/3] bg-gradient-to-br from-orange-50 via-white to-zinc-100 p-5">
             {category.image ? (
-              <div
-                role="img"
-                aria-label={category.name}
-                className="h-full w-full rounded-md bg-contain bg-center bg-no-repeat transition duration-200 group-hover:scale-[1.04]"
-                style={{ backgroundImage: `url("${category.image}")` }}
+              <Image
+                src={category.image}
+                alt={category.name}
+                width={360}
+                height={270}
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                quality={62}
+                className="h-full w-full rounded-md object-contain transition duration-200 group-hover:scale-[1.04]"
               />
             ) : (
               <CategoryPlaceholder name={category.name} />
@@ -216,6 +221,8 @@ export function ProductImage({
       height={520}
       sizes={sizes}
       priority={priority}
+      fetchPriority={priority ? "high" : undefined}
+      loading={priority ? "eager" : undefined}
       quality={quality}
       className={`h-full w-full object-contain ${className}`}
     />

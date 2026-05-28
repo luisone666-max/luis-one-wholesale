@@ -84,7 +84,9 @@ async function main() {
     "authorization: `Bearer ${session.access_token}`",
     "fetch(\"/api/orders/submit\"",
     "router.push(`/order-success?order=${encodeURIComponent(result.orderNo)}`)",
-    "Freight collect is not added to product total.",
+    "J&T Express COD total includes the estimated shipping fee when available.",
+    "Lalamove is arranged manually by Luis One or booked directly by the customer",
+    "Store pickup has no shipping fee.",
   ]);
 
   requireIncludes(productDetailPath, productDetail, [

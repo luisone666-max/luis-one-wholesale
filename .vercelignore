@@ -1,0 +1,17 @@
+.env*
+.git
+.next
+.vercel
+node_modules
+backups
+tmp-imports
+dev-server*.log
+dev-*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+*.pyc
+__pycache__
+public/product-images
+public/product-imports

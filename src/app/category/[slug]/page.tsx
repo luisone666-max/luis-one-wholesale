@@ -1,15 +1,18 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { SearchIcon } from "@/components/BrandActionIcons";
 import { Container, MarketplaceShell } from "@/components/CustomerUi";
 import { DataSourceNotice } from "@/components/DataSourceNotice";
+import { HorizontalScrollRail } from "@/components/HorizontalScrollRail";
 import { ProductCard } from "@/components/ProductCard";
 import { SearchEventTracker } from "@/components/SearchEventTracker";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeaderServer as SiteHeader } from "@/components/SiteHeaderServer";
-import { getCatalogCategoryListingPage, getCatalogCategoryPage, getCatalogCategoryParams, type CatalogListingSort } from "@/lib/catalog-data";
-import { absoluteUrl, categoryDescription, getSiteUrl, siteName } from "@/lib/seo";
+import { getCatalogCategoryListingPage, getCatalogCategoryPage, getCatalogCategoryParams, getCatalogNavigationCategories, type CatalogListingSort } from "@/lib/catalog-data";
+import { popularCatalogSearches } from "@/lib/catalog-search-suggestions";
+import { categoryDescription, getSiteUrl, optimizedPublicImageUrl, siteName } from "@/lib/seo";
 
-export const revalidate = 60;
+export const revalidate = 600;
 
 export async function generateStaticParams() {
   return getCatalogCategoryParams();
@@ -48,7 +51,7 @@ export async function generateMetadata({
   const description = searchQuery
     ? `Search public wholesale products for "${searchQuery}" at Luis One Supply Hub. Browse prices, MOQ, stock status, and order online.`
     : categoryDescription(category);
-  const image = absoluteUrl(category?.image ?? "/brand/luis-one-logo.jpg");
+  const image = optimizedPublicImageUrl(category?.image ?? "/brand/luis-one-logo.jpg");
 
   return {
     title,
@@ -79,7 +82,7 @@ export async function generateMetadata({
   };
 }
 
-const pageSize = 48;
+const pageSize = 36;
 const sortOptions = [
   { label: "Recommended", shortLabel: "Recommended", value: "popular" },
   { label: "Latest", shortLabel: "Latest", value: "latest" },
@@ -128,12 +131,16 @@ export default async function CategoryPage({
     query: searchQuery,
     sort: selectedSort,
   });
+  const navigationCategories = await getCatalogNavigationCategories();
   const { category, products: paginatedProducts, totalProducts, totalPages, currentPage } = catalog.data;
   const recommendedCatalog =
     searchQuery && totalProducts === 0
       ? await getCatalogCategoryListingPage(slug, { page: 1, pageSize: 8, sort: selectedSort })
       : null;
   const recommendedProducts = recommendedCatalog?.data.products ?? [];
+  const subcategoryChips = isAll
+    ? []
+    : catalog.data.categories.filter((item) => item.parentSlug === slug && item.active);
   const pageHref = (page: number) => {
     const params = new URLSearchParams();
 
@@ -166,11 +173,62 @@ export default async function CategoryPage({
     const suffix = params.toString();
     return suffix ? `/category/${slug}?${suffix}` : `/category/${slug}`;
   };
+  const categoryHref = (categorySlug: string) => {
+    const params = new URLSearchParams();
+
+    if (searchQuery) {
+      params.set("q", searchQuery);
+    }
+
+    if (selectedSort !== "popular") {
+      params.set("sort", selectedSort);
+    }
+
+    const suffix = params.toString();
+    return suffix ? `/category/${categorySlug}?${suffix}` : `/category/${categorySlug}`;
+  };
+  const clearSearchHref = () => {
+    const params = new URLSearchParams();
+
+    if (selectedSort !== "popular") {
+      params.set("sort", selectedSort);
+    }
+
+    const suffix = params.toString();
+    return suffix ? `/category/${slug}?${suffix}` : `/category/${slug}`;
+  };
+  const clearSortHref = () => {
+    const params = new URLSearchParams();
+
+    if (searchQuery) {
+      params.set("q", searchQuery);
+    }
+
+    const suffix = params.toString();
+    return suffix ? `/category/${slug}?${suffix}` : `/category/${slug}`;
+  };
+  const clearCategoryHref = () => {
+    const params = new URLSearchParams();
+
+    if (searchQuery) {
+      params.set("q", searchQuery);
+    }
+
+    if (selectedSort !== "popular") {
+      params.set("sort", selectedSort);
+    }
+
+    const suffix = params.toString();
+    return suffix ? `/category/all?${suffix}` : "/category/all";
+  };
 
   const title = searchQuery ? `Search: ${searchQuery}` : isAll ? "All Wholesale Products" : category?.name ?? "Products";
   const description = isAll
     ? "Browse public B2B prices, MOQ, stock status, and tier pricing across the full catalog."
     : category?.description;
+  const selectedSortLabel = sortOptions.find((option) => option.value === selectedSort)?.label ?? "Recommended";
+  const resultStart = totalProducts ? (currentPage - 1) * pageSize + 1 : 0;
+  const resultEnd = totalProducts ? Math.min(currentPage * pageSize, totalProducts) : 0;
 
   if (!isAll && !category) {
     return (
@@ -219,31 +277,177 @@ export default async function CategoryPage({
                     <span className="truncate rounded-sm bg-orange-50 px-2 py-1 text-[11px] font-black text-orange-700">
                       Search: {searchQuery}
                     </span>
-                    <Link href="/category/all" className="shrink-0 text-[11px] font-black text-zinc-600">
+                    <Link href={clearSearchHref()} className="shrink-0 text-[11px] font-black text-zinc-600">
                       Clear
                     </Link>
                   </div>
                 ) : null}
               </div>
               <div className="w-fit rounded-sm bg-orange-50 px-2 py-1 text-[11px] font-black text-orange-700 ring-1 ring-orange-200 sm:px-3 sm:py-2 sm:text-xs">
-                {totalProducts} products / Public wholesale prices
+                {totalProducts ? `Showing ${resultStart}-${resultEnd} of ${totalProducts}` : "0 products"} / Public prices
               </div>
             </div>
           </Container>
         </section>
 
         <Container className="!px-1.5 py-2 sm:!px-6 sm:py-4 lg:!px-8">
-            <div className="mb-2 flex flex-col gap-2 rounded-sm border border-zinc-200 bg-white p-1.5 shadow-sm sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-              <div className="flex snap-x gap-1 overflow-x-auto text-[11px] font-black [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-2 sm:text-sm [&::-webkit-scrollbar]:hidden">
-                {sortOptions.map((item) => (
-                  <Link key={item.value} href={sortHref(item.value)} className={`shrink-0 snap-start rounded-sm px-2 py-1.5 sm:px-3 sm:py-2 ${selectedSort === item.value ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700 hover:bg-orange-50 hover:text-orange-700"}`}>
-                    <span className="sm:hidden">{item.shortLabel}</span>
-                    <span className="hidden sm:inline">{item.label}</span>
+          <div className="space-y-2 sm:space-y-4">
+            <section className="rounded-sm border border-orange-100 bg-white p-2 shadow-sm sm:p-4">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start">
+                <div>
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-black sm:gap-2 sm:text-xs">
+                    <span className="mr-1 text-zinc-500">Current view</span>
+                    {!isAll && category ? (
+                      <span className="inline-flex items-center gap-1 rounded-sm bg-orange-50 px-2 py-1 text-orange-700">
+                        Category: {category.name}
+                        <Link href={clearCategoryHref()} className="text-orange-500 hover:text-orange-800" aria-label="Clear category filter">
+                          X
+                        </Link>
+                      </span>
+                    ) : null}
+                    {searchQuery ? (
+                      <span className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-sm bg-zinc-100 px-2 py-1 text-zinc-700">
+                        <span className="truncate">Search: {searchQuery}</span>
+                        <Link href={clearSearchHref()} className="text-zinc-500 hover:text-zinc-900" aria-label="Clear search filter">
+                          X
+                        </Link>
+                      </span>
+                    ) : null}
+                    {selectedSort !== "popular" ? (
+                      <span className="inline-flex items-center gap-1 rounded-sm bg-zinc-100 px-2 py-1 text-zinc-700">
+                        Sort: {selectedSortLabel}
+                        <Link href={clearSortHref()} className="text-zinc-500 hover:text-zinc-900" aria-label="Clear sort filter">
+                          X
+                        </Link>
+                      </span>
+                    ) : null}
+                    {isAll && !searchQuery && selectedSort === "popular" ? (
+                      <span className="rounded-sm bg-emerald-50 px-2 py-1 text-emerald-700">All products / Recommended</span>
+                    ) : (
+                      <Link href="/category/all" className="rounded-sm border border-zinc-200 bg-white px-2 py-1 text-zinc-600 hover:border-orange-200 hover:text-orange-700">
+                        Reset all
+                      </Link>
+                    )}
+                  </div>
+                  <p className="mt-2 text-[11px] font-bold leading-5 text-zinc-500 sm:text-xs">
+                    {totalProducts ? `Showing ${resultStart}-${resultEnd} of ${totalProducts} products.` : "No products match this view yet."} Use Details for full pricing and Chat for quick product confirmation.
+                  </p>
+                </div>
+
+                <form action={`/category/${slug}`} className="grid gap-1.5">
+                  <label htmlFor="category-inline-search" className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">
+                    {isAll ? "Search All Products" : "Search In This Category"}
+                  </label>
+                  <div className="flex overflow-hidden rounded-sm border border-zinc-300 bg-white focus-within:border-[#f65f18]">
+                    <input
+                      id="category-inline-search"
+                      type="search"
+                      name="q"
+                      required
+                      defaultValue={searchQuery}
+                      placeholder={isAll ? "Search SKU, model, or product" : `Search ${category?.name ?? "this category"}`}
+                      className="min-w-0 flex-1 px-3 py-2 text-xs font-bold text-zinc-800 outline-none placeholder:text-zinc-400 sm:text-sm"
+                    />
+                    {selectedSort !== "popular" ? <input type="hidden" name="sort" value={selectedSort} /> : null}
+                    <button
+                      type="submit"
+                      className="inline-flex shrink-0 items-center justify-center gap-1.5 bg-[#f65f18] px-3 py-2 text-xs font-black text-white hover:bg-[#df4f0d] sm:px-4 sm:text-sm"
+                    >
+                      <SearchIcon className="h-4 w-4 shrink-0" />
+                      <span>Search</span>
+                    </button>
+                  </div>
+                  {searchQuery ? (
+                    <Link href={clearSearchHref()} className="text-[11px] font-black text-zinc-500 hover:text-orange-700">
+                      Clear search only
+                    </Link>
+                  ) : null}
+                </form>
+              </div>
+            </section>
+
+            {navigationCategories.length ? (
+              <section className="rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:p-4">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Main Categories</p>
+                  <Link href={categoryHref("all")} className="shrink-0 text-[11px] font-black text-orange-700 sm:text-xs">
+                    Browse all
+                  </Link>
+                </div>
+                <HorizontalScrollRail viewportClassName="gap-1.5 text-[11px] font-black sm:gap-2 sm:text-sm">
+                <Link href={categoryHref("all")} className={`shrink-0 snap-start rounded-sm px-2.5 py-1.5 sm:px-3 sm:py-2 ${slug === "all" ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700 hover:bg-orange-50 hover:text-orange-700"}`}>
+                  All Products
+                </Link>
+                {navigationCategories.map((item) => (
+                  <Link
+                    key={item.slug}
+                    href={categoryHref(item.slug)}
+                    className={`shrink-0 snap-start rounded-sm px-2.5 py-1.5 sm:px-3 sm:py-2 ${slug === item.slug ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700 hover:bg-orange-50 hover:text-orange-700"}`}
+                  >
+                    {item.name}
+                    {item.itemCount ? <span className={slug === item.slug ? "ml-1 text-orange-50" : "ml-1 text-zinc-500"}>{item.itemCount}</span> : null}
                   </Link>
                 ))}
+                </HorizontalScrollRail>
+              </section>
+            ) : null}
+
+            {subcategoryChips.length ? (
+              <section className="rounded-sm border border-orange-100 bg-white p-2 shadow-sm sm:p-4">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-600 sm:text-xs">Subcategories</p>
+                  <span className="shrink-0 text-[11px] font-black text-zinc-400 sm:text-xs">{subcategoryChips.length} sections</span>
+                </div>
+                <HorizontalScrollRail viewportClassName="gap-1.5 text-[11px] font-black sm:gap-2 sm:text-sm">
+                  {subcategoryChips.map((item) => (
+                    <Link
+                      key={item.slug}
+                      href={categoryHref(item.slug)}
+                      className="shrink-0 snap-start rounded-sm bg-orange-50 px-2.5 py-1.5 text-orange-700 hover:bg-orange-100 sm:px-3 sm:py-2"
+                    >
+                      {item.name}
+                      {item.itemCount ? <span className="ml-1 text-orange-500">{item.itemCount}</span> : null}
+                    </Link>
+                  ))}
+                </HorizontalScrollRail>
+              </section>
+            ) : null}
+
+            <section className="rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:p-4">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <div className="min-w-0">
+                  <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Popular Searches</p>
+                  <HorizontalScrollRail viewportClassName="gap-1.5 text-[11px] font-black sm:gap-2 sm:text-sm">
+                    {popularCatalogSearches.map((term) => (
+                      <Link
+                        key={term}
+                        href={`/category/all?q=${encodeURIComponent(term)}`}
+                        className={`shrink-0 snap-start rounded-sm px-2.5 py-1.5 sm:px-3 sm:py-2 ${searchQuery.toLowerCase() === term.toLowerCase() ? "bg-[#f65f18] text-white" : "bg-orange-50 text-orange-700 hover:bg-orange-100"}`}
+                      >
+                        {term}
+                      </Link>
+                    ))}
+                  </HorizontalScrollRail>
+                </div>
+                <div>
+                  <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Sort By</p>
+                  <div className="flex flex-wrap gap-1.5 text-[11px] font-black sm:gap-2 sm:text-sm">
+                    {sortOptions.map((item) => (
+                      <Link key={item.value} href={sortHref(item.value)} className={`shrink-0 rounded-sm px-2 py-1.5 sm:px-3 sm:py-2 ${selectedSort === item.value ? "bg-[#f65f18] text-white" : "bg-zinc-100 text-zinc-700 hover:bg-orange-50 hover:text-orange-700"}`}>
+                        <span className="sm:hidden">{item.shortLabel}</span>
+                        <span className="hidden sm:inline">{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <Link href="/cart" className="hidden text-xs font-black text-orange-700 sm:block sm:text-sm">View Order List</Link>
-            </div>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-zinc-100 pt-3">
+                <p className="text-[11px] font-bold leading-5 text-zinc-500 sm:text-xs">
+                  Prices are public. Final availability, packing, and delivery are confirmed manually.
+                </p>
+                <Link href="/cart" className="shrink-0 text-xs font-black text-orange-700 sm:text-sm">View Order List</Link>
+              </div>
+            </section>
 
             <div className="grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4 xl:grid-cols-6">
               {paginatedProducts.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} />)}
@@ -323,6 +527,7 @@ export default async function CategoryPage({
                 </Link>
               </div>
             ) : null}
+          </div>
         </Container>
       </MarketplaceShell>
       <SiteFooter />

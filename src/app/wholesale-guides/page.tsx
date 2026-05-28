@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Wholesale Guides | Luis One Supply Hub",
     description:
-      "Learn about wholesale ordering, motorcycle parts, freight collect, Lalamove, courier, pickup, and reseller buying in the Philippines.",
+      "Learn about wholesale ordering, motorcycle parts, J&T Express COD, Lalamove, pickup, and reseller buying in the Philippines.",
     url: "/wholesale-guides",
     siteName: "Luis One Supply Hub",
     type: "website",
@@ -35,7 +35,7 @@ export default function WholesaleGuidesPage() {
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-600">
               Practical English content pages that explain how Luis One Supply Hub works: public wholesale prices,
-              MOQ, order lists, manual confirmation, pickup, Lalamove, courier shipping, and freight collect.
+              MOQ, order lists, manual confirmation, J&T Express COD, store pickup, and Lalamove delivery.
             </p>
             <PrimaryButton href="/category/all" className="mt-6">
               Browse Products

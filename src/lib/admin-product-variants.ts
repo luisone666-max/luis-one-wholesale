@@ -60,6 +60,16 @@ export async function saveProductVariants(admin: AdminClient, productId: string,
       lead_time: variant.leadTime,
       active: variant.active,
       sort_order: variant.sortOrder,
+      weight_grams: variant.weightGrams,
+      length_cm: variant.lengthCm,
+      width_cm: variant.widthCm,
+      height_cm: variant.heightCm,
+      cod_enabled: variant.codEnabled,
+      fragile: variant.fragile,
+      contains_battery: variant.containsBattery,
+      contains_liquid: variant.containsLiquid,
+      shipping_category: variant.shippingCategory,
+      shipping_notes: variant.shippingNotes,
     };
 
     const saveResult =
