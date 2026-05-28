@@ -145,16 +145,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <SocialAuthHashBridge storageKey={supabaseStorageKey} />
       <SiteHeader />
       <MarketplaceShell>
-        <Container className={isCheckoutFlow ? "max-w-2xl py-8" : "grid gap-8 py-10 lg:grid-cols-[1fr_440px]"}>
-          {isCheckoutFlow ? (
-            <section className="rounded-sm border border-orange-100 bg-orange-50 p-5 shadow-sm">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">Secure checkout</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950">Login to continue your order.</h1>
-              <p className="mt-2 text-sm font-bold leading-6 text-zinc-600">
-                After login, we will send you straight back to {redirectPath === "/cart" ? "your order cart" : "checkout"}.
-              </p>
-            </section>
-          ) : (
+        <Container className={isCheckoutFlow ? "max-w-2xl py-4 sm:py-6" : "grid gap-8 py-10 lg:grid-cols-[1fr_440px]"}>
+          {isCheckoutFlow ? null : (
             <section className="rounded-sm bg-[#f65f18] p-8 text-white shadow-sm lg:p-10">
               <p className="text-sm font-black uppercase tracking-[0.2em] text-orange-100">Wholesale Account</p>
               <h1 className="mt-4 max-w-xl text-4xl font-black tracking-tight">Login to manage your wholesale orders.</h1>
