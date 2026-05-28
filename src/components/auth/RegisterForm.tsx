@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { GoogleQuickSignInButton } from "@/components/auth/GoogleQuickSignInButton";
 import { trackMetaEvent } from "@/components/MetaPixel";
 import { getFriendlyAuthError } from "@/lib/customer-auth";
 
@@ -61,6 +62,16 @@ export function RegisterForm() {
     <form onSubmit={submit} className="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
       <h2 className="text-2xl font-black text-zinc-950">Create Your Wholesale Account</h2>
       <p className="mt-2 text-sm text-zinc-600">Register to place wholesale orders with Luis One Supply Hub.</p>
+      <div className="mt-5 rounded-sm border border-orange-100 bg-orange-50 p-3">
+        <p className="text-sm font-black text-zinc-950">Quick sign in</p>
+        <p className="mt-1 text-xs font-bold text-zinc-500">Use Google to create a customer account without setting a password.</p>
+        <GoogleQuickSignInButton className="mt-3" />
+      </div>
+      <div className="my-5 flex items-center gap-3">
+        <span className="h-px flex-1 bg-zinc-200" />
+        <span className="text-xs font-black uppercase tracking-[0.16em] text-zinc-400">or create with email</span>
+        <span className="h-px flex-1 bg-zinc-200" />
+      </div>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Field label="Full Name" value={form.fullName} onChange={(value) => updateField("fullName", value)} required />
         <Field label="Phone Number" value={form.phone} onChange={(value) => updateField("phone", value)} required />

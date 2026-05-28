@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { getFriendlyAuthError } from "@/lib/customer-auth";
+import { useEffect, useState, type FormEvent } from "react";
+import { GoogleQuickSignInButton } from "@/components/auth/GoogleQuickSignInButton";
+import { getCurrentCustomerSession, getFriendlyAuthError, normalizeCustomerRedirect } from "@/lib/customer-auth";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function LoginForm({ registered = false }: { registered?: boolean }) {
@@ -14,6 +15,48 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
   const [resetLoading, setResetLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    queueMicrotask(() => {
+      void (async () => {
+        const supabase = createBrowserSupabaseClient();
+
+        if (!supabase) {
+          return;
+        }
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!active || !user) {
+          return;
+        }
+
+        const session = await getCurrentCustomerSession({ ensureProfile: true });
+
+        if (!active) {
+          return;
+        }
+
+        if (!session.customer) {
+          setMessage("Login succeeded, but customer profile could not be created. Please contact us on Messenger.");
+          setSuccessMessage(false);
+          return;
+        }
+
+        const redirectTo = normalizeCustomerRedirect(new URLSearchParams(window.location.search).get("redirect"));
+        router.replace(redirectTo);
+        router.refresh();
+      })();
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -43,7 +86,15 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
       return;
     }
 
-    const redirectTo = new URLSearchParams(window.location.search).get("redirect") || "/";
+    const session = await getCurrentCustomerSession({ ensureProfile: true });
+
+    if (!session.customer) {
+      setMessage("Login succeeded, but customer profile could not be loaded. Please contact us on Messenger.");
+      setSuccessMessage(false);
+      return;
+    }
+
+    const redirectTo = normalizeCustomerRedirect(new URLSearchParams(window.location.search).get("redirect"));
     router.push(redirectTo);
     router.refresh();
   };
@@ -93,6 +144,20 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
           Account created. Please login to continue.
         </p>
       ) : null}
+      <div className="mt-5 rounded-sm border border-orange-100 bg-orange-50 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-zinc-950">Quick sign in</p>
+            <p className="mt-1 text-xs font-bold text-zinc-500">No password needed when you use Google.</p>
+          </div>
+        </div>
+        <GoogleQuickSignInButton className="mt-3" />
+      </div>
+      <div className="my-5 flex items-center gap-3">
+        <span className="h-px flex-1 bg-zinc-200" />
+        <span className="text-xs font-black uppercase tracking-[0.16em] text-zinc-400">or email login</span>
+        <span className="h-px flex-1 bg-zinc-200" />
+      </div>
       <form onSubmit={submit} className="mt-6 space-y-4">
         <label className="block text-sm font-bold text-zinc-800">
           Email

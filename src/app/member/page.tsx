@@ -231,7 +231,7 @@ function MenuRow({
         <span className="block truncate text-sm font-bold text-zinc-950">{label}</span>
       </span>
       <span className="truncate text-xs font-semibold text-zinc-400">{value}</span>
-      <span className="text-zinc-300">›</span>
+      <span aria-hidden="true" className="text-zinc-300">&gt;</span>
     </>
   );
 

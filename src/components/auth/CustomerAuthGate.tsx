@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { GoogleQuickSignInButton } from "@/components/auth/GoogleQuickSignInButton";
 import { getCurrentCustomerSession } from "@/lib/customer-auth";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function CustomerAuthGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
     let active = true;
+    let settled = false;
     const supabase = createBrowserSupabaseClient();
 
     const checkSession = async () => {
@@ -22,11 +24,22 @@ export function CustomerAuthGate({ children }: { children: ReactNode }) {
         return;
       }
 
+      settled = true;
       setLoggedIn(Boolean(session.user));
       setLoading(false);
     };
 
     void checkSession();
+
+    const timeout = window.setTimeout(() => {
+      if (!active || settled) {
+        return;
+      }
+
+      settled = true;
+      setLoggedIn(false);
+      setLoading(false);
+    }, 6000);
 
     const subscription = supabase?.auth.onAuthStateChange(() => {
       void checkSession();
@@ -34,6 +47,7 @@ export function CustomerAuthGate({ children }: { children: ReactNode }) {
 
     return () => {
       active = false;
+      window.clearTimeout(timeout);
       subscription?.data.subscription.unsubscribe();
     };
   }, []);
@@ -62,6 +76,7 @@ export function CustomerAuthGate({ children }: { children: ReactNode }) {
             <p className="mt-3 text-sm leading-6 text-zinc-600">
               Product prices remain public, but cart, checkout, and order history require a customer account.
             </p>
+            <GoogleQuickSignInButton label="Quick Sign In with Google" className="mx-auto mt-6 max-w-sm" />
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link href={`/login?redirect=${redirect}`} className="rounded-md bg-[#f65f18] px-5 py-3 text-sm font-black text-white">
                 Login
@@ -81,4 +96,3 @@ export function CustomerAuthGate({ children }: { children: ReactNode }) {
 
   return children;
 }
-

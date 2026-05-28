@@ -20,6 +20,35 @@ export type CustomerSessionState = {
   customer: CustomerProfile | null;
 };
 
+type SessionOptions = {
+  ensureProfile?: boolean;
+};
+
+function textOrEmpty(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function customerNameFromUser(user: User) {
+  const metadata = user.user_metadata ?? {};
+  return (
+    textOrEmpty(metadata.full_name) ||
+    textOrEmpty(metadata.name) ||
+    textOrEmpty(metadata.user_name) ||
+    textOrEmpty(user.email?.split("@")[0]) ||
+    "Luis One Customer"
+  );
+}
+
+export function normalizeCustomerRedirect(value: string | null | undefined, fallback = "/member") {
+  const target = textOrEmpty(value);
+
+  if (!target || !target.startsWith("/") || target.startsWith("//") || target.includes("\\") || /[\r\n]/.test(target)) {
+    return fallback;
+  }
+
+  return target;
+}
+
 export function getFriendlyAuthError(message: string) {
   const lowerMessage = message.toLowerCase();
 
@@ -50,7 +79,7 @@ export function getFriendlyAuthError(message: string) {
   return message || "Something went wrong. Please try again.";
 }
 
-export async function getCurrentCustomerSession(): Promise<CustomerSessionState> {
+export async function getCurrentCustomerSession(options: SessionOptions = {}): Promise<CustomerSessionState> {
   const supabase = createBrowserSupabaseClient();
 
   if (!supabase) {
@@ -69,9 +98,33 @@ export async function getCurrentCustomerSession(): Promise<CustomerSessionState>
     .from("customers")
     .select("id,auth_user_id,name,phone,facebook_name,messenger_link,location,business_type,status")
     .eq("auth_user_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
     .maybeSingle();
 
-  return { user, customer: (data as CustomerProfile | null) ?? null };
+  const customer = (data as CustomerProfile | null) ?? null;
+
+  if (customer || !options.ensureProfile) {
+    return { user, customer };
+  }
+
+  const metadata = user.user_metadata ?? {};
+  const { data: insertedData } = await supabase
+    .from("customers")
+    .insert({
+      auth_user_id: user.id,
+      name: customerNameFromUser(user),
+      phone: textOrEmpty(metadata.phone) || null,
+      facebook_name: null,
+      messenger_link: null,
+      location: null,
+      business_type: "Walk-in Buyer",
+      status: "active",
+    })
+    .select("id,auth_user_id,name,phone,facebook_name,messenger_link,location,business_type,status")
+    .maybeSingle();
+
+  return { user, customer: (insertedData as CustomerProfile | null) ?? null };
 }
 
 export async function logoutCustomer() {

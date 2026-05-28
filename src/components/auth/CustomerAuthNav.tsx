@@ -8,13 +8,14 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function CustomerAuthNav() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState<CustomerProfile | null>(null);
   const [fallbackName, setFallbackName] = useState("");
   const [logoutLoading, setLogoutLoading] = useState(false);
 
   useEffect(() => {
     let active = true;
+    let settled = false;
     const supabase = createBrowserSupabaseClient();
 
     const loadSession = async () => {
@@ -24,6 +25,7 @@ export function CustomerAuthNav() {
         return;
       }
 
+      settled = true;
       setCustomer(session.customer);
       setFallbackName(session.user?.user_metadata?.full_name ?? session.user?.email ?? "");
       setLoading(false);
@@ -31,12 +33,24 @@ export function CustomerAuthNav() {
 
     void loadSession();
 
+    const timeout = window.setTimeout(() => {
+      if (!active || settled) {
+        return;
+      }
+
+      settled = true;
+      setCustomer(null);
+      setFallbackName("");
+      setLoading(false);
+    }, 6000);
+
     const subscription = supabase?.auth.onAuthStateChange(() => {
       void loadSession();
     });
 
     return () => {
       active = false;
+      window.clearTimeout(timeout);
       subscription?.data.subscription.unsubscribe();
     };
   }, []);
