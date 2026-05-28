@@ -145,7 +145,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <SocialAuthHashBridge storageKey={supabaseStorageKey} />
       <SiteHeader />
       <MarketplaceShell>
-        <Container className={isCheckoutFlow ? "max-w-2xl py-4 sm:py-6" : "grid gap-8 py-10 lg:grid-cols-[1fr_440px]"}>
+        <Container className={isCheckoutFlow ? "max-w-2xl py-4 sm:py-6" : "grid gap-8 py-6 lg:grid-cols-[440px_1fr] lg:py-10"}>
+          <LoginForm registered={params.registered === "1"} redirectPath={redirectPath} siteOrigin={siteOrigin} />
           {isCheckoutFlow ? null : (
             <section className="rounded-sm bg-[#f65f18] p-8 text-white shadow-sm lg:p-10">
               <p className="text-sm font-black uppercase tracking-[0.2em] text-orange-100">Wholesale Account</p>
@@ -160,7 +161,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               </div>
             </section>
           )}
-          <LoginForm registered={params.registered === "1"} redirectPath={redirectPath} siteOrigin={siteOrigin} />
         </Container>
       </MarketplaceShell>
       <SiteFooter />
