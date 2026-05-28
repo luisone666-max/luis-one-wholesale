@@ -449,7 +449,7 @@ export default async function CategoryPage({
               </div>
             </section>
 
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4 xl:grid-cols-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {paginatedProducts.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} />)}
             </div>
 

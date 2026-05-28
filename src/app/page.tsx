@@ -97,7 +97,7 @@ export default async function Home() {
             <Link href="/cart" className="ml-2 shrink-0 text-xs font-black text-orange-700 sm:text-sm">Order List</Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {visibleProducts.map((product, index) => <ProductCard key={product.slug} product={product} priority={index < 2} />)}
           </div>
 

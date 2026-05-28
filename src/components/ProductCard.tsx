@@ -15,11 +15,28 @@ function formatMobileMoney(value: number) {
   return `PHP ${value.toLocaleString("en-US", { minimumFractionDigits: value % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
 
+function formatCardMoney(value: number, includeCurrency = true) {
+  const amount = value.toLocaleString("en-US", {
+    minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: value % 1 === 0 ? 0 : 2,
+  });
+
+  return includeCurrency ? `PHP ${amount}` : amount;
+}
+
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const bulkTier = getProductBulkHintTier(product);
   const prices = getProductPriceTiers(product).map((tier) => tier.price);
   const hasPrice = prices.length > 0;
-  const compactPrice = hasPrice ? `${formatMobileMoney(Math.min(...prices))}+` : "Quote";
+  const minPrice = hasPrice ? Math.min(...prices) : null;
+  const maxPrice = hasPrice ? Math.max(...prices) : null;
+  const compactPrice = minPrice ? `${formatMobileMoney(minPrice)}+` : "Quote";
+  const cardPrice =
+    minPrice !== null && maxPrice !== null
+      ? minPrice === maxPrice
+        ? formatCardMoney(minPrice)
+        : `${formatCardMoney(minPrice)} - ${formatCardMoney(maxPrice, false)}`
+      : "Contact for quote";
   const unavailable = isUnavailableStockStatus(product.stockStatus);
   const stockLabel = product.stockStatus === "In stock" ? "Ready" : product.stockStatus === "Preorder" ? "Order" : product.stockStatus;
   const productHref = `/product/${product.slug}`;
@@ -34,37 +51,37 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   };
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md [contain-intrinsic-size:220px_360px] [content-visibility:auto]">
+    <article className="group flex flex-col overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-lg [contain-intrinsic-size:240px_390px] [content-visibility:auto]">
       <Link href={productHref} className="block">
-        <div className="relative aspect-square bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-0 sm:p-4">
+        <div className="relative aspect-[4/3] bg-gradient-to-br from-orange-50 via-white to-zinc-50 p-2 sm:p-4">
           <ProductImage src={product.image} alt={product.name} priority={priority} quality={62} className="transition duration-200 group-hover:scale-[1.03]" />
-          <div className="absolute left-1 top-1 [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-[8px] sm:left-2 sm:top-2 sm:[&>span]:px-2 sm:[&>span]:py-1 sm:[&>span]:text-[11px]">
+          <div className="absolute left-2 top-2 [&>span]:px-2 [&>span]:py-0.5 [&>span]:text-[9px] sm:[&>span]:text-[11px]">
             <StockStatusBadge status={product.stockStatus} />
           </div>
-          <div className="absolute bottom-1 right-1 rounded-sm bg-white/95 px-1.5 py-0.5 text-[8px] font-black text-orange-700 shadow-sm sm:bottom-2 sm:right-2 sm:px-2 sm:py-1 sm:text-[11px]">
+          <div className="absolute bottom-2 right-2 rounded-sm bg-white/95 px-2 py-1 text-[9px] font-black text-orange-700 shadow-sm ring-1 ring-orange-100 sm:text-[11px]">
             MOQ {product.moq}
           </div>
         </div>
 
-        <div className="space-y-0.5 p-1.5 sm:space-y-2.5 sm:p-3">
+        <div className="space-y-1.5 p-2.5 sm:space-y-2.5 sm:p-3.5">
           <div>
-            <h3 className="line-clamp-2 min-h-[30px] text-[10px] font-black leading-[15px] text-zinc-950 group-hover:text-orange-700 sm:min-h-10 sm:text-sm sm:leading-5">{product.name}</h3>
-            <p className="mt-1 hidden truncate text-xs font-bold text-zinc-500 sm:block">
+            <h3 className="line-clamp-2 min-h-[32px] text-[11px] font-black leading-4 text-zinc-950 group-hover:text-orange-700 sm:min-h-10 sm:text-sm sm:leading-5">{product.name}</h3>
+            <p className="mt-1 truncate text-[10px] font-bold text-zinc-500 sm:text-xs">
               {variantCount > 1 ? `${variantCount} options` : product.category}
             </p>
           </div>
-          <div className="min-h-[34px] sm:min-h-[48px]">
+          <div className="min-h-[45px] sm:min-h-[54px]">
             {product.retailPrice ? (
-              <p className="truncate text-[8px] font-bold leading-[11px] text-zinc-400 sm:text-[11px]">
+              <p className="truncate text-[9px] font-bold leading-3 text-zinc-400 sm:text-[11px]">
                 <span className="sm:hidden">Retail {formatMobileMoney(product.retailPrice)}</span>
                 <span className="hidden sm:inline">Retail {formatMoney(product.retailPrice)}</span>
               </p>
             ) : null}
-            <p className="max-w-full truncate text-[10px] font-black leading-4 text-[#f65f18] sm:text-base sm:leading-5" title={priceRange}>
+            <p className="max-w-full truncate text-[12px] font-black leading-5 text-[#f65f18] sm:text-[15px]" title={priceRange}>
               <span className="sm:hidden">{compactPrice}</span>
-              <span className="hidden sm:inline">{priceRange}</span>
+              <span className="hidden sm:inline">{cardPrice}</span>
             </p>
-            <p className="mt-0.5 truncate text-[8px] font-bold leading-3 text-zinc-500 sm:mt-1 sm:text-[11px] sm:leading-4">
+            <p className="mt-0.5 truncate text-[9px] font-bold leading-3 text-zinc-500 sm:mt-1 sm:text-[11px] sm:leading-4">
               {!hasPrice ? (
                 "Ask on Messenger for price"
               ) : unavailable ? (
@@ -77,20 +94,19 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               )}
             </p>
           </div>
-          <div className="flex items-center justify-between gap-1 text-[8px] font-bold text-zinc-500 sm:hidden">
+          <div className="flex items-center justify-between gap-1 text-[9px] font-bold text-zinc-500 sm:hidden">
             <span className="rounded-sm bg-orange-50 px-1.5 py-0.5 text-orange-700">MOQ {product.moq}</span>
             <span className="truncate">{variantCount > 1 ? `${variantCount} options` : stockLabel}</span>
           </div>
         </div>
       </Link>
 
-      <div className="grid grid-cols-2 gap-1 p-1.5 pt-0 sm:gap-2 sm:p-3 sm:pt-0">
-        <Link href={productHref} aria-label={`View details for ${product.name}`} className="inline-flex h-8 items-center justify-center gap-1 rounded-sm border border-zinc-200 px-1 text-[10px] font-black leading-3 text-zinc-700 hover:border-orange-200 hover:text-orange-700 sm:h-10 sm:gap-1.5 sm:px-2 sm:text-xs">
+      <div className="mt-auto grid grid-cols-2 gap-1.5 border-t border-zinc-100 bg-zinc-50 p-2 sm:gap-2 sm:p-3">
+        <Link href={productHref} aria-label={`View details for ${product.name}`} className="inline-flex h-8 items-center justify-center gap-1.5 rounded-sm border border-zinc-200 bg-white px-2 text-[10px] font-black leading-3 text-zinc-700 hover:border-orange-200 hover:text-orange-700 sm:h-9 sm:text-xs">
           <ViewDetailsIcon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-          <span className="sm:hidden">Details</span>
-          <span className="hidden sm:inline">View Details</span>
+          <span>Details</span>
         </Link>
-        <ProductInquiryButton product={inquiryProduct} mobileLabel="Chat" className="h-8 w-full gap-1 px-1 text-[10px] sm:h-10 sm:px-2 sm:text-xs [&>svg]:h-3.5 [&>svg]:w-3.5 sm:[&>svg]:h-4 sm:[&>svg]:w-4" />
+        <ProductInquiryButton product={inquiryProduct} label="Chat" ariaLabel="Chat on Messenger" className="h-8 w-full gap-1.5 px-2 text-[10px] sm:h-9 sm:text-xs [&>svg]:h-3.5 [&>svg]:w-3.5 sm:[&>svg]:h-4 sm:[&>svg]:w-4" />
       </div>
     </article>
   );

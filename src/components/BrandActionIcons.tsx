@@ -40,6 +40,8 @@ export function CopyLinkIcon({ className = "h-4 w-4", ...props }: IconProps) {
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
+      width="16"
+      height="16"
       className={className}
       {...props}
     >
@@ -60,15 +62,13 @@ export function ViewDetailsIcon({ className = "h-4 w-4", ...props }: IconProps) 
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
+      width="16"
+      height="16"
       className={className}
       {...props}
     >
-      <path d="M8 6h13" />
-      <path d="M8 12h13" />
-      <path d="M8 18h13" />
-      <path d="M3 6h.01" />
-      <path d="M3 12h.01" />
-      <path d="M3 18h.01" />
+      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+      <circle cx="12" cy="12" r="2.5" />
     </svg>
   );
 }
@@ -84,6 +84,8 @@ export function SearchIcon({ className = "h-4 w-4", ...props }: IconProps) {
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
+      width="16"
+      height="16"
       className={className}
       {...props}
     >

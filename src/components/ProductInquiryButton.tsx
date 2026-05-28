@@ -16,11 +16,13 @@ export function ProductInquiryButton({
   product,
   label = "Messenger",
   mobileLabel,
+  ariaLabel,
   className = "",
 }: {
   product: ProductInquiryDetails;
   label?: string;
   mobileLabel?: string;
+  ariaLabel?: string;
   className?: string;
 }) {
   const [message, setMessage] = useState("");
@@ -52,7 +54,8 @@ export function ProductInquiryButton({
     <div className="space-y-2">
       <button
         type="button"
-        aria-label={label}
+        aria-label={ariaLabel ?? label}
+        title={ariaLabel ?? label}
         onClick={openInquiry}
         className={`inline-flex items-center justify-center gap-1.5 rounded-sm border border-[#cfeaff] bg-white px-3 text-xs font-black text-[#006aff] transition hover:bg-[#f1f8ff] ${className}`}
       >
