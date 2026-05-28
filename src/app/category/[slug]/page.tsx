@@ -292,6 +292,7 @@ export default async function CategoryPage({
 
         <Container className="!px-1.5 py-2 sm:!px-6 sm:py-4 lg:!px-8">
           <div className="space-y-2 sm:space-y-4">
+            {searchQuery || selectedSort !== "popular" ? (
             <section className="rounded-sm border border-orange-100 bg-white p-2 shadow-sm sm:p-4">
               <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start">
                 <div>
@@ -330,7 +331,7 @@ export default async function CategoryPage({
                     )}
                   </div>
                   <p className="mt-2 text-[11px] font-bold leading-5 text-zinc-500 sm:text-xs">
-                    {totalProducts ? `Showing ${resultStart}-${resultEnd} of ${totalProducts} products.` : "No products match this view yet."} Use Details for full pricing and Chat for quick product confirmation.
+                    {totalProducts ? `Showing ${resultStart}-${resultEnd} of ${totalProducts} products.` : "No products match this view yet."} Tap a product to view pricing, options, and availability.
                   </p>
                 </div>
 
@@ -365,9 +366,10 @@ export default async function CategoryPage({
                 </form>
               </div>
             </section>
+            ) : null}
 
             {navigationCategories.length ? (
-              <section className="rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:p-4">
+              <section className="hidden rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:p-4">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Main Categories</p>
                   <Link href={categoryHref("all")} className="shrink-0 text-[11px] font-black text-orange-700 sm:text-xs">
@@ -413,7 +415,7 @@ export default async function CategoryPage({
               </section>
             ) : null}
 
-            <section className="rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:p-4">
+            <section className="hidden rounded-sm border border-zinc-200 bg-white p-2 shadow-sm sm:p-4">
               <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                 <div className="min-w-0">
                   <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Popular Searches</p>
